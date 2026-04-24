@@ -1,0 +1,33 @@
+# Virtual environments — these are regenerated from requirements.txt
+env/
+env1/
+env2/
+env39/
+.venv/
+venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# PyInstaller build output
+dist/
+build/
+*.spec
+
+# Visual Studio / VS Code
+.vs/
+*.suo
+*.user
+UpgradeLog.htm
+
+# PyCharm
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated sample data — add/remove this line if you want to track the files
+data/*.csv
+data/*.xlsx
