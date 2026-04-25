@@ -61,3 +61,22 @@ def turnover_by_dept(df: pd.DataFrame) -> pd.Series:
         .mul(100)     # convert to percentage
         .round(1)
     )
+
+
+def salary_by_dept(df: pd.DataFrame) -> pd.Series:
+    """Return average salary per department, used for the salary bar chart."""
+    return df.groupby('Department')['Salary'].mean().round(0)
+
+
+def avg_absenteeism_by_dept(df: pd.DataFrame) -> pd.Series:
+    """Return average absenteeism days per department."""
+    if 'Absenteeism_Days' not in df.columns:
+        return pd.Series(dtype=float)
+    return df.groupby('Department')['Absenteeism_Days'].mean().round(1)
+
+
+def leave_balance_by_dept(df: pd.DataFrame) -> pd.Series:
+    """Return average leave balance days per department."""
+    if 'Leave_Balance' not in df.columns:
+        return pd.Series(dtype=float)
+    return df.groupby('Department')['Leave_Balance'].mean().round(1)

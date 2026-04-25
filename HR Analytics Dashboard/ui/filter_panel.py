@@ -36,6 +36,13 @@ class FilterPanel(QWidget):
         self.dept_combo.addItems(sorted(self._df['Department'].dropna().unique()))
         g_layout.addWidget(self.dept_combo)
 
+        # Job role dropdown — populated from the actual unique values in the dataset
+        g_layout.addWidget(QLabel('Job Role'))
+        self.role_combo = QComboBox()
+        self.role_combo.addItem('All')
+        self.role_combo.addItems(sorted(self._df['Job_Role'].dropna().unique()))
+        g_layout.addWidget(self.role_combo)
+
         # Employment status dropdown
         g_layout.addWidget(QLabel('Employment Status'))
         self.status_combo = QComboBox()
@@ -66,6 +73,7 @@ class FilterPanel(QWidget):
         """Collect the current filter values and emit them as a dict."""
         self.filters_changed.emit({
             'department': self.dept_combo.currentText(),
+            'job_role': self.role_combo.currentText(),
             'status': self.status_combo.currentText(),
             'date_from': self.date_from.date().toPyDate(),
             'date_to': self.date_to.date().toPyDate(),

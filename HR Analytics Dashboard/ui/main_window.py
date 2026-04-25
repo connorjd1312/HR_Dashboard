@@ -279,6 +279,9 @@ class MainWindow(QMainWindow):
         if f['department'] != 'All':
             df = df[df['Department'] == f['department']]
 
+        if f['job_role'] != 'All':
+            df = df[df['Job_Role'] == f['job_role']]
+
         if f['status'] != 'All':
             df = df[df['Status'] == f['status']]
 

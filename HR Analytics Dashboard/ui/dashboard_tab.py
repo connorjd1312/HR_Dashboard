@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from core import analytics
-from ui.chart_widget import ChartWidget
+from ui.chart_widget import ChartWithToolbar
 
 # Qt stylesheet applied to each KPI card — dark navy background, white text
 CARD_STYLE = '''
@@ -32,7 +32,7 @@ class DashboardTab(QWidget):
         layout.addLayout(self.kpi_row)
 
         # Bar chart of employee count per department below the KPI cards
-        self.dept_chart = ChartWidget(width=8, height=4)
+        self.dept_chart = ChartWithToolbar(width=8, height=4)
         layout.addWidget(self.dept_chart)
 
     def _make_kpi_card(self, label, value):

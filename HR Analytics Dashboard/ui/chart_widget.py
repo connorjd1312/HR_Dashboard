@@ -4,9 +4,9 @@
 # FigureCanvasQTAgg, which is Matplotlib's official Qt rendering backend.
 # Every chart in the application (bar, pie, line) is drawn using an instance of this class.
 
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
-from PyQt6.QtWidgets import QSizePolicy
+from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout
 
 
 class ChartWidget(FigureCanvasQTAgg):
@@ -35,3 +35,29 @@ class ChartWidget(FigureCanvasQTAgg):
         """Tighten layout to prevent label clipping, then repaint the canvas."""
         self.figure.tight_layout()
         self.draw()
+
+
+class ChartWithToolbar(QWidget):
+    """ChartWidget paired with a Matplotlib navigation toolbar (zoom, pan, save)."""
+
+    def __init__(self, width=6, height=4, dpi=100, parent=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        self._chart = ChartWidget(width=width, height=height, dpi=dpi)
+        self._toolbar = NavigationToolbar2QT(self._chart, self)
+
+        layout.addWidget(self._toolbar)
+        layout.addWidget(self._chart)
+
+    @property
+    def axes(self):
+        return self._chart.axes
+
+    def clear_axes(self):
+        self._chart.clear_axes()
+
+    def refresh(self):
+        self._chart.refresh()
