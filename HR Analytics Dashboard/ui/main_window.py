@@ -11,7 +11,7 @@ import pandas as pd
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
     QTabWidget, QFileDialog, QMessageBox, QStatusBar,
-    QLabel, QPushButton, QStackedWidget,
+    QLabel, QPushButton, QStackedWidget, QFrame,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QDragEnterEvent, QDropEvent
@@ -20,9 +20,25 @@ from core.data_loader import load_file
 from core.data_cleaner import clean
 from ui.filter_panel import FilterPanel
 from ui.dashboard_tab import DashboardTab
-from ui.charts_tab import ChartsTab
+from ui.analytics_tab import AnalyticsTab
 
 SUPPORTED = ('.csv', '.xlsx')
+
+_DROP_ZONE_NORMAL = '''
+    QFrame {
+        border: 2px dashed #2E75B6;
+        border-radius: 12px;
+        background-color: #EBF5FB;
+    }
+'''
+
+_DROP_ZONE_ACTIVE = '''
+    QFrame {
+        border: 2px dashed #1F3864;
+        border-radius: 12px;
+        background-color: #D6EAF8;
+    }
+'''
 
 
 class MainWindow(QMainWindow):
@@ -59,10 +75,11 @@ class MainWindow(QMainWindow):
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         h.addWidget(self.splitter)
 
-        # Left side — placeholder until a file is loaded
+        # Left side — placeholder until a file is loaded; hidden on welcome screen
         self.filter_panel = QWidget()
         self.filter_panel.setFixedWidth(220)
         self.splitter.addWidget(self.filter_panel)
+        self.filter_panel.hide()
 
         # Right side — stacked: page 0 = welcome, page 1 = dashboard tabs
         self.stack = QStackedWidget()
@@ -73,56 +90,147 @@ class MainWindow(QMainWindow):
 
         self.tab_widget = QTabWidget()
         self.dashboard_tab = DashboardTab()
-        self.charts_tab = ChartsTab()
+        self.analytics_tab = AnalyticsTab()
         self.tab_widget.addTab(self.dashboard_tab, 'Dashboard')
-        self.tab_widget.addTab(self.charts_tab, 'Charts')
+        self.tab_widget.addTab(self.analytics_tab, 'Analytics')
         self.stack.addWidget(self.tab_widget)              # index 1
+        self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
     def _build_welcome_page(self):
         """Landing screen shown before any data is loaded."""
         page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        page.setStyleSheet('background-color: #F5F7FA;')
+        outer = QVBoxLayout(page)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
-        title = QLabel('HR Employee Analytics Dashboard')
-        title.setStyleSheet('font-size: 24px; font-weight: bold; color: #1F3864;')
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # --- Branded header bar ---
+        header = QWidget()
+        header.setFixedHeight(72)
+        header.setStyleSheet('background-color: #1F3864;')
+        h_layout = QHBoxLayout(header)
+        h_layout.setContentsMargins(32, 0, 32, 0)
+        app_title = QLabel('HR Employee Analytics Dashboard')
+        app_title.setStyleSheet(
+            'font-size: 22px; font-weight: bold; color: white; font-family: Arial;'
+        )
+        app_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        h_layout.addWidget(app_title)
+        outer.addWidget(header)
 
-        subtitle = QLabel('Import one or more employee data files to get started')
-        subtitle.setStyleSheet('font-size: 14px; color: #555555;')
+        # --- Upload section ---
+        outer.addStretch()
+
+        subtitle = QLabel('Import your employee data file to get started')
+        subtitle.setStyleSheet(
+            'font-size: 14px; color: #555555; font-family: Arial; background: transparent;'
+        )
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        outer.addWidget(subtitle)
+        outer.addSpacing(20)
 
         btn = QPushButton('Open HR Data File(s)')
         btn.setFixedSize(240, 52)
         btn.setStyleSheet('''
             QPushButton {
                 background-color: #1F3864; color: white;
-                font-size: 14px; border-radius: 6px;
+                font-size: 14px; border-radius: 6px; border: none;
             }
             QPushButton:hover  { background-color: #2E75B6; }
             QPushButton:pressed { background-color: #163060; }
         ''')
         btn.clicked.connect(self._open_files)
+        outer.addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        outer.addSpacing(16)
 
-        formats = QLabel('Supports .csv and .xlsx — select multiple files at once')
-        formats.setStyleSheet('font-size: 11px; color: #888888;')
-        formats.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # --- Visible drag-and-drop zone ---
+        self._drop_zone = QFrame()
+        self._drop_zone.setFixedSize(400, 130)
+        self._drop_zone.setStyleSheet(_DROP_ZONE_NORMAL)
+        dz_layout = QVBoxLayout(self._drop_zone)
+        dz_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dz_layout.setSpacing(4)
 
-        dnd = QLabel('You can also drag and drop files directly onto this window')
-        dnd.setStyleSheet('font-size: 11px; color: #aaaaaa;')
-        dnd.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dz_icon = QLabel('📂')
+        dz_icon.setStyleSheet('font-size: 32px; border: none; background: transparent;')
+        dz_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        layout.addStretch()
-        layout.addWidget(title)
-        layout.addSpacing(8)
-        layout.addWidget(subtitle)
-        layout.addSpacing(28)
-        layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
-        layout.addSpacing(10)
-        layout.addWidget(formats)
-        layout.addSpacing(24)
-        layout.addWidget(dnd)
-        layout.addStretch()
+        dz_main = QLabel('Drag & drop your HR file here')
+        dz_main.setStyleSheet(
+            'font-size: 13px; font-weight: bold; color: #2E75B6;'
+            ' border: none; background: transparent;'
+        )
+        dz_main.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        dz_hint = QLabel('.csv and .xlsx  ·  multiple files supported')
+        dz_hint.setStyleSheet(
+            'font-size: 11px; color: #888888; border: none; background: transparent;'
+        )
+        dz_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        dz_layout.addWidget(dz_icon)
+        dz_layout.addWidget(dz_main)
+        dz_layout.addWidget(dz_hint)
+        outer.addWidget(self._drop_zone, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        outer.addStretch()
+
+        # --- Feature preview cards ---
+        cards_container = QWidget()
+        cards_container.setStyleSheet('background-color: #F5F7FA;')
+        cards_layout = QHBoxLayout(cards_container)
+        cards_layout.setContentsMargins(40, 0, 40, 40)
+        cards_layout.setSpacing(16)
+
+        for card_title, colour, description in [
+            (
+                'KPI Overview', '#1F3864',
+                'Track total headcount, active employees,\n'
+                'turnover rate, average tenure and salary.',
+            ),
+            (
+                'Visual Charts', '#2E75B6',
+                'Explore hiring trends, role distribution,\n'
+                'turnover, salary, and leave analytics.',
+            ),
+            (
+                'Filter & Explore', '#1E8449',
+                'Slice data by department, job role,\n'
+                'employment status and hire date range.',
+            ),
+        ]:
+            card = QFrame()
+            card.setStyleSheet(f'''
+                QFrame {{
+                    background-color: white;
+                    border-radius: 8px;
+                    border-top: 1px solid #E0E0E0;
+                    border-right: 1px solid #E0E0E0;
+                    border-bottom: 1px solid #E0E0E0;
+                    border-left: 5px solid {colour};
+                }}
+            ''')
+            card.setFixedHeight(100)
+            cl = QVBoxLayout(card)
+            cl.setContentsMargins(14, 12, 14, 12)
+            cl.setSpacing(6)
+
+            ct = QLabel(card_title)
+            ct.setStyleSheet(
+                f'font-size: 13px; font-weight: bold; color: {colour};'
+                ' border: none; background: transparent;'
+            )
+
+            cd = QLabel(description)
+            cd.setStyleSheet(
+                'font-size: 11px; color: #555555; border: none; background: transparent;'
+            )
+
+            cl.addWidget(ct)
+            cl.addWidget(cd)
+            cards_layout.addWidget(card)
+
+        outer.addWidget(cards_container)
 
         return page
 
@@ -188,6 +296,8 @@ class MainWindow(QMainWindow):
             new_fp.filters_changed.connect(self._apply_filters)
             self.splitter.replaceWidget(0, new_fp)
             self.filter_panel = new_fp
+            self.filter_panel.show()
+            self.splitter.setSizes([220, 1060])
 
             # Switch from welcome page to dashboard if this is the first load
             if self.stack.currentIndex() == 0:
@@ -234,9 +344,18 @@ class MainWindow(QMainWindow):
         if event.mimeData().hasUrls():
             if any(u.toLocalFile().endswith(SUPPORTED) for u in event.mimeData().urls()):
                 event.acceptProposedAction()
+                if self.stack.currentIndex() == 0 and hasattr(self, '_drop_zone'):
+                    self._drop_zone.setStyleSheet(_DROP_ZONE_ACTIVE)
+
+    def dragLeaveEvent(self, event):
+        """Reset the drop zone highlight when the drag leaves the window."""
+        if hasattr(self, '_drop_zone'):
+            self._drop_zone.setStyleSheet(_DROP_ZONE_NORMAL)
 
     def dropEvent(self, event: QDropEvent):
         """Handle dropped files — if data is already loaded, ask whether to add or replace."""
+        if hasattr(self, '_drop_zone'):
+            self._drop_zone.setStyleSheet(_DROP_ZONE_NORMAL)
         paths = [
             u.toLocalFile() for u in event.mimeData().urls()
             if u.toLocalFile().endswith(SUPPORTED)
@@ -285,6 +404,15 @@ class MainWindow(QMainWindow):
         if f['status'] != 'All':
             df = df[df['Status'] == f['status']]
 
+        if f.get('sex') and f['sex'] != 'All' and 'Sex' in df.columns:
+            df = df[df['Sex'] == f['sex']]
+
+        if f.get('ethnicity') and f['ethnicity'] != 'All' and 'Ethnicity' in df.columns:
+            df = df[df['Ethnicity'] == f['ethnicity']]
+
+        if f.get('age_group') and f['age_group'] != 'All' and 'Age_Group' in df.columns:
+            df = df[df['Age_Group'] == f['age_group']]
+
         df = df[
             (df['Hire_Date'].dt.date >= f['date_from']) &
             (df['Hire_Date'].dt.date <= f['date_to'])
@@ -293,7 +421,18 @@ class MainWindow(QMainWindow):
         self._refresh_all(df)
         self.statusBar().showMessage(f'Showing {len(df)} records')
 
+    def _on_tab_changed(self, index):
+        """Show sidebar on Dashboard tab, hide it on Analytics tab."""
+        if self._df_full is None:
+            return
+        if index == 0:  # Dashboard
+            self.filter_panel.show()
+            self.splitter.setSizes([220, 1060])
+        else:
+            self.filter_panel.hide()
+            self.splitter.setSizes([0, 1280])
+
     def _refresh_all(self, df):
-        """Push updated data to both tabs so they redraw their charts and KPIs."""
+        """Push updated data to all tabs so they redraw their charts and KPIs."""
         self.dashboard_tab.update_data(df)
-        self.charts_tab.update_data(df)
+        self.analytics_tab.update_data(df)

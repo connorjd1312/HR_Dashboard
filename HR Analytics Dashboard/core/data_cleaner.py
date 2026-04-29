@@ -53,11 +53,36 @@ def _normalise_status(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_SEX_MAP = {
+    'male':            'Male',
+    'm':               'Male',
+    'man':             'Male',
+    'female':          'Female',
+    'f':               'Female',
+    'woman':           'Female',
+    'non-binary':      'Non-binary',
+    'nonbinary':       'Non-binary',
+    'non binary':      'Non-binary',
+    'prefer not to say': 'Prefer not to say',
+    'prefer not':      'Prefer not to say',
+    'not disclosed':   'Prefer not to say',
+}
+
+
 def _normalise_text_fields(df: pd.DataFrame) -> pd.DataFrame:
     """Strip leading/trailing whitespace and apply consistent Title Casing to text columns."""
-    for col in ['Name', 'Department', 'Job_Role']:
+    for col in ['Name', 'Department', 'Job_Role', 'Ethnicity']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.title()
+    if 'Sex' in df.columns:
+        df['Sex'] = (
+            df['Sex']
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .map(_SEX_MAP)
+            .fillna('Unknown')
+        )
     return df
 
 
@@ -110,6 +135,9 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     # Age in whole years; will be NaN if Date_of_Birth was missing or unparseable
     if 'Date_of_Birth' in df.columns:
         df['Age'] = ((today - df['Date_of_Birth']).dt.days // 365).astype('Int64')
+        bins   = [-1, 29, 39, 49, 59, 200]
+        labels = ['Under 30', '30–39', '40–49', '50–59', '60+']
+        df['Age_Group'] = pd.cut(df['Age'], bins=bins, labels=labels).astype(str).replace('nan', 'Unknown')
 
     # Tenure in decimal years from Hire_Date to today
     df['Tenure_Years'] = ((today - df['Hire_Date']).dt.days / 365).round(1)

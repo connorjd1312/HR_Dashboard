@@ -32,6 +32,9 @@ COLUMN_MAP = {
                          'absenteeism', 'absent_days', 'absenteeism days'],
     'Leave_Balance':    ['leave_balance', 'annual_leave', 'leave_days',
                          'remaining_leave', 'leave balance', 'leave days remaining'],
+    'Sex':              ['sex', 'gender', 'biological_sex', 'employee_sex'],
+    'Ethnicity':        ['ethnicity', 'ethnic_group', 'race', 'cultural_background',
+                         'ethnic background'],
 }
 
 # The pipeline cannot function without these columns — file is rejected if they're missing
@@ -89,7 +92,7 @@ def _parse_dates(df: pd.DataFrame) -> pd.DataFrame:
             continue
 
         # Let pandas attempt automatic inference first — covers most common formats
-        parsed = pd.to_datetime(df[col], infer_datetime_format=True, errors='coerce')
+        parsed = pd.to_datetime(df[col], errors='coerce')
 
         # Where inference produced NaT but the source cell had a value, try explicit formats
         had_values = df[col].notna()

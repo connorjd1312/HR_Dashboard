@@ -7,6 +7,7 @@
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget
 from ui.chart_widget import ChartWithToolbar
+from ui.compare_tab import CompareTab
 from core import analytics
 
 
@@ -25,6 +26,7 @@ class ChartsTab(QWidget):
         self.salary_chart = ChartWithToolbar(width=8, height=4)
         self.absenteeism_chart = ChartWithToolbar(width=8, height=4)
         self.leave_chart = ChartWithToolbar(width=8, height=4)
+        self.compare_sub = CompareTab()
 
         self.tabs.addTab(self.pie_chart, 'Role Distribution')
         self.tabs.addTab(self.line_chart, 'Monthly Hires')
@@ -32,6 +34,7 @@ class ChartsTab(QWidget):
         self.tabs.addTab(self.salary_chart, 'Salary by Dept')
         self.tabs.addTab(self.absenteeism_chart, 'Absenteeism by Dept')
         self.tabs.addTab(self.leave_chart, 'Leave Balance by Dept')
+        self.tabs.addTab(self.compare_sub, 'Compare Departments')
 
     def update_data(self, df):
         """Redraw all charts with the given DataFrame."""
@@ -101,3 +104,5 @@ class ChartsTab(QWidget):
             self.leave_chart.axes.set_ylabel('Avg Leave Balance (Days)')
             self.leave_chart.axes.tick_params(axis='x', rotation=20)
         self.leave_chart.refresh()
+
+        self.compare_sub.update_data(df)

@@ -33,13 +33,11 @@
     <Compile Include="ui\dashboard_tab.py" />
     <Compile Include="ui\charts_tab.py" />
     <Compile Include="ui\main_window.py" />
-    <Compile Include="data\generate_sample.py" />
     <Compile Include="tests\test_analytics.py" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="core\" />
-    <Folder Include="data\" />
     <Folder Include="tests\" />
     <Folder Include="ui\" />
   </ItemGroup>

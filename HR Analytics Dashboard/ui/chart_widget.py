@@ -31,6 +31,11 @@ class ChartWidget(FigureCanvasQTAgg):
         """Remove all content from the chart area so it can be redrawn."""
         self.axes.cla()
 
+    def reset_axes(self, polar=False):
+        """Replace the current axes — needed when switching between standard and polar (radar)."""
+        self.figure.clear()
+        self.axes = self.figure.add_subplot(111, polar=polar)
+
     def refresh(self):
         """Tighten layout to prevent label clipping, then repaint the canvas."""
         self.figure.tight_layout()
@@ -58,6 +63,16 @@ class ChartWithToolbar(QWidget):
 
     def clear_axes(self):
         self._chart.clear_axes()
+
+    def reset_axes(self, polar=False):
+        self._chart.reset_axes(polar=polar)
+
+    @property
+    def figure(self):
+        return self._chart.figure
+
+    def redraw(self):
+        self._chart.draw()
 
     def refresh(self):
         self._chart.refresh()
