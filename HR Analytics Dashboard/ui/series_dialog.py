@@ -37,7 +37,7 @@ _DATE_EDIT_STYLE = '''
 
 
 def _color_btn_style(color: str) -> str:
-    """Return stylesheet for the color picker button showing the given hex color."""
+    # Return stylesheet for the color picker button showing the given hex color.
     return f'''
         QPushButton {{
             background-color: {color};
@@ -54,8 +54,8 @@ def _color_btn_style(color: str) -> str:
     '''
 
 
+# Modal dialog for configuring one chart series.
 class SeriesDialog(QDialog):
-    """Modal dialog for configuring one chart series."""
 
     def __init__(self, df, existing=None, parent=None):
         super().__init__(parent)
@@ -87,7 +87,8 @@ class SeriesDialog(QDialog):
         scroll.setStyleSheet('background: white;')
 
         content = QWidget()
-        content.setStyleSheet('background: white;')
+        content.setObjectName('seriesContent')
+        content.setStyleSheet('#seriesContent { background: white; }')
         layout = QVBoxLayout(content)
         layout.setSpacing(10)
         layout.setContentsMargins(20, 16, 20, 16)

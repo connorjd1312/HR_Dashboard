@@ -28,12 +28,8 @@ _PIE_COLORS = [
 ]
 
 
+# Chart with metric/dimension/type dropdowns; emits bar_clicked and close_requested.
 class ChartPanel(QFrame):
-    """Chart with metric/dimension/type dropdowns above it.
-
-    Emits `bar_clicked(label)` when the user clicks a bar/wedge.
-    Emits `close_requested(self)` when the corner ✕ is clicked (only when allow_close=True).
-    """
 
     bar_clicked     = pyqtSignal(str)
     close_requested = pyqtSignal(object)

@@ -37,7 +37,7 @@ class ChartsTab(QWidget):
         self.tabs.addTab(self.compare_sub, 'Compare Departments')
 
     def update_data(self, df):
-        """Redraw all charts with the given DataFrame."""
+        # Redraw all charts with the given DataFrame.
 
         # --- Pie chart: job role distribution ---
         self.pie_chart.clear_axes()

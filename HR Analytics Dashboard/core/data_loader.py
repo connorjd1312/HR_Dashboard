@@ -56,7 +56,7 @@ DATE_FORMATS = [
 
 
 def _normalise_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Rename incoming columns to the standard schema using COLUMN_MAP."""
+    # Rename incoming columns to the standard schema using COLUMN_MAP.
 
     # Build a flat lookup: lowercase variant → standard name
     lookup = {}
@@ -86,7 +86,7 @@ def _normalise_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _parse_dates(df: pd.DataFrame) -> pd.DataFrame:
-    """Parse date columns, falling back through explicit formats if auto-inference fails."""
+    # Parse date columns, trying explicit formats if auto-inference fails.
     for col in DATE_COLUMNS:
         if col not in df.columns:
             continue
@@ -113,7 +113,7 @@ def _parse_dates(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _clean_salary(df: pd.DataFrame) -> pd.DataFrame:
-    """Strip currency symbols, commas, and whitespace from Salary then coerce to float."""
+    # Strip currency symbols, commas, and whitespace from Salary then coerce to float.
     if 'Salary' not in df.columns:
         return df
 
@@ -129,11 +129,7 @@ def _clean_salary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_file(filepath: str) -> pd.DataFrame:
-    """
-    Load a CSV or XLSX file into a clean, consistently-named DataFrame.
-    Column names are normalised, dates are parsed, and salary is converted to float.
-    The returned DataFrame is ready to be passed straight to data_cleaner.clean().
-    """
+    # Load a CSV or XLSX file; normalise columns, parse dates, clean salary, return DataFrame.
     path = Path(filepath)
 
     if path.suffix not in SUPPORTED:

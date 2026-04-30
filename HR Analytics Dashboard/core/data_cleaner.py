@@ -36,7 +36,7 @@ STATUS_MAP = {
 
 
 def _normalise_status(df: pd.DataFrame) -> pd.DataFrame:
-    """Map status variants to standard labels; unrecognised values become 'Unknown'."""
+    # Map status variants to standard labels; unrecognised values become 'Unknown'.
     if 'Status' not in df.columns:
         # Column wasn't in the source file at all — default everyone to Unknown
         df['Status'] = 'Unknown'
@@ -70,7 +70,7 @@ _SEX_MAP = {
 
 
 def _normalise_text_fields(df: pd.DataFrame) -> pd.DataFrame:
-    """Strip leading/trailing whitespace and apply consistent Title Casing to text columns."""
+    # Strip whitespace, apply Title Casing to text columns, and map Sex to standard labels.
     for col in ['Name', 'Department', 'Job_Role', 'Ethnicity']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.title()
@@ -87,17 +87,8 @@ def _normalise_text_fields(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Clean and enrich the normalised HR DataFrame.
-    Returns a new DataFrame — the original is never modified.
-
-    Steps performed:
-      1. Normalise text fields and status values
-      2. Remove duplicate and incomplete rows
-      3. Fill optional missing values with safe defaults
-      4. Add computed columns: Age, Tenure_Years, Turnover
-      5. Validate data integrity and warn about bad records
-    """
+    # Clean and enrich the HR DataFrame — normalise text/status, deduplicate, fill missing
+    # values, add Age/Tenure_Years/Turnover columns, and warn about invalid records.
     # Always work on a copy so the raw data stays intact for error diagnosis
     df = df.copy()
 

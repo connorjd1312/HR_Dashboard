@@ -87,7 +87,7 @@ DRILL_CASCADE = ['Department', 'Job Role', 'Status', 'Sex', 'Ethnicity', 'Age Gr
 
 
 def kpi_value(df: pd.DataFrame, metric: str) -> str:
-    """Return formatted display string for a KPI on a dashboard card."""
+    # Return formatted display string for a KPI on a dashboard card.
     if df is None or len(df) == 0:
         return '—'
 
@@ -124,11 +124,7 @@ def kpi_value(df: pd.DataFrame, metric: str) -> str:
 
 
 def kpi_relevant_employees(df: pd.DataFrame, metric: str) -> pd.DataFrame:
-    """Return the subset of employees that contribute to this KPI.
-
-    Count metrics return only the matching employees (e.g. Resigned Count → resigned only).
-    Averages and totals return the full DataFrame, since every row contributes to the value.
-    """
+    # Return employees contributing to this KPI; count metrics filter to matching rows only.
     if df is None or len(df) == 0:
         return df
 
@@ -144,7 +140,7 @@ def kpi_relevant_employees(df: pd.DataFrame, metric: str) -> pd.DataFrame:
 
 
 def kpi_breakdown(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
-    """Return a per-group Series for a KPI metric — used in the drill-down breakdown charts."""
+    # Return a per-group Series for a KPI metric, used in drill-down breakdown charts.
     col = _COL_MAP.get(group_by, group_by)
     if df is None or col not in df.columns or len(df) == 0:
         return pd.Series(dtype=float)
@@ -185,7 +181,7 @@ def kpi_breakdown(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
 
 
 def summary_kpis(df: pd.DataFrame) -> dict:
-    """Return the five headline KPI values shown as cards on the Dashboard tab."""
+    # Return the five headline KPI values shown as cards on the Dashboard tab.
     total = len(df)
     active = int((df['Status'] == 'Active').sum())
 
@@ -205,20 +201,17 @@ def summary_kpis(df: pd.DataFrame) -> dict:
 
 
 def dept_distribution(df: pd.DataFrame) -> pd.Series:
-    """Return employee count per department, used for the bar chart on the Dashboard tab."""
+    # Return employee count per department, used for the bar chart on the Dashboard tab.
     return df['Department'].value_counts()
 
 
 def role_distribution(df: pd.DataFrame) -> pd.Series:
-    """Return employee count per job role, used for the pie chart on the Charts tab."""
+    # Return employee count per job role, used for the pie chart on the Charts tab.
     return df['Job_Role'].value_counts()
 
 
 def monthly_hires(df: pd.DataFrame) -> pd.Series:
-    """
-    Return the number of employees hired per month, used for the line chart on the Charts tab.
-    Resamples by month-end ('ME') so gaps with zero hires are included.
-    """
+    # Return hires per month (resampled to month-end so zero-hire gaps are included).
     return (
         df.set_index('Hire_Date')
         .resample('ME')['Name']
@@ -228,10 +221,7 @@ def monthly_hires(df: pd.DataFrame) -> pd.Series:
 
 
 def turnover_by_dept(df: pd.DataFrame) -> pd.Series:
-    """
-    Return the turnover rate (%) for each department, used for the horizontal bar chart.
-    Calculated as the proportion of employees in each department who have left.
-    """
+    # Return turnover rate (%) per department — proportion of employees who have left.
     return (
         df.groupby('Department')['Turnover']
         .mean()       # gives proportion who left (0.0 – 1.0)
@@ -252,7 +242,7 @@ COMPARISON_METRICS = [
 
 
 def dept_comparison(df: pd.DataFrame, departments: list, metric: str) -> pd.Series:
-    """Return a Series of metric values indexed by department for the given selection."""
+    # Return a Series of metric values indexed by department for the given selection.
     result = {}
     for dept in departments:
         sub = df[df['Department'] == dept]
@@ -282,19 +272,19 @@ def dept_comparison(df: pd.DataFrame, departments: list, metric: str) -> pd.Seri
 
 
 def salary_by_dept(df: pd.DataFrame) -> pd.Series:
-    """Return average salary per department, used for the salary bar chart."""
+    # Return average salary per department, used for the salary bar chart.
     return df.groupby('Department')['Salary'].mean().round(0)
 
 
 def avg_absenteeism_by_dept(df: pd.DataFrame) -> pd.Series:
-    """Return average absenteeism days per department."""
+    # Return average absenteeism days per department.
     if 'Absenteeism_Days' not in df.columns:
         return pd.Series(dtype=float)
     return df.groupby('Department')['Absenteeism_Days'].mean().round(1)
 
 
 def leave_balance_by_dept(df: pd.DataFrame) -> pd.Series:
-    """Return average leave balance days per department."""
+    # Return average leave balance days per department.
     if 'Leave_Balance' not in df.columns:
         return pd.Series(dtype=float)
     return df.groupby('Department')['Leave_Balance'].mean().round(1)
@@ -311,11 +301,7 @@ def time_series_data(
     end_date: pd.Timestamp,
     granularity: str = 'Monthly',
 ) -> pd.Series:
-    """
-    Compute a time series for one metric.
-    start_date / end_date: pd.Timestamp
-    granularity: 'Weekly' | 'Monthly' | 'Quarterly' | 'Yearly'
-    """
+    # Compute a time series for one metric over the given date range and granularity.
     if filter_by and filter_by != 'None' and filter_val and filter_val != 'All':
         col = _COL_MAP.get(filter_by, filter_by)
         df = df[df[col] == filter_val]
@@ -343,7 +329,7 @@ def time_series_data(
 
 
 def snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
-    """Compute a snapshot metric grouped by one dimension."""
+    # Compute a snapshot metric grouped by one dimension.
     col = _COL_MAP.get(group_by, group_by)
 
     if metric == 'Employee Count':

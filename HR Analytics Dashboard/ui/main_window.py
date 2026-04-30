@@ -97,7 +97,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
     def _build_welcome_page(self):
-        """Landing screen shown before any data is loaded."""
+        # Build the landing screen shown before any data is loaded.
         page = QWidget()
         page.setStyleSheet('background-color: #F5F7FA;')
         outer = QVBoxLayout(page)
@@ -263,12 +263,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ #
 
     def _load_paths(self, paths: list[str], append: bool = False):
-        """
-        Load one or more files and either replace or append to the current dataset.
-
-        append=False  →  discard existing data, load only the new files
-        append=True   →  combine new files with previously loaded data, then re-clean
-        """
+        # Load files and either replace (append=False) or merge (append=True) with existing data.
         try:
             # Load each file individually so we get a clear error message per file
             new_frames = []
@@ -318,7 +313,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, 'Error loading file', str(e))
 
     def _open_files(self):
-        """Open a multi-select file dialog; selected files replace the current dataset."""
+        # Open a file dialog; selected files replace the current dataset.
         paths, _ = QFileDialog.getOpenFileNames(
             self, 'Open HR Data', '',
             'Data Files (*.csv *.xlsx)',
@@ -327,7 +322,7 @@ class MainWindow(QMainWindow):
             self._load_paths(paths, append=False)
 
     def _add_files(self):
-        """Open a multi-select file dialog; selected files are appended to existing data."""
+        # Open a file dialog; selected files are appended to existing data.
         paths, _ = QFileDialog.getOpenFileNames(
             self, 'Add More HR Data', '',
             'Data Files (*.csv *.xlsx)',
@@ -340,7 +335,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ #
 
     def dragEnterEvent(self, event: QDragEnterEvent):
-        """Accept the drag if at least one dragged file is a supported type."""
+        # Accept drag if at least one dragged file is a supported type.
         if event.mimeData().hasUrls():
             if any(u.toLocalFile().endswith(SUPPORTED) for u in event.mimeData().urls()):
                 event.acceptProposedAction()
@@ -348,12 +343,12 @@ class MainWindow(QMainWindow):
                     self._drop_zone.setStyleSheet(_DROP_ZONE_ACTIVE)
 
     def dragLeaveEvent(self, event):
-        """Reset the drop zone highlight when the drag leaves the window."""
+        # Reset drop zone highlight when the drag leaves the window.
         if hasattr(self, '_drop_zone'):
             self._drop_zone.setStyleSheet(_DROP_ZONE_NORMAL)
 
     def dropEvent(self, event: QDropEvent):
-        """Handle dropped files — if data is already loaded, ask whether to add or replace."""
+        # Handle dropped files — if data is loaded, ask whether to add or replace.
         if hasattr(self, '_drop_zone'):
             self._drop_zone.setStyleSheet(_DROP_ZONE_NORMAL)
         paths = [
@@ -392,7 +387,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ #
 
     def _apply_filters(self, f: dict):
-        """Filter the full dataset and push the result to both tabs."""
+        # Filter the full dataset and push the result to both tabs.
         df = self._df_full.copy()
 
         if f['department'] != 'All':
@@ -422,7 +417,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f'Showing {len(df)} records')
 
     def _on_tab_changed(self, index):
-        """Show sidebar on Dashboard tab, hide it on Analytics tab."""
+        # Show sidebar on Dashboard tab, hide it on Analytics tab.
         if self._df_full is None:
             return
         if index == 0:  # Dashboard
@@ -433,6 +428,6 @@ class MainWindow(QMainWindow):
             self.splitter.setSizes([0, 1280])
 
     def _refresh_all(self, df):
-        """Push updated data to all tabs so they redraw their charts and KPIs."""
+        # Push updated data to all tabs so they redraw charts and KPIs.
         self.dashboard_tab.update_data(df)
         self.analytics_tab.update_data(df)

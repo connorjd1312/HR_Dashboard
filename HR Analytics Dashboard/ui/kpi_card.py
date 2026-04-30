@@ -2,12 +2,8 @@ from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButto
 from PyQt6.QtCore import Qt, pyqtSignal
 
 
+# Clickable KPI card; emits clicked(metric) on body click, remove_clicked(metric) on ✕.
 class KPICard(QFrame):
-    """Clickable KPI card with a small remove (✕) button in the corner.
-
-    Emits `clicked(metric)` when the card body is left-clicked, and
-    `remove_clicked(metric)` when the ✕ button is pressed.
-    """
 
     clicked        = pyqtSignal(str)
     remove_clicked = pyqtSignal(str)
@@ -72,8 +68,8 @@ class KPICard(QFrame):
         super().mousePressEvent(event)
 
 
+# Tile that opens a menu of available metrics when clicked.
 class AddKPIButton(QFrame):
-    """Tile shaped like a KPI card; opens a menu of available metrics when clicked."""
 
     clicked = pyqtSignal()
 

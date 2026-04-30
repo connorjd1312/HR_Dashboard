@@ -26,13 +26,13 @@ SAMPLE = pd.DataFrame({
 
 
 def test_deduplication():
-    """The duplicate Bob row should be removed, leaving exactly 2 records."""
+    # Duplicate Bob row should be removed, leaving exactly 2 records.
     df = clean(SAMPLE)
     assert len(df) == 2
 
 
 def test_derived_columns():
-    """Cleaner must add Age, Tenure_Years, and Turnover columns."""
+    # Cleaner must add Age, Tenure_Years, and Turnover columns.
     df = clean(SAMPLE)
     assert 'Age' in df.columns
     assert 'Tenure_Years' in df.columns
@@ -40,7 +40,7 @@ def test_derived_columns():
 
 
 def test_kpi_structure():
-    """summary_kpis must return the expected keys with correct values."""
+    # summary_kpis must return expected keys; Total=2, Active=1.
     df = clean(SAMPLE)
     kpis = analytics.summary_kpis(df)
     assert 'Total Employees' in kpis
@@ -49,13 +49,13 @@ def test_kpi_structure():
 
 
 def test_turnover_flag():
-    """Bob is Resigned, so his Turnover flag must be True."""
+    # Bob is Resigned, so his Turnover flag must be True.
     df = clean(SAMPLE)
     assert df.loc[df['Name'] == 'Bob', 'Turnover'].values[0] == True
 
 
 def test_dept_distribution():
-    """Both departments from the sample must appear in the distribution."""
+    # Both HR and Engineering must appear in the distribution.
     df = clean(SAMPLE)
     dist = analytics.dept_distribution(df)
     assert 'HR' in dist.index

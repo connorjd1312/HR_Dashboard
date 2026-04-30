@@ -37,8 +37,8 @@ _RED_HOVER = '#FADBD8'
 
 # ── _SeriesCard ───────────────────────────────────────────────────────────────
 
+# One row in the series list — coloured dot, label, edit and delete buttons.
 class _SeriesCard(QFrame):
-    """One row in the series list — coloured dot, label, edit and delete buttons."""
 
     def __init__(self, series, on_edit, on_delete, parent=None):
         super().__init__(parent)
@@ -94,8 +94,8 @@ class _SeriesCard(QFrame):
 
 # ── _ThumbnailCard ────────────────────────────────────────────────────────────
 
+# Clickable chart thumbnail in the right sidebar.
 class _ThumbnailCard(QFrame):
-    """A clickable chart thumbnail in the right sidebar."""
 
     def __init__(self, chart_dict, pixmap, is_active, on_click, on_delete, parent=None):
         super().__init__(parent)
@@ -167,8 +167,8 @@ class _ThumbnailCard(QFrame):
 
 # ── AnalyticsTab ──────────────────────────────────────────────────────────────
 
+# Multi-chart analytics builder with series management and thumbnail navigation.
 class AnalyticsTab(QWidget):
-    """Multi-chart analytics builder with series management and thumbnail navigation."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -630,7 +630,7 @@ class AnalyticsTab(QWidget):
         self._update_data_table()
 
     def _draw_on_figure(self, fig, chart_dict, df):
-        """Draw all series in chart_dict onto fig."""
+        # Draw all series in chart_dict onto fig.
         series_list = chart_dict.get('series_list', [])
         if not series_list:
             return
@@ -776,7 +776,7 @@ class AnalyticsTab(QWidget):
     # ── Series data helper ────────────────────────────────────────────────────
 
     def _series_data(self, s, df):
-        """Return a pd.Series of data for a series config dict."""
+        # Return a pd.Series of data for a series config dict.
         if df is None:
             return None
         try:
@@ -805,7 +805,7 @@ class AnalyticsTab(QWidget):
     # ── Thumbnail management ──────────────────────────────────────────────────
 
     def _chart_to_pixmap(self, chart_dict, w=190, h=120):
-        """Render a chart dict to a QPixmap (thumbnail)."""
+        # Render a chart dict to a QPixmap for use as a thumbnail.
         series_list = chart_dict.get('series_list', [])
         if not series_list or self._df is None:
             # Grey placeholder

@@ -71,8 +71,8 @@ _COMBO_STYLE = '''
 '''
 
 
+# Dashboard tab: customisable KPI cards, charts, and drill-down.
 class DashboardTab(QWidget):
-    """Dashboard tab with customisable KPI cards, customisable chart(s), and drill-down."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -272,7 +272,7 @@ class DashboardTab(QWidget):
         self._relayout_charts()
 
     def _rebuild_charts(self, allow_close: bool):
-        """Rebuild existing panels with a different allow_close flag, preserving configs."""
+        # Rebuild panels with a different allow_close flag, preserving configs.
         configs = [p.current_config() for p in self._chart_panels]
         for p in self._chart_panels:
             p.deleteLater()
