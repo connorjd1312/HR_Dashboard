@@ -6,6 +6,8 @@
 #   - Layout: filter panel on the left, tabbed dashboard/charts on the right
 #   - Re-filtering and refreshing all tabs when the user applies filters
 
+from pathlib import Path
+
 import pandas as pd
 
 from PyQt6.QtWidgets import (
@@ -315,7 +317,7 @@ class MainWindow(QMainWindow):
     def _open_files(self):
         # Open a file dialog; selected files replace the current dataset.
         paths, _ = QFileDialog.getOpenFileNames(
-            self, 'Open HR Data', '',
+            self, 'Open HR Data', str(Path.home()),
             'Data Files (*.csv *.xlsx)',
         )
         if paths:
@@ -324,7 +326,7 @@ class MainWindow(QMainWindow):
     def _add_files(self):
         # Open a file dialog; selected files are appended to existing data.
         paths, _ = QFileDialog.getOpenFileNames(
-            self, 'Add More HR Data', '',
+            self, 'Add More HR Data', str(Path.home()),
             'Data Files (*.csv *.xlsx)',
         )
         if paths:

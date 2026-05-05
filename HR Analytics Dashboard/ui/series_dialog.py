@@ -109,6 +109,8 @@ class SeriesDialog(QDialog):
         self._view_group = QButtonGroup(self)
         self.time_radio = QRadioButton('Over Time  (track a metric over a date range)')
         self.snap_radio = QRadioButton('Snapshot  (compare groups at the current moment)')
+        self.time_radio.setStyleSheet('font-size: 12px; color: #333;')
+        self.snap_radio.setStyleSheet('font-size: 12px; color: #333;')
         self.time_radio.setChecked(True)
         self._view_group.addButton(self.time_radio, 0)
         self._view_group.addButton(self.snap_radio, 1)
