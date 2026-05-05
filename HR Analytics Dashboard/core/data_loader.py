@@ -8,7 +8,7 @@ from pathlib import Path
 
 SUPPORTED = {'.csv', '.xlsx'}
 
-# Maps each standard column name to a list of known real-world variants.
+# Maps each standard column name to a list of known real world variants.
 # All comparisons are done lowercase so casing in the source file doesn't matter.
 COLUMN_MAP = {
     'Name':             ['name', 'employee_name', 'full_name', 'emp_name',
@@ -32,6 +32,9 @@ COLUMN_MAP = {
                          'absenteeism', 'absent_days', 'absenteeism days'],
     'Leave_Balance':    ['leave_balance', 'annual_leave', 'leave_days',
                          'remaining_leave', 'leave balance', 'leave days remaining'],
+    'Sex':              ['sex', 'gender', 'biological_sex', 'employee_sex'],
+    'Ethnicity':        ['ethnicity', 'ethnic_group', 'race', 'cultural_background',
+                         'ethnic background'],
 }
 
 # The pipeline cannot function without these columns — file is rejected if they're missing
@@ -53,7 +56,7 @@ DATE_FORMATS = [
 
 
 def _normalise_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Rename incoming columns to the standard schema using COLUMN_MAP."""
+    # Rename incoming columns to the standard schema using COLUMN_MAP.
 
     # Build a flat lookup: lowercase variant → standard name
     lookup = {}
@@ -83,13 +86,13 @@ def _normalise_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _parse_dates(df: pd.DataFrame) -> pd.DataFrame:
-    """Parse date columns, falling back through explicit formats if auto-inference fails."""
+    # Parse date columns, trying explicit formats if auto-inference fails.
     for col in DATE_COLUMNS:
         if col not in df.columns:
             continue
 
         # Let pandas attempt automatic inference first — covers most common formats
-        parsed = pd.to_datetime(df[col], infer_datetime_format=True, errors='coerce')
+        parsed = pd.to_datetime(df[col], errors='coerce')
 
         # Where inference produced NaT but the source cell had a value, try explicit formats
         had_values = df[col].notna()
@@ -110,7 +113,7 @@ def _parse_dates(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _clean_salary(df: pd.DataFrame) -> pd.DataFrame:
-    """Strip currency symbols, commas, and whitespace from Salary then coerce to float."""
+    # Strip currency symbols, commas, and whitespace from Salary then coerce to float.
     if 'Salary' not in df.columns:
         return df
 
@@ -126,11 +129,7 @@ def _clean_salary(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_file(filepath: str) -> pd.DataFrame:
-    """
-    Load a CSV or XLSX file into a clean, consistently-named DataFrame.
-    Column names are normalised, dates are parsed, and salary is converted to float.
-    The returned DataFrame is ready to be passed straight to data_cleaner.clean().
-    """
+    # Load a CSV or XLSX file; normalise columns, parse dates, clean salary, return DataFrame.
     path = Path(filepath)
 
     if path.suffix not in SUPPORTED:
