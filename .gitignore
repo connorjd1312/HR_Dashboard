@@ -1,8 +1,6 @@
 # Virtual environments — these are regenerated from requirements.txt
 env/
-env1/
-env2/
-env39/
+env3/
 .venv/
 venv/
 
