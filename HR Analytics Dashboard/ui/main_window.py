@@ -63,9 +63,9 @@ class MainWindow(QMainWindow):
         self.setStatusBar(QStatusBar())
         self.statusBar().showMessage('Open a CSV or XLSX file to get started  (File → Open HR Data)')
 
-    # ------------------------------------------------------------------ #
+   
     # UI construction
-    # ------------------------------------------------------------------ #
+
 
     def _build_ui(self):
         central = QWidget()
@@ -75,13 +75,13 @@ class MainWindow(QMainWindow):
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         h.addWidget(self.splitter)
 
-        # Left side — placeholder until a file is loaded; hidden on welcome screen
+        # Left side placeholder until a file is loaded; hidden on welcome screen
         self.filter_panel = QWidget()
         self.filter_panel.setFixedWidth(220)
         self.splitter.addWidget(self.filter_panel)
         self.filter_panel.hide()
 
-        # Right side — stacked: page 0 = welcome, page 1 = dashboard tabs
+        # Right side stacked: page 0 = welcome, page 1 = dashboard tabs
         self.stack = QStackedWidget()
         self.splitter.addWidget(self.stack)
         self.splitter.setSizes([220, 1060])
@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # --- Branded header bar ---
+        # header bar
         header = QWidget()
         header.setFixedHeight(72)
         header.setStyleSheet('background-color: #1F3864;')
@@ -118,7 +118,7 @@ class MainWindow(QMainWindow):
         h_layout.addWidget(app_title)
         outer.addWidget(header)
 
-        # --- Upload section ---
+        # Upload section
         outer.addStretch()
 
         subtitle = QLabel('Import your employee data file to get started')
@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         outer.addWidget(btn, alignment=Qt.AlignmentFlag.AlignCenter)
         outer.addSpacing(16)
 
-        # --- Visible drag-and-drop zone ---
+        # Visible drag-and-drop zone
         self._drop_zone = QFrame()
         self._drop_zone.setFixedSize(400, 130)
         self._drop_zone.setStyleSheet(_DROP_ZONE_NORMAL)
@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
 
         outer.addStretch()
 
-        # --- Feature preview cards ---
+        # Feature preview cards
         cards_container = QWidget()
         cards_container.setStyleSheet('background-color: #F5F7FA;')
         cards_layout = QHBoxLayout(cards_container)
@@ -258,9 +258,9 @@ class MainWindow(QMainWindow):
         quit_action.triggered.connect(self.close)
         file_menu.addAction(quit_action)
 
-    # ------------------------------------------------------------------ #
+
     # Core loading logic
-    # ------------------------------------------------------------------ #
+
 
     def _load_paths(self, paths: list[str], append: bool = False):
         # Load files and either replace (append=False) or merge (append=True) with existing data.
@@ -330,9 +330,9 @@ class MainWindow(QMainWindow):
         if paths:
             self._load_paths(paths, append=True)
 
-    # ------------------------------------------------------------------ #
+
     # Drag-and-drop
-    # ------------------------------------------------------------------ #
+
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         # Accept drag if at least one dragged file is a supported type.
@@ -382,9 +382,9 @@ class MainWindow(QMainWindow):
             # No data yet — just load them
             self._load_paths(paths, append=False)
 
-    # ------------------------------------------------------------------ #
+
     # Filtering and refresh
-    # ------------------------------------------------------------------ #
+
 
     def _apply_filters(self, f: dict):
         # Filter the full dataset and push the result to both tabs.

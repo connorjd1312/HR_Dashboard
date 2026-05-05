@@ -19,7 +19,7 @@ class FilterPanel(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # ── Header ────────────────────────────────────────────────────────
+        # Header
         header = QWidget()
         header.setFixedHeight(48)
         header.setStyleSheet('background-color: #1F3864;')
@@ -32,7 +32,7 @@ class FilterPanel(QWidget):
         hl.addWidget(title)
         outer.addWidget(header)
 
-        # ── Filter fields ─────────────────────────────────────────────────
+        # Filter fields 
         content = QWidget()
         content.setStyleSheet('background-color: white;')
         cl = QVBoxLayout(content)
@@ -109,7 +109,7 @@ class FilterPanel(QWidget):
         cl.addStretch()
         outer.addWidget(content, stretch=1)
 
-        # ── Footer buttons ────────────────────────────────────────────────
+        # Footer buttons 
         footer = QWidget()
         footer.setStyleSheet(
             'background-color: #F5F7FA;'
@@ -147,7 +147,7 @@ class FilterPanel(QWidget):
         fl.addWidget(reset_btn)
         outer.addWidget(footer)
 
-    # ── Helpers ───────────────────────────────────────────────────────────
+    #  Helpers
 
     def _field_label(self, text):
         lbl = QLabel(text)

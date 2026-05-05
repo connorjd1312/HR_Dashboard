@@ -92,11 +92,11 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     # Always work on a copy so the raw data stays intact for error diagnosis
     df = df.copy()
 
-    # --- 1. Normalise text and status ---
+    # 1. Normalise text and status 
     df = _normalise_text_fields(df)
     df = _normalise_status(df)
 
-    # --- 2. Deduplication and required-field enforcement ---
+    # 2. Deduplication and required field enforcement
 
     before = len(df)
     df.drop_duplicates(inplace=True)
@@ -107,7 +107,7 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     # Drop rows missing the columns the whole dashboard depends on
     df.dropna(subset=['Name', 'Hire_Date', 'Department'], inplace=True)
 
-    # --- 3. Fill optional missing values with safe defaults ---
+    # 3. Fill optional missing values with safe defaults
 
     if 'Salary' in df.columns:
         # Median is used instead of mean to avoid distortion from executive-level outliers
@@ -119,7 +119,7 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     if 'Leave_Balance' in df.columns:
         df['Leave_Balance'] = df['Leave_Balance'].fillna(0)
 
-    # --- 4. Derived / computed columns ---
+    # 4. Derived / computed columns
 
     today = pd.Timestamp(date.today())
 
@@ -136,16 +136,16 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     # Turnover flag — True for any status that means the employee has left
     df['Turnover'] = df['Status'].isin(['Resigned', 'Terminated', 'Retired'])
 
-    # --- 5. Validation warnings ---
+    # 5. Validation warnings
 
-    # Hire date before date of birth is physically impossible — remove those rows
+    # Hire date before date of birth is physically impossible, remove those rows
     if 'Date_of_Birth' in df.columns:
         invalid_dob = df['Hire_Date'] < df['Date_of_Birth']
         if invalid_dob.any():
             print(f"Removed {invalid_dob.sum()} record(s) where Hire_Date is before Date_of_Birth.")
             df = df[~invalid_dob]
 
-    # Negative tenure means the hire date is in the future — warn but keep the row
+    # Negative tenure means the hire date is in the future, warn but keep the row
     future_hires = df['Tenure_Years'] < 0
     if future_hires.any():
         print(f"Warning: {future_hires.sum()} record(s) have a Hire_Date in the future.")

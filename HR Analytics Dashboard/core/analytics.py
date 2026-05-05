@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-# ── Constants used by the analytics builder ───────────────────────────────────
+# ── Constants used by the analytics builder 
 
 TIME_RANGES = {
     'Last 6 Months': 6,
@@ -55,7 +55,7 @@ _FREQ_MAP = {
     'Yearly':    'YE',
 }
 
-# ── Dashboard customisation constants ─────────────────────────────────────────
+# Dashboard customisation constants 
 
 # All KPI metrics available for the cards on the dashboard
 KPI_OPTIONS = [
@@ -290,7 +290,7 @@ def leave_balance_by_dept(df: pd.DataFrame) -> pd.Series:
     return df.groupby('Department')['Leave_Balance'].mean().round(1)
 
 
-# ── Analytics builder functions ───────────────────────────────────────────────
+# Analytics builder functions 
 
 def time_series_data(
     df: pd.DataFrame,

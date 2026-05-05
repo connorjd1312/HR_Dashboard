@@ -88,9 +88,9 @@ class DashboardTab(QWidget):
 
         self._build_ui()
 
-    # ──────────────────────────────────────────────────────────────────
-    # Build top-level layout
-    # ──────────────────────────────────────────────────────────────────
+  
+    # Build top level layout
+
 
     def _build_ui(self):
         outer = QVBoxLayout(self)
@@ -117,12 +117,12 @@ class DashboardTab(QWidget):
         v.setContentsMargins(8, 8, 8, 8)
         v.setSpacing(8)
 
-        # --- KPI cards row ---
+        #KPI cards row
         self._kpi_row = QHBoxLayout()
         self._kpi_row.setSpacing(8)
         v.addLayout(self._kpi_row)
 
-        # --- Toggle row above charts ---
+        # Toggle row above charts
         toggle_row = QHBoxLayout()
         toggle_row.addStretch()
 
@@ -139,7 +139,7 @@ class DashboardTab(QWidget):
 
         v.addLayout(toggle_row)
 
-        # --- Chart area (1 chart by default; up to 4 in multi mode) ---
+        # Chart area 
         self._chart_area = QWidget()
         self._chart_layout = QGridLayout(self._chart_area)
         self._chart_layout.setContentsMargins(0, 0, 0, 0)
@@ -153,9 +153,9 @@ class DashboardTab(QWidget):
 
         return page
 
-    # ──────────────────────────────────────────────────────────────────
-    # Public API — called by MainWindow whenever the dataset changes
-    # ──────────────────────────────────────────────────────────────────
+
+    # Public API, called by MainWindow whenever the dataset changes
+
 
     def update_data(self, df: pd.DataFrame):
         self._df = df
@@ -166,9 +166,9 @@ class DashboardTab(QWidget):
         if self._stack.currentIndex() == 1 and self._drill_state:
             self._render_drill()
 
-    # ──────────────────────────────────────────────────────────────────
+
     # KPI row management
-    # ──────────────────────────────────────────────────────────────────
+
 
     def _refresh_kpi_row(self):
         while self._kpi_row.count():
@@ -219,9 +219,9 @@ class DashboardTab(QWidget):
             self._kpi_metrics.append(metric)
             self._refresh_kpi_row()
 
-    # ──────────────────────────────────────────────────────────────────
-    # Chart area management (single ↔ multi mode)
-    # ──────────────────────────────────────────────────────────────────
+  
+    # Chart area management 
+
 
     def _make_chart_panel(
         self,
@@ -301,9 +301,9 @@ class DashboardTab(QWidget):
         panel.deleteLater()
         self._relayout_charts()
 
-    # ──────────────────────────────────────────────────────────────────
-    # Chart bar click → drill-down entry
-    # ──────────────────────────────────────────────────────────────────
+ 
+    # Chart bar click to drill down entry
+
 
     def _on_chart_bar_clicked(self, label: str):
         sender = self.sender()
@@ -319,9 +319,14 @@ class DashboardTab(QWidget):
         self._render_drill()
         self._stack.setCurrentIndex(1)
 
-    # ──────────────────────────────────────────────────────────────────
+
+
+#/////////////////////////////////////////////////////////////////////////////////////////////////
+# drill down feature will be change in future
+
+
     # Drill-down rendering
-    # ──────────────────────────────────────────────────────────────────
+
 
     def _render_drill(self):
         # Clear current contents
@@ -391,9 +396,9 @@ class DashboardTab(QWidget):
         self._drill_state = None
         self._stack.setCurrentIndex(0)
 
-    # ──────────────────────────────────────────────────────────────────
+
     # KPI drill-down view
-    # ──────────────────────────────────────────────────────────────────
+  
 
     def _build_kpi_drill_view(self) -> QWidget:
         s = self._drill_state
@@ -572,9 +577,9 @@ class DashboardTab(QWidget):
         self._drill_state['show_table'] = not self._drill_state['show_table']
         self._render_drill()
 
-    # ──────────────────────────────────────────────────────────────────
-    # Chart drill-down view (cascading)
-    # ──────────────────────────────────────────────────────────────────
+
+    # Chart drill-down view
+
 
     def _build_chart_drill_view(self) -> QWidget:
         s = self._drill_state
@@ -663,9 +668,12 @@ class DashboardTab(QWidget):
         lbl.setStyleSheet('font-size: 12px; color: #555; background: transparent;')
         return lbl
 
-    # ──────────────────────────────────────────────────────────────────
-    # Employee table builder (used at the deepest level of any drill-down)
-    # ──────────────────────────────────────────────────────────────────
+
+#///////////////////////////////////////////////////////////////////////////////////////////
+        #drill down feature will be change in future 
+
+    # Employee table builder 
+
 
     def _build_employee_table(self, df: pd.DataFrame) -> QTableWidget:
         cols = [(c, label) for c, label in EMPLOYEE_TABLE_COLS if c in df.columns]
@@ -720,3 +728,4 @@ class DashboardTab(QWidget):
         table.horizontalHeader().setStretchLastSection(True)
         table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         return table
+    

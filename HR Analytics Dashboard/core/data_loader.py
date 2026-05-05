@@ -8,7 +8,7 @@ from pathlib import Path
 
 SUPPORTED = {'.csv', '.xlsx'}
 
-# Maps each standard column name to a list of known real-world variants.
+# Maps each standard column name to a list of known real world variants.
 # All comparisons are done lowercase so casing in the source file doesn't matter.
 COLUMN_MAP = {
     'Name':             ['name', 'employee_name', 'full_name', 'emp_name',
