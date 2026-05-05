@@ -17,6 +17,9 @@ dist/
 build/
 *.spec
 
+# Claude Code
+.claude/
+
 # Visual Studio / VS Code
 .vs/
 *.suo
