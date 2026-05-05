@@ -36,7 +36,7 @@ STATUS_MAP = {
 
 
 def _normalise_status(df: pd.DataFrame) -> pd.DataFrame:
-    """Map status variants to standard labels; unrecognised values become 'Unknown'."""
+    # Map status variants to standard labels; unrecognised values become 'Unknown'.
     if 'Status' not in df.columns:
         # Column wasn't in the source file at all — default everyone to Unknown
         df['Status'] = 'Unknown'
@@ -53,34 +53,50 @@ def _normalise_status(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+_SEX_MAP = {
+    'male':            'Male',
+    'm':               'Male',
+    'man':             'Male',
+    'female':          'Female',
+    'f':               'Female',
+    'woman':           'Female',
+    'non-binary':      'Non-binary',
+    'nonbinary':       'Non-binary',
+    'non binary':      'Non-binary',
+    'prefer not to say': 'Prefer not to say',
+    'prefer not':      'Prefer not to say',
+    'not disclosed':   'Prefer not to say',
+}
+
+
 def _normalise_text_fields(df: pd.DataFrame) -> pd.DataFrame:
-    """Strip leading/trailing whitespace and apply consistent Title Casing to text columns."""
-    for col in ['Name', 'Department', 'Job_Role']:
+    # Strip whitespace, apply Title Casing to text columns, and map Sex to standard labels.
+    for col in ['Name', 'Department', 'Job_Role', 'Ethnicity']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.title()
+    if 'Sex' in df.columns:
+        df['Sex'] = (
+            df['Sex']
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .map(_SEX_MAP)
+            .fillna('Unknown')
+        )
     return df
 
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Clean and enrich the normalised HR DataFrame.
-    Returns a new DataFrame — the original is never modified.
-
-    Steps performed:
-      1. Normalise text fields and status values
-      2. Remove duplicate and incomplete rows
-      3. Fill optional missing values with safe defaults
-      4. Add computed columns: Age, Tenure_Years, Turnover
-      5. Validate data integrity and warn about bad records
-    """
+    # Clean and enrich the HR DataFrame — normalise text/status, deduplicate, fill missing
+    # values, add Age/Tenure_Years/Turnover columns, and warn about invalid records.
     # Always work on a copy so the raw data stays intact for error diagnosis
     df = df.copy()
 
-    # --- 1. Normalise text and status ---
+    # 1. Normalise text and status 
     df = _normalise_text_fields(df)
     df = _normalise_status(df)
 
-    # --- 2. Deduplication and required-field enforcement ---
+    # 2. Deduplication and required field enforcement
 
     before = len(df)
     df.drop_duplicates(inplace=True)
@@ -91,7 +107,7 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     # Drop rows missing the columns the whole dashboard depends on
     df.dropna(subset=['Name', 'Hire_Date', 'Department'], inplace=True)
 
-    # --- 3. Fill optional missing values with safe defaults ---
+    # 3. Fill optional missing values with safe defaults
 
     if 'Salary' in df.columns:
         # Median is used instead of mean to avoid distortion from executive-level outliers
@@ -103,13 +119,16 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     if 'Leave_Balance' in df.columns:
         df['Leave_Balance'] = df['Leave_Balance'].fillna(0)
 
-    # --- 4. Derived / computed columns ---
+    # 4. Derived / computed columns
 
     today = pd.Timestamp(date.today())
 
     # Age in whole years; will be NaN if Date_of_Birth was missing or unparseable
     if 'Date_of_Birth' in df.columns:
         df['Age'] = ((today - df['Date_of_Birth']).dt.days // 365).astype('Int64')
+        bins   = [-1, 29, 39, 49, 59, 200]
+        labels = ['Under 30', '30–39', '40–49', '50–59', '60+']
+        df['Age_Group'] = pd.cut(df['Age'], bins=bins, labels=labels).astype(str).replace('nan', 'Unknown')
 
     # Tenure in decimal years from Hire_Date to today
     df['Tenure_Years'] = ((today - df['Hire_Date']).dt.days / 365).round(1)
@@ -117,16 +136,16 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     # Turnover flag — True for any status that means the employee has left
     df['Turnover'] = df['Status'].isin(['Resigned', 'Terminated', 'Retired'])
 
-    # --- 5. Validation warnings ---
+    # 5. Validation warnings
 
-    # Hire date before date of birth is physically impossible — remove those rows
+    # Hire date before date of birth is physically impossible, remove those rows
     if 'Date_of_Birth' in df.columns:
         invalid_dob = df['Hire_Date'] < df['Date_of_Birth']
         if invalid_dob.any():
             print(f"Removed {invalid_dob.sum()} record(s) where Hire_Date is before Date_of_Birth.")
             df = df[~invalid_dob]
 
-    # Negative tenure means the hire date is in the future — warn but keep the row
+    # Negative tenure means the hire date is in the future, warn but keep the row
     future_hires = df['Tenure_Years'] < 0
     if future_hires.any():
         print(f"Warning: {future_hires.sum()} record(s) have a Hire_Date in the future.")

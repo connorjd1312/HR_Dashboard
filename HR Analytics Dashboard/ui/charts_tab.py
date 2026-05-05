@@ -7,6 +7,7 @@
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTabWidget
 from ui.chart_widget import ChartWithToolbar
+from ui.compare_tab import CompareTab
 from core import analytics
 
 
@@ -25,6 +26,7 @@ class ChartsTab(QWidget):
         self.salary_chart = ChartWithToolbar(width=8, height=4)
         self.absenteeism_chart = ChartWithToolbar(width=8, height=4)
         self.leave_chart = ChartWithToolbar(width=8, height=4)
+        self.compare_sub = CompareTab()
 
         self.tabs.addTab(self.pie_chart, 'Role Distribution')
         self.tabs.addTab(self.line_chart, 'Monthly Hires')
@@ -32,11 +34,12 @@ class ChartsTab(QWidget):
         self.tabs.addTab(self.salary_chart, 'Salary by Dept')
         self.tabs.addTab(self.absenteeism_chart, 'Absenteeism by Dept')
         self.tabs.addTab(self.leave_chart, 'Leave Balance by Dept')
+        self.tabs.addTab(self.compare_sub, 'Compare Departments')
 
     def update_data(self, df):
-        """Redraw all charts with the given DataFrame."""
+        # Redraw all charts with the given DataFrame.
 
-        # --- Pie chart: job role distribution ---
+        # Pie chart; job role distribution
         self.pie_chart.clear_axes()
         roles = analytics.role_distribution(df)
         self.pie_chart.axes.pie(
@@ -48,7 +51,7 @@ class ChartsTab(QWidget):
         self.pie_chart.axes.set_title('Job Role Distribution')
         self.pie_chart.refresh()
 
-        # --- Line chart: monthly hiring trend ---
+        # Line chart; monthly hiring trend
         self.line_chart.clear_axes()
         hires = analytics.monthly_hires(df)
         self.line_chart.axes.plot(
@@ -61,7 +64,7 @@ class ChartsTab(QWidget):
         self.line_chart.axes.tick_params(axis='x', rotation=30)
         self.line_chart.refresh()
 
-        # --- Horizontal bar chart: turnover rate by department ---
+        # Horizontal bar chart: turnover rate by department
         self.turnover_chart.clear_axes()
         to = analytics.turnover_by_dept(df)
         self.turnover_chart.axes.barh(to.index, to.values, color='#C0392B')
@@ -69,20 +72,20 @@ class ChartsTab(QWidget):
         self.turnover_chart.axes.set_xlabel('Turnover %')
         self.turnover_chart.refresh()
 
-        # --- Bar chart: average salary by department ---
+        # Bar chart: average salary by department 
         self.salary_chart.clear_axes()
         sal = analytics.salary_by_dept(df)
         self.salary_chart.axes.bar(sal.index, sal.values, color='#1E8449')
         self.salary_chart.axes.set_title('Average Salary by Department ($)')
         self.salary_chart.axes.set_ylabel('Avg Salary ($)')
         self.salary_chart.axes.tick_params(axis='x', rotation=20)
-        # Format y-axis values with commas
+        # Format y axis values with commas
         self.salary_chart.axes.yaxis.set_major_formatter(
             lambda x, _: f'${x:,.0f}'
         )
         self.salary_chart.refresh()
 
-        # --- Bar chart: average absenteeism days by department ---
+        #Bar chart: average absenteeism days by department
         self.absenteeism_chart.clear_axes()
         ab = analytics.avg_absenteeism_by_dept(df)
         if not ab.empty:
@@ -92,7 +95,7 @@ class ChartsTab(QWidget):
             self.absenteeism_chart.axes.tick_params(axis='x', rotation=20)
         self.absenteeism_chart.refresh()
 
-        # --- Bar chart: average leave balance by department ---
+        # Bar chart: average leave balance by department
         self.leave_chart.clear_axes()
         lb = analytics.leave_balance_by_dept(df)
         if not lb.empty:
@@ -101,3 +104,5 @@ class ChartsTab(QWidget):
             self.leave_chart.axes.set_ylabel('Avg Leave Balance (Days)')
             self.leave_chart.axes.tick_params(axis='x', rotation=20)
         self.leave_chart.refresh()
+
+        self.compare_sub.update_data(df)

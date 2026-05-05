@@ -2,9 +2,7 @@
 #
 
 env/
-env1/
-env2/
-env39/
+env3/
 .venv/
 venv/
 
