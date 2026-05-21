@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>HR Analytics Dashboard</Name>
     <RootNamespace>HR Analytics Dashboard</RootNamespace>
-    <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>MSBuild|env4|$(MSBuildProjectFullPath)</InterpreterId>
     <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -34,7 +34,8 @@
     <Compile Include="ui\dashboard_tab.py" />
     <Compile Include="ui\charts_tab.py" />
     <Compile Include="ui\main_window.py" />
-    <Compile Include="tests\test_analytics.py" />
+    <Compile Include="tests\conftest.py" />
+    <Compile Include="tests\test_data_cleaner.py" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -56,6 +57,15 @@
       <Id>env2</Id>
       <Version>3.9</Version>
       <Description>env2 (Python 3.9 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
+    <Interpreter Include="env4\">
+      <Id>env4</Id>
+      <Version>3.9</Version>
+      <Description>env4 (Python 3.9 (64-bit))</Description>
       <InterpreterPath>Scripts\python.exe</InterpreterPath>
       <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>

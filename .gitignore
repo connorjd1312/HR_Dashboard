@@ -2,7 +2,9 @@
 #
 
 env/
+env2/
 env3/
+env4/
 .venv/
 venv/
 
@@ -23,6 +25,7 @@ build/
 *.suo
 *.user
 UpgradeLog.htm
+TestResults/
 
 # PyCharm
 .idea/

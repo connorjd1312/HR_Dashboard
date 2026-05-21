@@ -13,7 +13,6 @@ import pandas as pd
 TIME_RANGES = {
     'Last 6 Months': 6,
     'Last 1 Year':   12,
-
     'Last 2 Years':  24,
     'Last 3 Years':  36,
     'All Time':      None,
