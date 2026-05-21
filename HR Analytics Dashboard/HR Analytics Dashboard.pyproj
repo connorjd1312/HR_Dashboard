@@ -36,6 +36,7 @@
     <Compile Include="ui\main_window.py" />
     <Compile Include="tests\conftest.py" />
     <Compile Include="tests\test_data_cleaner.py" />
+    <Compile Include="tests\test_metrics.py" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
