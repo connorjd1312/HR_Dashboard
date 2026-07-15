@@ -80,7 +80,27 @@ DEFAULT_KPIS = [
     'Avg Salary ($)',
 ]
 
-CHART_TYPES = ['Vertical Bar', 'Horizontal Bar', 'Pie', 'Donut', 'Line']
+CHART_TYPES = ['Auto', 'Vertical Bar', 'Horizontal Bar', 'Pie', 'Donut', 'Line']
+
+# Metrics whose category values sum to a meaningful whole (so a pie/donut is
+# defensible). Average/rate metrics are NOT parts-of-a-whole and must never
+# use Pie/Donut — averaging across slices is misleading. Covers both the
+# snapshot metric ('Employee Count') and the count-type KPI/drill-down metrics.
+PARTS_OF_WHOLE_METRICS = [
+    'Employee Count',
+    'Total Employees',
+    'Active Employees',
+    'On Leave Count',
+    'Resigned Count',
+]
+
+# Dimensions that have a natural order — never split these into a pie, where
+# ordering is lost.
+ORDERED_DIMENSIONS = ['Age Group']
+
+# Chart-type recommender thresholds (named so they're easy to tune).
+_MAX_PIE_CATEGORIES = 5   # pie/donut only when categories ≤ this
+_MAX_VERTICAL_BARS  = 6   # above this, switch to horizontal bars for readability
 
 # Order used when cascading drill-downs through dimensions
 DRILL_CASCADE = ['Department', 'Job Role', 'Status', 'Sex', 'Ethnicity', 'Age Group']
@@ -353,3 +373,28 @@ def snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
             return pd.Series(dtype=float)
         return df.groupby(col)['Age'].mean().round(1).rename('Value')
     return pd.Series(dtype=float)
+
+
+def recommend_chart_type(metric: str, group_by: str, data: pd.Series) -> str:
+    # Pick the best concrete chart type for a snapshot Series.
+    # Always returns a value in CHART_TYPES and never 'Auto'.
+    #
+    # Signals: metric type (parts-of-whole vs average/rate), dimension
+    # (ordered vs categorical), category count, and data shape.
+    n = 0 if data is None else len(data)
+
+    # Empty / single category — nothing to compare, use the safe default.
+    if n <= 1:
+        return 'Vertical Bar'
+
+    # Ordered buckets (e.g. Age Group) must keep their order → vertical bars.
+    if group_by in ORDERED_DIMENSIONS:
+        return 'Vertical Bar' if n <= _MAX_VERTICAL_BARS else 'Horizontal Bar'
+
+    # Parts-of-a-whole counts with few categories read well as a pie.
+    if metric in PARTS_OF_WHOLE_METRICS and n <= _MAX_PIE_CATEGORIES:
+        return 'Pie'
+
+    # Everything else is a bar; orientation depends on how many categories
+    # there are (many long labels are more readable horizontally).
+    return 'Vertical Bar' if n <= _MAX_VERTICAL_BARS else 'Horizontal Bar'
