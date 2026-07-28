@@ -10,7 +10,7 @@ import pandas as pd
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from core import context_builder, query_router
-from core.ollama_client import OllamaClient, OllamaError
+from core.local_llm_client import LocalLLMClient, LocalLLMError
 
 
 class AdvisorWorker(QThread):
@@ -18,7 +18,7 @@ class AdvisorWorker(QThread):
     succeeded = pyqtSignal(str, dict)   # answer text, debug info (function + params)
     failed = pyqtSignal(str)
 
-    def __init__(self, client: OllamaClient, model: str, question: str, df: pd.DataFrame, parent=None):
+    def __init__(self, client: LocalLLMClient, model: str, question: str, df: pd.DataFrame, parent=None):
         super().__init__(parent)
         self._client = client
         self._model = model
@@ -40,7 +40,7 @@ class AdvisorWorker(QThread):
             answer = query_router.explain_result(self._client, self._model, self._question, context)
 
             self.succeeded.emit(answer, {'function': route.function, 'params': route.params})
-        except OllamaError as e:
+        except LocalLLMError as e:
             self.failed.emit(str(e))
         except Exception as e:
             self.failed.emit(f'Something went wrong answering that question: {e}')

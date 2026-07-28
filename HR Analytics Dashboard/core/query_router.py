@@ -21,7 +21,7 @@ from datetime import date
 import pandas as pd
 
 from core import analytics, forecasting
-from core.ollama_client import OllamaError
+from core.local_llm_client import LocalLLMError
 
 ROUTER_FUNCTIONS = {
     'overall_kpi': 'A single headline number for the whole (filtered) workforce.',
@@ -109,7 +109,7 @@ def route_query(client, model: str, question: str, df: pd.DataFrame | None) -> R
         parsed = json.loads(raw)
         function = parsed.get('function')
         params = parsed.get('params') or {}
-    except (OllamaError, ValueError, AttributeError, TypeError):
+    except (LocalLLMError, ValueError, AttributeError, TypeError):
         return RouterResult('general_summary', {})
 
     if function not in ROUTER_FUNCTIONS or not isinstance(params, dict):

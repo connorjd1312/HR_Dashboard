@@ -6,7 +6,7 @@ from core import analytics, query_router
 
 
 class _FakeClient:
-    # Stands in for OllamaClient — records calls, returns a canned response.
+    # Stands in for LocalLLMClient — records calls, returns a canned response.
     def __init__(self, response: str):
         self._response = response
         self.calls = []

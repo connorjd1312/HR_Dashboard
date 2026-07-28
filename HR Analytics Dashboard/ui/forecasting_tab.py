@@ -1,7 +1,8 @@
 # forecasting_tab.py
 # Forecasting tab: statistical forecast charts (no AI) + the AI Workforce Advisor
-# chat (local LLM via Ollama). Two sub-tabs inside one top-level tab, mirroring how
-# compare_tab.py is embedded inside analytics_tab.py rather than being its own tab.
+# chat (an embedded local LLM — no external server or process to install/run).
+# Two sub-tabs inside one top-level tab, mirroring how compare_tab.py is embedded
+# inside analytics_tab.py rather than being its own tab.
 
 from __future__ import annotations
 
@@ -12,14 +13,15 @@ import pandas as pd
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox,
     QSpinBox, QTabWidget, QFrame, QScrollArea, QLineEdit, QStackedWidget,
-    QSizePolicy,
+    QSizePolicy, QProgressBar,
 )
 from PyQt6.QtCore import Qt, QTimer
 
 from core import analytics, forecasting
-from core.ollama_client import OllamaClient, OllamaError, DEFAULT_MODEL
+from core.local_llm_client import LocalLLMClient
 from ui.chart_widget import ChartWithToolbar
 from ui.advisor_worker import AdvisorWorker
+from ui.model_download_worker import ModelDownloadWorker
 
 # Colour / style constants — matches dashboard_tab.py / series_dialog.py
 
@@ -77,8 +79,9 @@ class ForecastingTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._df: pd.DataFrame | None = None
-        self._client = OllamaClient()
+        self._client = LocalLLMClient()
         self._worker: AdvisorWorker | None = None
+        self._download_worker: ModelDownloadWorker | None = None
         self._pending_label: QLabel | None = None
 
         self._build_ui()
@@ -256,7 +259,7 @@ class ForecastingTab(QWidget):
         self._status_dot.setStyleSheet('font-size: 14px; background: transparent;')
         status_row.addWidget(self._status_dot)
 
-        self._status_label = QLabel('Checking Ollama connection…')
+        self._status_label = QLabel('Checking local model…')
         self._status_label.setStyleSheet('font-size: 12px; color: #555; background: transparent;')
         status_row.addWidget(self._status_label, stretch=1)
 
@@ -273,7 +276,7 @@ class ForecastingTab(QWidget):
 
         v.addLayout(status_row)
 
-        # Setup card (shown when Ollama isn't reachable) / Chat widget (shown when it is)
+        # Setup card (shown when the local model isn't downloaded yet) / Chat widget (shown when it is)
         self._advisor_stack = QStackedWidget()
         v.addWidget(self._advisor_stack, stretch=1)
 
@@ -295,7 +298,7 @@ class ForecastingTab(QWidget):
         icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         v.addWidget(icon)
 
-        title = QLabel('AI Workforce Advisor needs Ollama')
+        title = QLabel('AI Workforce Advisor needs its local model')
         title.setStyleSheet(f'font-size: 15px; font-weight: bold; color: {_NAVY}; background: transparent; border: none;')
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         v.addWidget(title)
@@ -306,17 +309,32 @@ class ForecastingTab(QWidget):
         self._setup_message_label.setStyleSheet('font-size: 12px; color: #555; background: transparent; border: none;')
         v.addWidget(self._setup_message_label)
 
+        self._download_btn = QPushButton('Download Model (~2 GB)')
+        self._download_btn.setStyleSheet(_BTN_PRIMARY)
+        self._download_btn.clicked.connect(self._start_download)
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        btn_row.addWidget(self._download_btn)
+        btn_row.addStretch()
+        v.addLayout(btn_row)
+
+        self._download_progress = QProgressBar()
+        self._download_progress.setRange(0, 100)
+        self._download_progress.setVisible(False)
+        self._download_progress.setStyleSheet('QProgressBar { border: 1px solid #CCC; border-radius: 4px; text-align: center; } '
+                                                f'QProgressBar::chunk {{ background-color: {_NAVY}; }}')
+        v.addWidget(self._download_progress)
+
         v.addStretch()
         return card
 
     def _default_setup_text(self) -> str:
         return (
-            'This feature answers HR questions using a locally hosted AI model, so your '
-            'workforce data never leaves this computer and no internet connection is needed '
-            'once it is installed.\n\n'
-            '1. Install Ollama (ollama.com)\n'
-            f'2. Open a terminal and run:  ollama pull {DEFAULT_MODEL}\n'
-            '3. Click "Check Again" above once it is running'
+            'This feature answers HR questions using a locally hosted AI model that runs '
+            'inside this application — no external program to install, no server to start, '
+            'and once the one-time download below finishes, no internet connection is needed '
+            'to use it.\n\n'
+            'Click "Download Model" to fetch it now (a one-time download of a few GB).'
         )
 
     def _build_chat_widget(self) -> QWidget:
@@ -378,49 +396,74 @@ class ForecastingTab(QWidget):
         return wrap
 
 
-    # Ollama connection handling
+    # Local model status handling
 
 
     def _check_connection(self):
         self._recheck_btn.setEnabled(False)
-        available = self._client.is_available()
+        models = self._client.list_models()
 
-        if not available:
+        if not models:
             self._status_dot.setStyleSheet(f'color: {_RED}; font-size: 14px; background: transparent;')
-            self._status_label.setText('Ollama not detected')
+            self._status_label.setText('Local model not downloaded yet')
             self._model_combo.clear()
             self._model_combo.setEnabled(False)
             if hasattr(self, '_setup_message_label'):
                 self._setup_message_label.setText(self._default_setup_text())
             self._advisor_stack.setCurrentIndex(0)
-            self._recheck_btn.setEnabled(True)
-            return
-
-        try:
-            models = self._client.list_models()
-        except OllamaError:
-            models = []
-
-        if not models:
-            self._status_dot.setStyleSheet(f'color: {_RED}; font-size: 14px; background: transparent;')
-            self._status_label.setText('Ollama is running, but no models are pulled yet')
-            self._model_combo.clear()
-            self._model_combo.setEnabled(False)
-            self._setup_message_label.setText(
-                'Ollama is running, but it has no models installed yet.\n\n'
-                f'Open a terminal and run:  ollama pull {DEFAULT_MODEL}\n\n'
-                'Then click "Check Again" above.'
-            )
-            self._advisor_stack.setCurrentIndex(0)
         else:
             self._status_dot.setStyleSheet(f'color: {_GREEN}; font-size: 14px; background: transparent;')
-            self._status_label.setText(f'Connected to Ollama · {len(models)} model(s) available')
+            self._status_label.setText(f'Local model ready · {len(models)} model(s) available')
             self._model_combo.clear()
             self._model_combo.addItems(models)
             self._model_combo.setEnabled(True)
             self._advisor_stack.setCurrentIndex(1)
 
         self._recheck_btn.setEnabled(True)
+
+
+    # Model download handling
+
+
+    def _start_download(self):
+        if self._download_worker is not None and self._download_worker.isRunning():
+            return
+
+        self._download_btn.setEnabled(False)
+        self._recheck_btn.setEnabled(False)
+        self._download_progress.setVisible(True)
+        self._download_progress.setValue(0)
+        self._setup_message_label.setText('Downloading the local model — this can take a while on first run…')
+
+        self._download_worker = ModelDownloadWorker(self._client)
+        self._download_worker.progress.connect(self._on_download_progress)
+        self._download_worker.succeeded.connect(self._on_download_succeeded)
+        self._download_worker.failed.connect(self._on_download_failed)
+        self._download_worker.finished.connect(self._on_download_finished)
+        self._download_worker.start()
+
+    def _on_download_progress(self, downloaded: int, total: int):
+        if total > 0:
+            self._download_progress.setValue(int(downloaded * 100 / total))
+        mb_done = downloaded / (1024 * 1024)
+        mb_total = total / (1024 * 1024) if total else 0
+        self._setup_message_label.setText(
+            f'Downloading the local model… {mb_done:.0f} MB'
+            + (f' / {mb_total:.0f} MB' if mb_total else '')
+        )
+
+    def _on_download_succeeded(self):
+        self._download_progress.setValue(100)
+        self._check_connection()
+
+    def _on_download_failed(self, message: str):
+        self._setup_message_label.setText(f'Download failed: {message}\n\nClick "Download Model" to try again.')
+
+    def _on_download_finished(self):
+        self._download_btn.setEnabled(True)
+        self._recheck_btn.setEnabled(True)
+        self._download_progress.setVisible(False)
+        self._download_worker = None
 
 
     # Chat message handling
