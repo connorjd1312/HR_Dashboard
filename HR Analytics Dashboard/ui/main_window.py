@@ -1,7 +1,11 @@
 # main_window.py
 # The top-level application window. Responsible for:
+#   - Auto-loading whatever is in the Default Documents folder on startup
 #   - A welcome screen with an Open button and drag-and-drop support
-#   - The menu bar (File → Open, Add More Data, Quit)
+#     (shown only when Default Documents is empty/missing)
+#   - The menu bar (File → Manage Data, Quit) — Manage Data offers
+#     session-only loads or editing the Default Documents folder that
+#     auto-loads on startup
 #   - Loading multiple files at once, or appending new files to existing data
 #   - Layout: filter panel on the left, tabbed dashboard/charts on the right
 #   - Re-filtering and refreshing all tabs when the user applies filters
@@ -12,7 +16,7 @@ import pandas as pd
 
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
-    QTabWidget, QFileDialog, QMessageBox, QStatusBar,
+    QTabWidget, QFileDialog, QMessageBox, QStatusBar, QDialog,
     QLabel, QPushButton, QStackedWidget, QFrame,
 )
 from PyQt6.QtCore import Qt
@@ -23,8 +27,13 @@ from core.data_cleaner import clean
 from ui.filter_panel import FilterPanel
 from ui.dashboard_tab import DashboardTab
 from ui.analytics_tab import AnalyticsTab
+from ui.data_manager_dialog import DataOptionsDialog, DefaultDocumentsDialog
+from ui import message_box
 
 SUPPORTED = ('.csv', '.xlsx')
+
+# ui/ -> HR Analytics Dashboard/ -> Default documents
+DEFAULT_DOCS_DIR = Path(__file__).resolve().parent.parent / 'Default documents'
 
 _DROP_ZONE_NORMAL = '''
     QFrame {
@@ -63,7 +72,9 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._build_menu()
         self.setStatusBar(QStatusBar())
-        self.statusBar().showMessage('Open a CSV or XLSX file to get started  (File → Open HR Data)')
+        self.statusBar().showMessage('Open a CSV or XLSX file to get started  (File → Manage Data)')
+
+        self._load_default_documents()
 
    
     # UI construction
@@ -240,18 +251,11 @@ class MainWindow(QMainWindow):
         menu = self.menuBar()
         file_menu = menu.addMenu('File')
 
-        # Open — replaces whatever is currently loaded
-        open_action = QAction('Open HR Data...', self)
-        open_action.setShortcut('Ctrl+O')
-        open_action.triggered.connect(self._open_files)
-        file_menu.addAction(open_action)
-
-        # Add More Data — appends to the current dataset; disabled until first load
-        self._add_action = QAction('Add More Data...', self)
-        self._add_action.setShortcut('Ctrl+Shift+O')
-        self._add_action.setEnabled(False)   # enabled once data is loaded
-        self._add_action.triggered.connect(self._add_files)
-        file_menu.addAction(self._add_action)
+        # Manage Data — session-only loads, or edit the Default Documents folder
+        self._manage_data_action = QAction('Manage Data...', self)
+        self._manage_data_action.setShortcut('Ctrl+M')
+        self._manage_data_action.triggered.connect(self._open_data_options)
+        file_menu.addAction(self._manage_data_action)
 
         file_menu.addSeparator()
 
@@ -300,9 +304,6 @@ class MainWindow(QMainWindow):
             if self.stack.currentIndex() == 0:
                 self.stack.setCurrentIndex(1)
 
-            # Enable "Add More Data" now that we have a loaded dataset
-            self._add_action.setEnabled(True)
-
             self._refresh_all(self._df_full)
 
             action = 'Added' if (append and self._file_count > len(paths)) else 'Loaded'
@@ -312,7 +313,7 @@ class MainWindow(QMainWindow):
             )
 
         except Exception as e:
-            QMessageBox.critical(self, 'Error loading file', str(e))
+            message_box.critical(self, 'Error loading file', str(e))
 
     def _open_files(self):
         # Open a file dialog; selected files replace the current dataset.
@@ -323,14 +324,73 @@ class MainWindow(QMainWindow):
         if paths:
             self._load_paths(paths, append=False)
 
-    def _add_files(self):
-        # Open a file dialog; selected files are appended to existing data.
-        paths, _ = QFileDialog.getOpenFileNames(
-            self, 'Add More HR Data', str(Path.home()),
-            'Data Files (*.csv *.xlsx)',
+    def _default_document_paths(self) -> list[str]:
+        if not DEFAULT_DOCS_DIR.is_dir():
+            return []
+        return sorted(
+            str(p) for p in DEFAULT_DOCS_DIR.iterdir()
+            if p.suffix.lower() in SUPPORTED
         )
-        if paths:
-            self._load_paths(paths, append=True)
+
+    def _load_default_documents(self):
+        # Auto-load whatever is in the Default Documents folder on startup.
+        # Leaves the welcome/upload screen showing if it's missing or empty.
+        paths = self._default_document_paths()
+        if not paths:
+            return
+
+        self._load_paths(paths, append=False)
+        self.statusBar().showMessage(
+            f'Loaded {len(paths)} default document(s)  —  '
+            f'{len(self._df_full)} records from "Default documents"'
+        )
+
+    def _reset_to_welcome(self):
+        # Clear all loaded data and return to the welcome/upload screen.
+        self._df_full = None
+        self._raw_frames = []
+        self._file_count = 0
+        self.filter_panel.hide()
+        self.splitter.setSizes([0, 1280])
+        self.stack.setCurrentIndex(0)
+        self.statusBar().showMessage('Open a CSV or XLSX file to get started  (File → Manage Data)')
+
+
+    # Manage Data entry point
+
+
+    def _open_data_options(self):
+        dlg = DataOptionsDialog(self)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        if dlg.choice == 'load':
+            self._open_files()
+        elif dlg.choice == 'manage':
+            self._manage_default_documents()
+
+    def _manage_default_documents(self):
+        dlg = DefaultDocumentsDialog(DEFAULT_DOCS_DIR, self)
+        dlg.exec()
+        if not dlg.changed:
+            return
+
+        paths = self._default_document_paths()
+        if not paths:
+            message_box.information(
+                self, 'Default Documents cleared',
+                'The Default Documents folder is now empty. Returning to the upload screen.',
+            )
+            self._reset_to_welcome()
+            return
+
+        reply = message_box.question(
+            self, 'Reload dashboard?',
+            'The Default Documents folder has changed.\n'
+            'Reload the dashboard with the updated files now?',
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self._load_paths(paths, append=False)
 
 
     # Drag-and-drop
@@ -362,24 +422,22 @@ class MainWindow(QMainWindow):
 
         if self._df_full is not None:
             # Data already exists — ask the user what they want to do
-            msg = QMessageBox(self)
-            msg.setWindowTitle('Add or Replace?')
-            msg.setText(
+            clicked = message_box.custom(
+                self, 'Add or Replace?',
                 f'You dropped {len(paths)} file(s).\n'
                 f'Currently loaded: {self._file_count} file(s), {len(self._df_full)} records.\n\n'
-                'What would you like to do?'
+                'What would you like to do?',
+                [
+                    ('Add to existing data', QMessageBox.ButtonRole.AcceptRole),
+                    ('Replace existing data', QMessageBox.ButtonRole.DestructiveRole),
+                    ('Cancel', QMessageBox.ButtonRole.RejectRole),
+                ],
             )
-            add_btn     = msg.addButton('Add to existing data',  QMessageBox.ButtonRole.AcceptRole)
-            replace_btn = msg.addButton('Replace existing data', QMessageBox.ButtonRole.DestructiveRole)
-            msg.addButton('Cancel',                              QMessageBox.ButtonRole.RejectRole)
-            msg.exec()
-
-            clicked = msg.clickedButton()
-            if clicked == add_btn:
+            if clicked == 'Add to existing data':
                 self._load_paths(paths, append=True)
-            elif clicked == replace_btn:
+            elif clicked == 'Replace existing data':
                 self._load_paths(paths, append=False)
-            # Cancel → do nothing
+            # Cancel (or closed) → do nothing
         else:
             # No data yet — just load them
             self._load_paths(paths, append=False)
