@@ -5,3 +5,9 @@ matplotlib==3.9.0
 seaborn==0.13.2
 openpyxl==3.1.2
 pyinstaller==6.6.0
+requests==2.32.3
+
+# On Windows, `pip install -r requirements.txt` alone tries to compile this from source
+# and fails without a C++ compiler. Install it separately with the prebuilt CPU wheel:
+#   pip install llama-cpp-python==0.2.90 --prefer-binary --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+llama-cpp-python==0.2.90

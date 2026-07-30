@@ -29,6 +29,7 @@ from ui.dashboard_tab import DashboardTab
 from ui.analytics_tab import AnalyticsTab
 from ui.data_manager_dialog import DataOptionsDialog, DefaultDocumentsDialog
 from ui import message_box
+from ui.forecasting_tab import ForecastingTab
 
 SUPPORTED = ('.csv', '.xlsx')
 
@@ -104,8 +105,10 @@ class MainWindow(QMainWindow):
         self.tab_widget = QTabWidget()
         self.dashboard_tab = DashboardTab()
         self.analytics_tab = AnalyticsTab()
+        self.forecasting_tab = ForecastingTab()
         self.tab_widget.addTab(self.dashboard_tab, 'Dashboard')
         self.tab_widget.addTab(self.analytics_tab, 'Analytics')
+        self.tab_widget.addTab(self.forecasting_tab, 'Forecasting')
         self.stack.addWidget(self.tab_widget)              # index 1
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
@@ -477,7 +480,9 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f'Showing {len(df)} records')
 
     def _on_tab_changed(self, index):
-        # Show sidebar on Dashboard tab, hide it on Analytics tab.
+        # Show sidebar on Dashboard tab, hide it on Analytics/Forecasting tabs —
+        # both have their own independent filtering (department dropdown, AI Advisor
+        # reasons over the currently loaded dataset).
         if self._df_full is None:
             return
         if index == 0:  # Dashboard
@@ -491,3 +496,4 @@ class MainWindow(QMainWindow):
         # Push updated data to all tabs so they redraw charts and KPIs.
         self.dashboard_tab.update_data(df)
         self.analytics_tab.update_data(df)
+        self.forecasting_tab.update_data(df)
