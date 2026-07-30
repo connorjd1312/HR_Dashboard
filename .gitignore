@@ -34,3 +34,9 @@ Thumbs.db
 # Generated sample data — add/remove this line if you want to track the files
 data/*.csv
 data/*.xlsx
+
+# Local LLM model weights — downloaded on first run by core/local_llm_client.py,
+# multiple GB so they never belong in git
+HR Analytics Dashboard/models/
+*.gguf
+*.gguf.partial
