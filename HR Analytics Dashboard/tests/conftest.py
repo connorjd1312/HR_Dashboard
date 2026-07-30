@@ -1,8 +1,8 @@
-# conftest.py
-# Ensures the project root (containing core/ and ui/) is importable regardless of
-# the directory pytest is invoked from.
-
+import os
 import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Make the project root (the dir containing core/ and ui/) importable so tests
+# can do `from core import analytics` regardless of where pytest is invoked.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)

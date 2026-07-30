@@ -6,7 +6,7 @@ from matplotlib.patches import Circle
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
     QFrame, QStackedWidget, QMenu, QTableWidget, QTableWidgetItem,
-    QHeaderView, QSizePolicy, QComboBox,
+    QHeaderView, QSizePolicy, QComboBox, QScrollArea,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
@@ -33,6 +33,11 @@ _PIE_COLORS = [
     '#D4AC0D', '#5B2C6F', '#117A65', '#E67E22',
     '#7F8C8D', '#34495E',
 ]
+
+# Above this many categories, a horizontal-bar breakdown switches to a tall,
+# scrollable canvas so every label stays readable (instead of hiding any in an
+# 'Other' bucket).
+_SCROLL_BAR_THRESHOLD = 7
 
 _BTN_PRIMARY = '''
     QPushButton {
@@ -196,6 +201,7 @@ class DashboardTab(QWidget):
             'removed_dims': set(),
             'show_charts':  True,
             'show_table':   True,
+            'chart_types':  {},   # {dimension: chart_type}; missing = 'Auto'
         }
         self._render_drill()
         self._stack.setCurrentIndex(1)
@@ -228,7 +234,7 @@ class DashboardTab(QWidget):
         allow_close: bool,
         metric: str = 'Employee Count',
         dimension: str = 'Department',
-        chart_type: str = 'Vertical Bar',
+        chart_type: str = 'Auto',
     ) -> ChartPanel:
         panel = ChartPanel(
             allow_close=allow_close,
@@ -503,6 +509,20 @@ class DashboardTab(QWidget):
         head.addWidget(title)
         head.addStretch()
 
+        # Per-chart type selector (defaults to 'Auto'). Lets the user override
+        # the automatically chosen chart type for this breakdown.
+        current_type = self._drill_state.get('chart_types', {}).get(dimension, 'Auto')
+        type_combo = QComboBox()
+        type_combo.addItems(analytics.CHART_TYPES)
+        type_combo.setCurrentText(current_type)
+        type_combo.setStyleSheet(_COMBO_STYLE)
+        type_combo.setFixedWidth(120)
+        type_combo.setToolTip('Chart type for this breakdown')
+        type_combo.currentTextChanged.connect(
+            lambda t, d=dimension: self._kpi_set_chart_type(d, t)
+        )
+        head.addWidget(type_combo)
+
         if not focused:
             focus_btn = QPushButton('🔍')
             focus_btn.setFixedSize(22, 22)
@@ -520,25 +540,48 @@ class DashboardTab(QWidget):
 
         layout.addLayout(head)
 
-        # Chart
-        chart = ChartWithToolbar(width=5 if not focused else 9, height=3 if not focused else 5)
-        layout.addWidget(chart, stretch=1)
+        data = analytics.kpi_breakdown(df, metric, dimension)
+
+        # Resolve the selected type ('Auto' → recommended).
+        ctype = current_type
+        if ctype == 'Auto':
+            ctype = (analytics.recommend_chart_type(metric, dimension, data)
+                     if not data.empty else 'Vertical Bar')
+
+        # A horizontal bar chart with many categories gets a tall, scrollable
+        # canvas so every label is readable — nothing is hidden or bucketed.
+        n = len(data)
+        scrollable = ctype == 'Horizontal Bar' and n > _SCROLL_BAR_THRESHOLD
+        if scrollable:
+            per_bar = 34 if focused else 26
+            tall_px = n * per_bar + 70
+            chart = ChartWithToolbar(width=5 if not focused else 9, height=tall_px / 100)
+        else:
+            chart = ChartWithToolbar(width=5 if not focused else 9, height=3 if not focused else 5)
 
         ax = chart.axes
         chart.clear_axes()
-
-        data = analytics.kpi_breakdown(df, metric, dimension)
         if data.empty:
             ax.text(0.5, 0.5, 'No data', ha='center', va='center',
                     transform=ax.transAxes, color='#888')
             ax.axis('off')
         else:
-            labels = [str(x) for x in data.index]
-            values = data.values
-            ax.bar(labels, values, color='#2E75B6')
-            ax.tick_params(axis='x', rotation=20, labelsize=8)
-            ax.set_ylabel(metric, fontsize=9)
+            self._draw_snapshot(ax, data, metric, dimension, ctype)
         chart.refresh()
+
+        if scrollable:
+            # Fixed tall canvas inside a vertical scroll area; width still tracks
+            # the panel so bars use the full available width.
+            chart.setMinimumHeight(tall_px)
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(QFrame.Shape.NoFrame)
+            scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+            scroll.setStyleSheet('QScrollArea { background: transparent; }')
+            scroll.setWidget(chart)
+            layout.addWidget(scroll, stretch=1)
+        else:
+            layout.addWidget(chart, stretch=1)
 
         if focused:
             frame.setMinimumHeight(420)
@@ -546,6 +589,62 @@ class DashboardTab(QWidget):
             frame.setMinimumHeight(220)
 
         return frame
+
+    def _draw_snapshot(self, ax, data: pd.Series, metric: str, dimension: str, ctype: str):
+        # Render a snapshot Series onto an axes as the given concrete chart type.
+        # Bars are sorted largest-first for readability (except ordered
+        # dimensions like Age Group, where the natural order is preserved).
+        labels = [str(x) for x in data.index]
+        values = [float(v) for v in data.values]
+
+        ordered = dimension in analytics.ORDERED_DIMENSIONS
+        if ctype in ('Vertical Bar', 'Horizontal Bar', 'Line') and not ordered:
+            order = sorted(range(len(values)), key=lambda i: values[i], reverse=True)
+            labels = [labels[i] for i in order]
+            values = [values[i] for i in order]
+
+        if ctype == 'Horizontal Bar':
+            # Show every category (no 'Other' bucket); barh stacks bottom-to-top,
+            # so reverse to put the largest on top.
+            labels, values = labels[::-1], values[::-1]
+            ax.barh(labels, values, color='#2E75B6')
+            for i, val in enumerate(values):
+                ax.text(val, i, f' {self._fmt_val(metric, val)}',
+                        va='center', fontsize=7, color='#333')
+            ax.set_xlabel(metric, fontsize=9)
+            ax.tick_params(axis='y', labelsize=8)
+            ax.margins(x=0.15)
+        elif ctype in ('Pie', 'Donut'):
+            colors = [_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(labels))]
+            ax.pie(values, labels=labels, colors=colors, startangle=90,
+                   textprops={'fontsize': 8})
+            if ctype == 'Donut':
+                ax.add_artist(Circle((0, 0), 0.55, fc='white'))
+            ax.set_aspect('equal')
+        elif ctype == 'Line':
+            ax.plot(labels, values, color='#2E75B6', linewidth=2, marker='o')
+            ax.set_ylabel(metric, fontsize=9)
+            ax.tick_params(axis='x', rotation=20, labelsize=8)
+        else:  # Vertical Bar (safe default)
+            ax.bar(labels, values, color='#2E75B6')
+            ax.tick_params(axis='x', rotation=20, labelsize=8)
+            ax.set_ylabel(metric, fontsize=9)
+
+    def _fmt_val(self, metric: str, val: float) -> str:
+        # Compact value label for bar ends.
+        if '%' in metric:
+            return f'{val:.1f}'
+        if '$' in metric or 'Salary' in metric:
+            return f'${val:,.0f}'
+        if float(val).is_integer():
+            return f'{int(val)}'
+        return f'{val:.1f}'
+
+    def _kpi_set_chart_type(self, dimension: str, chart_type: str):
+        if not self._drill_state:
+            return
+        self._drill_state.setdefault('chart_types', {})[dimension] = chart_type
+        self._render_drill()
 
     def _kpi_focus(self, dimension: str):
         if not self._drill_state:
@@ -638,7 +737,7 @@ class DashboardTab(QWidget):
                 allow_close=False,
                 metric=metric,
                 dimension=next_dim,
-                chart_type='Vertical Bar',
+                chart_type='Auto',
             )
             chart_panel.bar_clicked.connect(self._on_drill_chart_bar_clicked)
             chart_panel.update_data(df)
