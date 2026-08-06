@@ -16,6 +16,43 @@ DEPT_COLOURS = [
 
 CHART_TYPES = ['Vertical Bar', 'Horizontal Bar', 'Radar']
 
+_LIST_STYLE = '''
+    QListWidget {
+        background-color: white; color: #333333;
+        border: 1px solid #CCCCCC; border-radius: 4px;
+        font-size: 12px;
+    }
+    QListWidget::item { color: #333333; padding: 2px; }
+    QListWidget::item:selected { background-color: #D6EAF8; color: #333333; }
+'''
+
+_COMBO_STYLE = '''
+    QComboBox {
+        border: 1px solid #CCCCCC; border-radius: 4px;
+        padding: 4px 6px; background: white; font-size: 12px; color: #333;
+    }
+    QComboBox:focus { border-color: #2E75B6; }
+'''
+
+_GROUP_STYLE = '''
+    QGroupBox {
+        background-color: transparent; border: 1px solid #CCCCCC; border-radius: 6px;
+        margin-top: 10px; font-size: 12px; font-weight: bold; color: #1F3864;
+    }
+    QGroupBox::title {
+        subcontrol-origin: margin; left: 8px; padding: 0 4px;
+        color: #1F3864; background-color: #F5F7FA;
+    }
+'''
+
+_SMALL_BTN_STYLE = '''
+    QPushButton {
+        background-color: white; color: #333333;
+        border: 1px solid #CCCCCC; border-radius: 4px; font-size: 11px;
+    }
+    QPushButton:hover { background-color: #F0F0F0; }
+'''
+
 
 class CompareTab(QWidget):
     def __init__(self, parent=None):
@@ -37,20 +74,24 @@ class CompareTab(QWidget):
 
         # Department checklist
         dept_group = QGroupBox('Select Departments')
+        dept_group.setStyleSheet(_GROUP_STYLE)
         dept_inner = QVBoxLayout(dept_group)
         dept_inner.setSpacing(4)
 
         self.dept_list = QListWidget()
         self.dept_list.setFixedHeight(90)
+        self.dept_list.setStyleSheet(_LIST_STYLE)
         self.dept_list.itemChanged.connect(self._draw)
         dept_inner.addWidget(self.dept_list)
 
         btn_row = QHBoxLayout()
         all_btn = QPushButton('All')
         all_btn.setFixedHeight(24)
+        all_btn.setStyleSheet(_SMALL_BTN_STYLE)
         all_btn.clicked.connect(self._select_all)
         none_btn = QPushButton('None')
         none_btn.setFixedHeight(24)
+        none_btn.setStyleSheet(_SMALL_BTN_STYLE)
         none_btn.clicked.connect(self._select_none)
         btn_row.addWidget(all_btn)
         btn_row.addWidget(none_btn)
@@ -59,9 +100,11 @@ class CompareTab(QWidget):
 
         # Metric selector
         metric_group = QGroupBox('Metric')
+        metric_group.setStyleSheet(_GROUP_STYLE)
         metric_inner = QVBoxLayout(metric_group)
         self.metric_combo = QComboBox()
         self.metric_combo.addItems(analytics.COMPARISON_METRICS)
+        self.metric_combo.setStyleSheet(_COMBO_STYLE)
         self.metric_combo.currentIndexChanged.connect(self._draw)
         metric_inner.addWidget(self.metric_combo)
         metric_inner.addStretch()
@@ -69,9 +112,11 @@ class CompareTab(QWidget):
 
         # Chart type selector
         chart_group = QGroupBox('Display As')
+        chart_group.setStyleSheet(_GROUP_STYLE)
         chart_inner = QVBoxLayout(chart_group)
         self.chart_type_combo = QComboBox()
         self.chart_type_combo.addItems(CHART_TYPES)
+        self.chart_type_combo.setStyleSheet(_COMBO_STYLE)
         self.chart_type_combo.currentIndexChanged.connect(self._draw)
         chart_inner.addWidget(self.chart_type_combo)
         chart_inner.addStretch()

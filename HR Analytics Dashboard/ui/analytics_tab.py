@@ -23,6 +23,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from core import analytics
 from ui.chart_widget import ChartWithToolbar
 from ui.series_dialog import SeriesDialog
+from ui import message_box
 
 # ── Colour / style constants ──────────────────────────────────────────────────
 
@@ -388,9 +389,11 @@ class AnalyticsTab(QWidget):
             QTableWidget {
                 font-size: 11px; gridline-color: #E8E8E8;
                 border: none; border-top: 1px solid #E0E0E0;
+                background: white; color: black;
             }
+            QTableWidget::item { color: black; }
             QHeaderView::section {
-                background: #F5F7FA; font-weight: bold;
+                background: #F5F7FA; color: #333333; font-weight: bold;
                 font-size: 11px; padding: 4px;
                 border: none; border-bottom: 1px solid #E0E0E0;
             }
@@ -895,8 +898,7 @@ class AnalyticsTab(QWidget):
             try:
                 self._main_widget.figure.savefig(path, dpi=150, bbox_inches='tight')
             except Exception as e:
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.warning(self, 'Export Failed', str(e))
+                message_box.warning(self, 'Export Failed', str(e))
 
     def _export_pdf(self):
         path, _ = QFileDialog.getSaveFileName(
@@ -906,8 +908,7 @@ class AnalyticsTab(QWidget):
             try:
                 self._main_widget.figure.savefig(path, format='pdf', bbox_inches='tight')
             except Exception as e:
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.warning(self, 'Export Failed', str(e))
+                message_box.warning(self, 'Export Failed', str(e))
 
     def _copy_to_clipboard(self):
         try:
@@ -918,8 +919,7 @@ class AnalyticsTab(QWidget):
             pix.loadFromData(buf.read())
             QApplication.clipboard().setPixmap(pix)
         except Exception as e:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, 'Copy Failed', str(e))
+            message_box.warning(self, 'Copy Failed', str(e))
 
     # ── Save / Load config ────────────────────────────────────────────────────
 
@@ -932,8 +932,7 @@ class AnalyticsTab(QWidget):
                 with open(path, 'w', encoding='utf-8') as f:
                     json.dump(self._charts, f, indent=2)
             except Exception as e:
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.warning(self, 'Save Failed', str(e))
+                message_box.warning(self, 'Save Failed', str(e))
 
     def _load_config(self):
         path, _ = QFileDialog.getOpenFileName(
@@ -953,8 +952,7 @@ class AnalyticsTab(QWidget):
                     self._update_thumbnails()
                     self._render_active()
             except Exception as e:
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.warning(self, 'Load Failed', str(e))
+                message_box.warning(self, 'Load Failed', str(e))
 
     # ── Data table ────────────────────────────────────────────────────────────
 

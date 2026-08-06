@@ -7,6 +7,7 @@
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
 from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout
+from PyQt6.QtGui import QPalette, QColor
 
 
 class ChartWidget(FigureCanvasQTAgg):
@@ -51,8 +52,30 @@ class ChartWithToolbar(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        # NavigationToolbar2QT bakes its icon colours once, at construction,
+        # based on whether its background looks dark or light. On a system in
+        # dark mode (and with no palette set yet) that reads as "dark", so
+        # matplotlib recolours every icon white. Every chart card in this app
+        # is then explicitly styled white, so those pre-baked white icons
+        # render on a white background and disappear (Save, Pan/"Move", etc.).
+        # Forcing a light palette here — before the toolbar is built — keeps
+        # matplotlib on the light-background branch so icons stay their normal
+        # dark colour no matter what the OS theme is.
+        pal = self.palette()
+        pal.setColor(QPalette.ColorRole.Window, QColor('white'))
+        pal.setColor(QPalette.ColorRole.WindowText, QColor('black'))
+        pal.setColor(QPalette.ColorRole.Button, QColor('white'))
+        pal.setColor(QPalette.ColorRole.ButtonText, QColor('black'))
+        self.setPalette(pal)
+
         self._chart = ChartWidget(width=width, height=height, dpi=dpi)
         self._toolbar = NavigationToolbar2QT(self._chart, self)
+        self._toolbar.setStyleSheet('''
+            QToolBar { background: white; border: none; spacing: 2px; }
+            QToolButton { background: white; border: none; border-radius: 4px; padding: 3px; }
+            QToolButton:hover { background: #EBF5FB; }
+            QToolButton:pressed, QToolButton:checked { background: #D6EAF8; }
+        ''')
 
         layout.addWidget(self._toolbar)
         layout.addWidget(self._chart)

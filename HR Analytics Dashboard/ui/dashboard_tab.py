@@ -60,10 +60,11 @@ _BTN_SECONDARY = '''
 
 _BTN_DANGER = '''
     QPushButton {
-        color: #555; background: #F0F0F0; border: 1px solid #CCC;
+        color: #C0392B; background: #FDECEA; border: 1px solid #C0392B;
         border-radius: 11px; font-size: 11px; font-weight: bold;
     }
     QPushButton:hover { background: #E74C3C; color: white; border-color: #C0392B; }
+    QPushButton:pressed { background: #C0392B; color: white; }
 '''
 
 _COMBO_STYLE = '''
@@ -111,6 +112,7 @@ class DashboardTab(QWidget):
 
         # Page 1: drill-down container (rebuilt on entry)
         self._drill_page = QWidget()
+        self._drill_page.setStyleSheet('background: white;')
         self._drill_layout = QVBoxLayout(self._drill_page)
         self._drill_layout.setContentsMargins(8, 8, 8, 8)
         self._drill_layout.setSpacing(8)
@@ -527,7 +529,12 @@ class DashboardTab(QWidget):
             focus_btn = QPushButton('🔍')
             focus_btn.setFixedSize(22, 22)
             focus_btn.setToolTip('Focus this chart')
-            focus_btn.setStyleSheet(_BTN_DANGER.replace('#E74C3C', '#2E75B6').replace('#C0392B', '#1F3864'))
+            focus_btn.setStyleSheet(
+                _BTN_DANGER
+                .replace('#FDECEA', '#EBF5FB')
+                .replace('#E74C3C', '#2E75B6')
+                .replace('#C0392B', '#1F3864')
+            )
             focus_btn.clicked.connect(lambda _, d=dimension: self._kpi_focus(d))
             head.addWidget(focus_btn)
 
@@ -783,7 +790,8 @@ class DashboardTab(QWidget):
         table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         table.setStyleSheet('''
-            QTableWidget { background: white; alternate-background-color: #F8F9FB; gridline-color: #E5E7EB; }
+            QTableWidget { background: white; alternate-background-color: #F8F9FB; gridline-color: #E5E7EB; color: black; }
+            QTableWidget::item { color: black; }
             QHeaderView::section {
                 background: #1F3864; color: white; font-weight: bold;
                 padding: 6px; border: none; font-size: 11px;
