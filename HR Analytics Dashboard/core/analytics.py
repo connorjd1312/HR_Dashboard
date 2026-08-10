@@ -27,7 +27,7 @@ TIME_SERIES_METRICS = [
 
 SNAPSHOT_METRICS = [
     'Employee Count',
-    'Turnover Rate (%)',
+    'Overall Turnover Rate (%)',
     'Average Salary ($)',
     'Average Tenure (yrs)',
     'Average Age',
@@ -61,7 +61,7 @@ _FREQ_MAP = {
 KPI_OPTIONS = [
     'Total Employees',
     'Active Employees',
-    'Turnover Rate (%)',
+    'Overall Turnover Rate (%)',
     'Avg Tenure (yrs)',
     'Avg Salary ($)',
     'Average Age',
@@ -75,7 +75,7 @@ KPI_OPTIONS = [
 DEFAULT_KPIS = [
     'Total Employees',
     'Active Employees',
-    'Turnover Rate (%)',
+    'Overall Turnover Rate (%)',
     'Avg Tenure (yrs)',
     'Avg Salary ($)',
 ]
@@ -119,7 +119,7 @@ def kpi_value(df: pd.DataFrame, metric: str) -> str:
         return f'{int((df["Status"] == "On Leave").sum()):,}'
     if metric == 'Resigned Count':
         return f'{int((df["Status"] == "Resigned").sum()):,}'
-    if metric == 'Turnover Rate (%)':
+    if metric == 'Overall Turnover Rate (%)':
         return f'{df["Turnover"].mean() * 100:.1f}%'
     if metric == 'Avg Tenure (yrs)':
         v = df['Tenure_Years'].mean()
@@ -154,7 +154,7 @@ def kpi_relevant_employees(df: pd.DataFrame, metric: str) -> pd.DataFrame:
         return df[df['Status'] == 'On Leave']
     if metric == 'Resigned Count':
         return df[df['Status'] == 'Resigned']
-    if metric == 'Turnover Rate (%)':
+    if metric == 'Overall Turnover Rate (%)':
         return df[df['Turnover'] == True]
     return df
 
@@ -179,7 +179,7 @@ def kpi_breakdown(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
         return df.groupby(col).apply(
             lambda g: int((g['Status'] == 'Resigned').sum())
         ).rename('Value')
-    if metric == 'Turnover Rate (%)':
+    if metric == 'Overall Turnover Rate (%)':
         return (df.groupby(col)['Turnover'].mean() * 100).round(1).rename('Value')
     if metric == 'Avg Tenure (yrs)':
         return df.groupby(col)['Tenure_Years'].mean().round(1).rename('Value')
@@ -214,7 +214,7 @@ def summary_kpis(df: pd.DataFrame) -> dict:
     return {
         'Total Employees': total,
         'Active Employees': active,
-        'Turnover Rate (%)': turnover_rate,
+        'Overall Turnover Rate (%)': turnover_rate,
         'Avg Tenure (yrs)': avg_tenure,
         'Avg Salary ($)': f'{avg_salary:,.0f}',  # formatted with commas, no decimals
     }
@@ -252,7 +252,7 @@ def turnover_by_dept(df: pd.DataFrame) -> pd.Series:
 
 COMPARISON_METRICS = [
     'Employee Count',
-    'Turnover Rate (%)',
+    'Overall Turnover Rate (%)',
     'Average Salary ($)',
     'Average Tenure (yrs)',
     'Average Age',
@@ -271,7 +271,7 @@ def dept_comparison(df: pd.DataFrame, departments: list, metric: str) -> pd.Seri
             continue
         if metric == 'Employee Count':
             result[dept] = float(len(sub))
-        elif metric == 'Turnover Rate (%)':
+        elif metric == 'Overall Turnover Rate (%)':
             result[dept] = round(float(sub['Turnover'].mean() * 100), 1)
         elif metric == 'Average Salary ($)':
             result[dept] = round(float(sub['Salary'].mean()), 0)
@@ -354,7 +354,7 @@ def snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
 
     if metric == 'Employee Count':
         return df.groupby(col).size().rename('Value')
-    elif metric == 'Turnover Rate (%)':
+    elif metric == 'Overall Turnover Rate (%)':
         return (df.groupby(col)['Turnover'].mean() * 100).round(1).rename('Value')
     elif metric == 'Average Salary ($)':
         return df.groupby(col)['Salary'].mean().round(0).rename('Value')

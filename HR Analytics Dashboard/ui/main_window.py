@@ -202,7 +202,7 @@ class MainWindow(QMainWindow):
             (
                 'KPI Overview', '#1F3864',
                 'Track total headcount, active employees,\n'
-                'turnover rate, average tenure and salary.',
+                'overall turnover rate, average tenure and salary.',
             ),
             (
                 'Visual Charts', '#2E75B6',

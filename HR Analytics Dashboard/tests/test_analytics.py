@@ -46,7 +46,7 @@ class TestRecommendChartType:
         assert ctype not in ('Pie', 'Donut')
 
     @pytest.mark.parametrize('metric', [
-        'Turnover Rate (%)',
+        'Overall Turnover Rate (%)',
         'Average Salary ($)',
         'Average Tenure (yrs)',
         'Average Age',

@@ -357,7 +357,7 @@ class AnalyticsTab(QWidget):
             'Click  "+ Add Series"  to start building your chart.\n\n'
             'Examples:\n'
             '  • Monthly Hires — Last 2 Years\n'
-            '  • Compare Turnover Rate across departments\n'
+            '  • Compare Overall Turnover Rate across departments\n'
             '  • Overlay multiple series on the same chart'
         )
         self._placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)

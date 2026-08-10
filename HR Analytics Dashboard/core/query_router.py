@@ -216,7 +216,7 @@ def _general_summary(df: pd.DataFrame) -> dict:
     return {
         'total_employees': analytics.kpi_value(df, 'Total Employees'),
         'active_employees': analytics.kpi_value(df, 'Active Employees'),
-        'turnover_rate': analytics.kpi_value(df, 'Turnover Rate (%)'),
+        'turnover_rate': analytics.kpi_value(df, 'Overall Turnover Rate (%)'),
         'avg_tenure_years': analytics.kpi_value(df, 'Avg Tenure (yrs)'),
         'avg_salary': analytics.kpi_value(df, 'Avg Salary ($)'),
     }
