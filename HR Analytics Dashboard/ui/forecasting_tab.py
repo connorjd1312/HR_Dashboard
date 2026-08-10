@@ -365,7 +365,7 @@ class ForecastingTab(QWidget):
         chips_row = QHBoxLayout()
         chips_row.setSpacing(6)
         for question in [
-            "What's our turnover rate by department?",
+            "What's our overall turnover rate by department?",
             'Forecast hires for next quarter',
             "What's our average tenure?",
         ]:

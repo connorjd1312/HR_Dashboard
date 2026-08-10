@@ -218,6 +218,6 @@ class CompareTab(QWidget):
     def _label_fmt(metric):
         if metric == 'Average Salary ($)':
             return '${:,.0f}'
-        if metric == 'Turnover Rate (%)':
+        if metric == 'Overall Turnover Rate (%)':
             return '{:.1f}%'
         return '{:.1f}'
