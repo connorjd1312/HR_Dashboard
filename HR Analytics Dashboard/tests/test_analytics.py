@@ -47,6 +47,7 @@ class TestRecommendChartType:
 
     @pytest.mark.parametrize('metric', [
         'Overall Turnover Rate (%)',
+        'Attrition Rate (%)',
         'Average Salary ($)',
         'Average Tenure (yrs)',
         'Average Age',
@@ -85,3 +86,57 @@ class TestRecommendChartType:
     def test_none_data_does_not_raise(self):
         ctype = analytics.recommend_chart_type('Employee Count', 'Status', None)
         assert ctype == 'Vertical Bar'
+
+
+# ── Attrition rate ────────────────────────────────────────────────────────
+
+def _staff() -> pd.DataFrame:
+    # Four leavers (2 resigned, 1 retired, 1 terminated) out of eight staff.
+    status = ['Active', 'Active', 'Active', 'On Leave',
+              'Resigned', 'Resigned', 'Retired', 'Terminated']
+    dept = ['Sales'] * 4 + ['IT'] * 4
+    end = [None] * 4 + ['2026-01-15', '2026-02-10', '2026-02-20', '2026-03-05']
+    df = pd.DataFrame({
+        'Name': [f'E{i}' for i in range(8)],
+        'Department': dept,
+        'Status': status,
+        'End_Date': pd.to_datetime(end),
+    })
+    df['Turnover'] = df['Status'].isin(['Resigned', 'Terminated', 'Retired'])
+    return df
+
+
+class TestAttritionRate:
+
+    def test_kpi_excludes_terminations(self):
+        # 3 voluntary leavers / 8 staff = 37.5%, while overall turnover is 50%.
+        df = _staff()
+        assert analytics.kpi_value(df, 'Attrition Rate (%)') == '37.5%'
+        assert analytics.kpi_value(df, 'Overall Turnover Rate (%)') == '50.0%'
+
+    def test_relevant_employees_are_voluntary_leavers(self):
+        rows = analytics.kpi_relevant_employees(_staff(), 'Attrition Rate (%)')
+        assert sorted(rows['Status']) == ['Resigned', 'Resigned', 'Retired']
+
+    def test_breakdown_by_department(self):
+        result = analytics.kpi_breakdown(_staff(), 'Attrition Rate (%)', 'Department')
+        assert result['IT'] == 75.0
+        assert result['Sales'] == 0.0
+
+    def test_snapshot_matches_breakdown(self):
+        df = _staff()
+        snap = analytics.snapshot_data(df, 'Attrition Rate (%)', 'Department')
+        assert snap.equals(analytics.kpi_breakdown(df, 'Attrition Rate (%)', 'Department'))
+
+    def test_dept_comparison(self):
+        result = analytics.dept_comparison(_staff(), ['IT', 'Sales'], 'Attrition Rate (%)')
+        assert result['IT'] == 75.0
+        assert result['Sales'] == 0.0
+
+    def test_monthly_series_counts_voluntary_exits_only(self):
+        series = analytics.time_series_data(
+            _staff(), 'Monthly Attrition Rate (%)', 'None', 'All',
+            pd.Timestamp('2026-01-01'), pd.Timestamp('2026-03-31'), 'Monthly',
+        )
+        # Jan: 1 resigned, Feb: 1 resigned + 1 retired, Mar: termination only.
+        assert list(series) == [12.5, 25.0, 0.0]
