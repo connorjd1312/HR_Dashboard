@@ -104,22 +104,22 @@ Arthur Nguyen,1995-05-11,Human Resources,HR Coordinator,2024-03-07,,76400.0,Acti
 Charlotte Hernandez,1995-06-08,Human Resources,Senior Recruiter,2023-03-17,,87600.0,Active,6,18.7,F,White
 Cheryl Cox,1976-07-23,Human Resources,HR Generalist,2023-12-07,,71900.0,On Leave,9,8.0,F,White
 Mark Wilson,1976-06-05,Human Resources,HR Manager,2019-03-11,2023-07-24,124100.0,Resigned,3,16.0,M,Hispanic
-William Cox,1969-01-17,Human Resources,HR Generalist,2022-06-20,2023-05-16,64800.0,Resigned,7,16.2,M,White
+William Cox,1969-01-17,Human Resources,HR Generalist,2022-06-20,2023-05-16,64800.0,Retired,7,16.2,M,White
 Michelle Robinson,1986-04-08,Human Resources,Senior Recruiter,2022-02-27,2026-02-25,97500.0,Resigned,6,16.6,F,White
-Steven Aguilar,1973-11-22,Human Resources,HR Generalist,2020-04-05,2026-02-22,75800.0,Resigned,7,13.6,M,Hispanic
-Jonathan Ellis,1989-05-12,Human Resources,Senior Recruiter,2018-10-27,2023-02-07,98400.0,Resigned,7,19.1,M,White
+Steven Aguilar,1973-11-22,Human Resources,HR Generalist,2020-04-05,2026-02-22,75800.0,Retired,7,13.6,M,Hispanic
+Jonathan Ellis,1989-05-12,Human Resources,Senior Recruiter,2018-10-27,2023-02-07,98400.0,Terminated,7,19.1,M,White
 Teresa Nelson,1980-08-04,Human Resources,Senior Recruiter,2018-02-19,2022-06-27,100500.0,Resigned,6,16.2,F,Hispanic
 Scott Edwards,1985-04-01,Human Resources,HR Business Partner,2023-05-08,2024-05-04,84400.0,Resigned,8,15.1,M,White
 Linda Peterson,1975-09-25,Human Resources,Recruiter,2022-01-16,2026-01-25,81700.0,Resigned,4,19.2,F,Other
 Emily Brooks,1994-01-12,Human Resources,HR Coordinator,2022-09-02,2022-11-25,72400.0,Resigned,9,15.0,F,Asian
-Sharon Carter,1969-08-07,Human Resources,Recruiter,2019-04-28,2023-11-01,96000.0,Resigned,3,15.9,F,Black
+Sharon Carter,1969-08-07,Human Resources,Recruiter,2019-04-28,2023-11-01,96000.0,Retired,3,15.9,F,Black
 Andrew Moore,1982-10-06,Human Resources,HR Business Partner,2019-11-05,2024-08-23,90200.0,Resigned,4,17.0,M,White
 Martha Ward,1987-07-20,Human Resources,HR Business Partner,2024-11-06,2025-02-07,72500.0,Resigned,5,15.0,F,White
-Russell Simmons,1969-01-01,Human Resources,HR Generalist,2022-05-05,2026-01-02,75100.0,Resigned,4,15.6,M,Hispanic
-Jonathan Gibson,1994-07-08,Human Resources,HR Coordinator,2019-12-20,2021-12-27,78700.0,Resigned,3,16.6,M,Hispanic
+Russell Simmons,1969-01-01,Human Resources,HR Generalist,2022-05-05,2026-01-02,75100.0,Retired,4,15.6,M,Hispanic
+Jonathan Gibson,1994-07-08,Human Resources,HR Coordinator,2019-12-20,2021-12-27,78700.0,Terminated,3,16.6,M,Hispanic
 Harold Patterson,1974-06-11,Human Resources,Senior Recruiter,2018-05-07,2024-03-14,97000.0,Resigned,3,15.6,M,Hispanic
 Thomas Reynolds,1983-07-19,Human Resources,Recruiter,2018-10-08,2023-03-16,103900.0,Resigned,7,14.8,M,White
-George White,1966-01-09,Human Resources,Recruiter,2018-04-03,2021-04-12,93400.0,Resigned,7,18.8,M,Asian
+George White,1966-01-09,Human Resources,Recruiter,2018-04-03,2021-04-12,93400.0,Retired,7,18.8,M,Asian
 Jeffrey West,1985-11-16,Human Resources,HR Manager,2018-12-16,2024-04-10,116100.0,Resigned,4,16.9,M,White
 Joseph Patterson,1974-03-14,Human Resources,HR Business Partner,2022-11-03,,85200.0,On Leave,9,7.9,M,White
 Nancy Hill,1988-08-06,Human Resources,CHRO,2023-03-18,2025-01-02,127600.0,Resigned,6,13.2,F,White
@@ -127,7 +127,7 @@ Raymond Sanchez,2000-01-20,Human Resources,HR Coordinator,2023-01-06,2024-04-03,
 Deborah Sanders,2000-05-13,Human Resources,HR Coordinator,2022-01-12,2024-12-26,57600.0,Resigned,8,16.7,F,White
 Samantha Mitchell,2000-05-14,Human Resources,HR Coordinator,2024-12-23,2025-08-11,56800.0,Resigned,10,18.3,F,White
 Christopher Hughes,1972-01-04,Human Resources,Recruiter,2022-04-01,2023-11-10,93800.0,Resigned,8,15.5,M,White
-Larry James,1971-11-03,Human Resources,CHRO,2023-06-04,2024-01-09,124400.0,Resigned,10,11.5,M,White
+Larry James,1971-11-03,Human Resources,CHRO,2023-06-04,2024-01-09,124400.0,Retired,10,11.5,M,White
 Kelly Alvarez,1991-08-17,Human Resources,HR Coordinator,2021-05-06,2025-04-03,63600.0,Resigned,3,15.3,F,White
 Bobby Jordan,1993-07-07,Human Resources,HR Coordinator,2023-01-11,2025-11-26,68200.0,Resigned,2,22.3,M,White
 Jerry Mendoza,1982-01-02,Human Resources,Recruiter,2023-08-18,,96300.0,On Leave,3,10.3,M,Asian
@@ -136,16 +136,16 @@ Peter Edwards,1997-10-04,Human Resources,HR Coordinator,2022-05-21,2023-12-14,69
 Carolyn Reynolds,1981-01-24,Human Resources,Recruiter,2021-07-23,2025-03-28,84900.0,Resigned,5,17.5,F,White
 Ronald King,1982-11-15,Human Resources,HR Generalist,2018-03-07,2019-11-07,90500.0,Resigned,11,18.4,M,Hispanic
 Kenneth Taylor,1989-08-13,Human Resources,Senior Recruiter,2022-05-27,2024-08-31,102800.0,Resigned,7,16.9,M,White
-Steven Wilson,1970-04-26,Human Resources,HR Business Partner,2022-11-19,2023-05-01,75700.0,Resigned,6,16.6,M,Hispanic
-Carol Lee,1993-08-26,Human Resources,HR Coordinator,2018-12-01,2025-02-14,72400.0,Resigned,6,16.5,F,Hispanic
-Debra Thompson,1972-05-17,Human Resources,HR Generalist,2023-04-13,2025-07-24,71300.0,Resigned,6,16.2,F,White
+Steven Wilson,1970-04-26,Human Resources,HR Business Partner,2022-11-19,2023-05-01,75700.0,Terminated,6,16.6,M,Hispanic
+Carol Lee,1993-08-26,Human Resources,HR Coordinator,2018-12-01,2025-02-14,72400.0,Terminated,6,16.5,F,Hispanic
+Debra Thompson,1972-05-17,Human Resources,HR Generalist,2023-04-13,2025-07-24,71300.0,Retired,6,16.2,F,White
 Robert Mitchell,2001-05-26,Human Resources,HR Coordinator,2023-10-12,2024-04-14,68300.0,Resigned,5,9.6,M,Asian
 Elizabeth Mitchell,1977-12-22,Human Resources,HR Business Partner,2019-06-25,2025-09-27,86100.0,Resigned,5,22.2,F,White
 Steven West,1983-11-23,Human Resources,Recruiter,2019-05-11,2022-10-08,95600.0,Resigned,6,18.1,M,Asian
 Nicholas Bennett,1989-07-24,Human Resources,HR Manager,2020-06-07,2022-03-08,106600.0,Resigned,7,15.4,M,Hispanic
 Mark Gonzalez,1981-04-19,Human Resources,Recruiter,2022-08-24,2023-12-02,87800.0,Resigned,7,9.4,M,White
 Joe Ward,1993-04-08,Human Resources,HR Coordinator,2019-10-03,2025-04-09,70700.0,Resigned,7,22.2,M,White
-Joseph Evans,1972-10-03,Human Resources,HR Generalist,2019-01-02,2021-07-21,82700.0,Resigned,8,19.7,M,White
+Joseph Evans,1972-10-03,Human Resources,HR Generalist,2019-01-02,2021-07-21,82700.0,Terminated,8,19.7,M,White
 Virginia Campbell,1982-08-21,Human Resources,HR Business Partner,2020-06-12,2023-07-27,88500.0,Resigned,5,14.4,F,Hispanic
 Jacqueline Graham,1981-05-08,Human Resources,Senior Recruiter,2019-05-18,2020-01-21,120800.0,Resigned,7,15.3,F,White
 Catherine Reynolds,1988-10-27,Human Resources,Recruiter,2023-02-02,2025-04-26,98000.0,Resigned,10,15.0,F,White
@@ -153,7 +153,7 @@ Louis Reynolds,1968-03-13,Human Resources,CHRO,2021-10-06,2025-08-11,116000.0,Re
 Samuel Griffin,1991-05-05,Human Resources,HR Coordinator,2021-09-21,2022-01-02,60900.0,Resigned,9,15.8,M,White
 Edward Hall,1993-03-27,Human Resources,HR Manager,2024-05-19,2024-09-12,101900.0,Resigned,6,17.0,M,Hispanic
 Ethan Flores,1984-08-25,Human Resources,HR Business Partner,2022-12-01,2024-05-11,80700.0,Resigned,10,15.9,M,Other
-Willie Ross,1971-03-22,Human Resources,Recruiter,2022-04-11,2026-02-28,99700.0,Resigned,2,18.0,M,Mixed
+Willie Ross,1971-03-22,Human Resources,Recruiter,2022-04-11,2026-02-28,99700.0,Retired,2,18.0,M,Mixed
 Douglas Castillo,1995-07-19,Human Resources,HR Coordinator,2019-03-23,2023-04-02,76000.0,Resigned,8,19.7,M,Hispanic
 Ann Herrera,1991-11-27,Human Resources,Senior Recruiter,2022-02-27,2023-09-25,102200.0,Resigned,3,9.3,F,Black
 Kathleen James,1988-11-02,Human Resources,Senior Recruiter,2024-05-13,2026-03-18,100500.0,Resigned,7,18.2,F,White
@@ -161,25 +161,25 @@ Donald Sullivan,1985-02-22,Human Resources,HR Business Partner,2022-07-03,2026-0
 Emma Jackson,1984-01-15,Human Resources,HR Manager,2022-10-21,2025-06-14,104300.0,Resigned,4,14.1,F,Hispanic
 Jonathan Jones,1976-08-20,Human Resources,HR Manager,2018-06-08,2020-06-01,106800.0,Resigned,12,19.6,M,Asian
 Kimberly Sanders,2000-12-28,Human Resources,HR Coordinator,2023-07-22,2025-05-28,62500.0,Resigned,7,16.3,F,Hispanic
-Jacqueline Reed,1994-04-07,Human Resources,HR Coordinator,2019-05-01,2020-06-29,82100.0,Resigned,4,15.4,F,White
-Lisa Moreno,1998-11-04,Human Resources,HR Coordinator,2022-07-04,2023-08-02,74000.0,Resigned,8,15.4,F,Black
-Joan Tran,1975-07-04,Human Resources,HR Business Partner,2021-09-22,2024-05-25,91500.0,Resigned,8,15.2,F,White
+Jacqueline Reed,1994-04-07,Human Resources,HR Coordinator,2019-05-01,2020-06-29,82100.0,Terminated,4,15.4,F,White
+Lisa Moreno,1998-11-04,Human Resources,HR Coordinator,2022-07-04,2023-08-02,74000.0,Terminated,8,15.4,F,Black
+Joan Tran,1975-07-04,Human Resources,HR Business Partner,2021-09-22,2024-05-25,91500.0,Terminated,8,15.2,F,White
 Diane Watson,1987-07-09,Human Resources,HR Business Partner,2025-10-11,2026-01-29,81900.0,Resigned,5,14.9,F,Black
 Adam Baker,1989-01-27,Human Resources,HR Manager,2019-08-24,2020-11-03,112900.0,Resigned,10,13.2,M,Hispanic
-Martha Vasquez,1972-06-24,Human Resources,HR Generalist,2024-02-21,2025-10-25,71400.0,Resigned,1,14.8,F,White
+Martha Vasquez,1972-06-24,Human Resources,HR Generalist,2024-02-21,2025-10-25,71400.0,Retired,1,14.8,F,White
 Gloria Gray,1976-04-19,Human Resources,HR Business Partner,2021-02-28,2025-02-21,94700.0,Resigned,4,12.7,F,White
 Jessica Henderson,1982-04-13,Human Resources,HR Manager,2025-02-15,2026-03-19,102100.0,Resigned,4,14.3,F,White
 Samuel Green,1996-11-28,Human Resources,HR Coordinator,2024-03-08,,59400.0,On Leave,20,9.0,M,White
-Kevin Jackson,1980-06-19,Human Resources,CHRO,2019-02-17,2024-05-31,125000.0,Resigned,7,10.9,M,Hispanic
+Kevin Jackson,1980-06-19,Human Resources,CHRO,2019-02-17,2024-05-31,125000.0,Terminated,7,10.9,M,Hispanic
 Abigail Ward,1994-03-05,Human Resources,Senior Recruiter,2022-11-09,,97400.0,On Leave,10,6.0,F,Hispanic
-Nicholas Stevens,1967-03-10,Human Resources,HR Director,2022-12-20,2023-08-09,106300.0,Resigned,6,12.2,M,Hispanic
-William Alexander,1998-04-18,Human Resources,HR Coordinator,2022-08-26,2022-12-17,72200.0,Resigned,9,19.4,M,Hispanic
-Julia Moreno,1970-08-13,Human Resources,HR Business Partner,2022-02-20,2023-03-02,81600.0,Resigned,7,14.4,F,White
+Nicholas Stevens,1967-03-10,Human Resources,HR Director,2022-12-20,2023-08-09,106300.0,Retired,6,12.2,M,Hispanic
+William Alexander,1998-04-18,Human Resources,HR Coordinator,2022-08-26,2022-12-17,72200.0,Terminated,9,19.4,M,Hispanic
+Julia Moreno,1970-08-13,Human Resources,HR Business Partner,2022-02-20,2023-03-02,81600.0,Retired,7,14.4,F,White
 William Gray,1987-07-21,Human Resources,Recruiter,2022-04-16,2025-12-16,88900.0,Resigned,7,13.2,M,Hispanic
 Heather Perry,1979-11-15,Human Resources,Recruiter,2024-11-28,,90100.0,On Leave,12,5.0,F,White
 Tyler Wallace,1981-03-12,Human Resources,Recruiter,2022-05-06,2025-06-29,88800.0,Resigned,6,17.2,M,Asian
 Jack Clark,1984-05-03,Human Resources,HR Generalist,2024-04-28,2025-11-03,64200.0,Resigned,9,18.4,M,Hispanic
-Jean Morris,1987-06-17,Human Resources,HR Manager,2022-10-06,2023-07-10,120400.0,Resigned,4,18.3,F,Asian
+Jean Morris,1987-06-17,Human Resources,HR Manager,2022-10-06,2023-07-10,120400.0,Terminated,4,18.3,F,Asian
 Heather Ruiz,1995-08-25,Human Resources,HR Coordinator,2022-11-16,2023-09-17,65800.0,Resigned,10,16.8,F,Hispanic
 Judith Herrera,1983-09-27,Human Resources,HR Generalist,2024-02-27,2024-11-28,66500.0,Resigned,6,15.3,F,Black
 Ronald Ramirez,1981-06-20,Human Resources,HR Generalist,2021-02-11,2022-08-12,78800.0,Resigned,7,16.8,M,White
@@ -189,20 +189,20 @@ Rose Reynolds,1981-05-28,Human Resources,HR Business Partner,2024-10-17,2025-11-
 Benjamin Ward,1984-05-20,Human Resources,HR Generalist,2023-07-12,2024-01-27,80600.0,Resigned,7,12.5,M,White
 Judy Murphy,1976-02-08,Human Resources,Recruiter,2018-03-26,2019-09-11,98000.0,Resigned,8,12.8,F,White
 Rebecca Simmons,1978-11-04,Human Resources,Recruiter,2018-06-16,2021-10-22,102300.0,Resigned,4,15.0,F,Other
-Jeffrey Simmons,1967-08-24,Human Resources,HR Business Partner,2022-08-28,2025-09-16,87700.0,Resigned,11,15.6,M,White
+Jeffrey Simmons,1967-08-24,Human Resources,HR Business Partner,2022-08-28,2025-09-16,87700.0,Retired,11,15.6,M,White
 Thomas Stewart,1992-12-18,Human Resources,Senior Recruiter,2025-05-07,2025-09-17,92700.0,Resigned,9,17.5,M,White
 Isabella Williams,1979-04-14,Human Resources,HR Manager,2023-10-03,2024-05-19,97600.0,Resigned,7,12.1,F,White
 Melissa Patel,1978-05-24,Human Resources,HR Business Partner,2023-11-15,2025-08-20,76100.0,Resigned,9,16.1,F,White
-Adam Griffin,1971-04-24,Human Resources,HR Business Partner,2023-09-27,2024-01-19,79800.0,Resigned,5,14.3,M,White
+Adam Griffin,1971-04-24,Human Resources,HR Business Partner,2023-09-27,2024-01-19,79800.0,Retired,5,14.3,M,White
 Danielle Stewart,1978-10-21,Human Resources,HR Generalist,2019-08-06,2022-02-27,80300.0,Resigned,8,17.5,F,Asian
-Samuel Martin,1981-09-18,Human Resources,Recruiter,2023-03-04,2024-04-08,87500.0,Resigned,9,19.4,M,Black
-Jonathan Fisher,1993-12-24,Human Resources,HR Coordinator,2022-06-18,2025-10-29,66200.0,Resigned,4,13.5,M,Asian
+Samuel Martin,1981-09-18,Human Resources,Recruiter,2023-03-04,2024-04-08,87500.0,Terminated,9,19.4,M,Black
+Jonathan Fisher,1993-12-24,Human Resources,HR Coordinator,2022-06-18,2025-10-29,66200.0,Terminated,4,13.5,M,Asian
 Donald Campbell,1981-01-06,Human Resources,HR Manager,2023-08-20,2025-06-20,115700.0,Resigned,3,16.8,M,Hispanic
 Katherine Scott,1970-09-08,Human Resources,Recruiter,2022-02-07,2022-06-04,93100.0,Resigned,8,11.7,F,White
-Richard Carter,1988-05-25,Human Resources,HR Generalist,2024-07-24,2025-09-14,81500.0,Resigned,6,11.4,M,Hispanic
-Jack Long,1968-09-13,Human Resources,HR Generalist,2023-12-24,2024-12-27,80700.0,Resigned,6,15.0,M,White
-Sara Mendoza,1998-06-27,Human Resources,HR Coordinator,2021-07-21,2025-04-27,72900.0,Resigned,6,16.9,F,Black
+Richard Carter,1988-05-25,Human Resources,HR Generalist,2024-07-24,2025-09-14,81500.0,Terminated,6,11.4,M,Hispanic
+Jack Long,1968-09-13,Human Resources,HR Generalist,2023-12-24,2024-12-27,80700.0,Retired,6,15.0,M,White
+Sara Mendoza,1998-06-27,Human Resources,HR Coordinator,2021-07-21,2025-04-27,72900.0,Terminated,6,16.9,F,Black
 Brandon Miller,1998-08-09,Human Resources,HR Coordinator,2023-12-19,2025-06-12,68000.0,Resigned,7,14.8,M,White
 Madison Robinson,1997-11-05,Human Resources,HR Coordinator,2019-11-19,2021-08-11,76000.0,Resigned,3,22.4,F,White
-Daniel Robinson,1990-02-05,Human Resources,HR Coordinator,2018-10-25,2024-11-29,71600.0,Resigned,8,18.8,M,Black
+Daniel Robinson,1990-02-05,Human Resources,HR Coordinator,2018-10-25,2024-11-29,71600.0,Terminated,8,18.8,M,Black
 Russell Collins,1999-07-13,Human Resources,HR Coordinator,2024-04-07,2024-09-20,63200.0,Resigned,3,17.8,M,Black
