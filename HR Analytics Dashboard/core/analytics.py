@@ -23,11 +23,13 @@ TIME_SERIES_METRICS = [
     'Hires per Month',
     'Departures per Month',
     'Monthly Turnover Rate (%)',
+    'Monthly Attrition (Voluntary Leavers) Rate (%)',
 ]
 
 SNAPSHOT_METRICS = [
     'Employee Count',
     'Overall Turnover Rate (%)',
+    'Attrition (Voluntary Leavers) Rate (%)',
     'Average Salary ($)',
     'Average Tenure (yrs)',
     'Average Age',
@@ -48,6 +50,10 @@ _COL_MAP = {
 
 GRANULARITIES = ['Weekly', 'Monthly', 'Quarterly', 'Yearly']
 
+# Attrition only counts employees who chose to leave (voluntary exits).
+# Overall turnover also includes terminations.
+ATTRITION_STATUSES = ['Resigned', 'Retired']
+
 _FREQ_MAP = {
     'Weekly':    'W',
     'Monthly':   'ME',
@@ -62,6 +68,7 @@ KPI_OPTIONS = [
     'Total Employees',
     'Active Employees',
     'Overall Turnover Rate (%)',
+    'Attrition (Voluntary Leavers) Rate (%)',
     'Avg Tenure (yrs)',
     'Avg Salary ($)',
     'Average Age',
@@ -76,6 +83,7 @@ DEFAULT_KPIS = [
     'Total Employees',
     'Active Employees',
     'Overall Turnover Rate (%)',
+    'Attrition (Voluntary Leavers) Rate (%)',
     'Avg Tenure (yrs)',
     'Avg Salary ($)',
 ]
@@ -106,6 +114,11 @@ _MAX_VERTICAL_BARS  = 6   # above this, switch to horizontal bars for readabilit
 DRILL_CASCADE = ['Department', 'Job Role', 'Status', 'Sex', 'Ethnicity', 'Age Group']
 
 
+def _attrition_flag(df: pd.DataFrame) -> pd.Series:
+    # True for employees who left voluntarily (resigned or retired).
+    return df['Status'].isin(ATTRITION_STATUSES)
+
+
 def kpi_value(df: pd.DataFrame, metric: str) -> str:
     # Return formatted display string for a KPI on a dashboard card.
     if df is None or len(df) == 0:
@@ -121,6 +134,8 @@ def kpi_value(df: pd.DataFrame, metric: str) -> str:
         return f'{int((df["Status"] == "Resigned").sum()):,}'
     if metric == 'Overall Turnover Rate (%)':
         return f'{df["Turnover"].mean() * 100:.1f}%'
+    if metric == 'Attrition (Voluntary Leavers) Rate (%)':
+        return f'{_attrition_flag(df).mean() * 100:.1f}%'
     if metric == 'Avg Tenure (yrs)':
         v = df['Tenure_Years'].mean()
         return f'{v:.1f}' if pd.notna(v) else '—'
@@ -156,6 +171,8 @@ def kpi_relevant_employees(df: pd.DataFrame, metric: str) -> pd.DataFrame:
         return df[df['Status'] == 'Resigned']
     if metric == 'Overall Turnover Rate (%)':
         return df[df['Turnover'] == True]
+    if metric == 'Attrition (Voluntary Leavers) Rate (%)':
+        return df[_attrition_flag(df)]
     return df
 
 
@@ -181,6 +198,8 @@ def kpi_breakdown(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
         ).rename('Value')
     if metric == 'Overall Turnover Rate (%)':
         return (df.groupby(col)['Turnover'].mean() * 100).round(1).rename('Value')
+    if metric == 'Attrition (Voluntary Leavers) Rate (%)':
+        return (_attrition_flag(df).groupby(df[col]).mean() * 100).round(1).rename('Value')
     if metric == 'Avg Tenure (yrs)':
         return df.groupby(col)['Tenure_Years'].mean().round(1).rename('Value')
     if metric == 'Avg Salary ($)':
@@ -253,6 +272,7 @@ def turnover_by_dept(df: pd.DataFrame) -> pd.Series:
 COMPARISON_METRICS = [
     'Employee Count',
     'Overall Turnover Rate (%)',
+    'Attrition (Voluntary Leavers) Rate (%)',
     'Average Salary ($)',
     'Average Tenure (yrs)',
     'Average Age',
@@ -273,6 +293,8 @@ def dept_comparison(df: pd.DataFrame, departments: list, metric: str) -> pd.Seri
             result[dept] = float(len(sub))
         elif metric == 'Overall Turnover Rate (%)':
             result[dept] = round(float(sub['Turnover'].mean() * 100), 1)
+        elif metric == 'Attrition (Voluntary Leavers) Rate (%)':
+            result[dept] = round(float(_attrition_flag(sub).mean() * 100), 1)
         elif metric == 'Average Salary ($)':
             result[dept] = round(float(sub['Salary'].mean()), 0)
         elif metric == 'Average Tenure (yrs)':
@@ -341,6 +363,12 @@ def time_series_data(
         mask = sub['End_Date'] >= start_date
         counts = sub[mask].set_index('End_Date').resample(freq)['Name'].count()
         raw = (counts / total * 100).round(2)
+    elif metric == 'Monthly Attrition (Voluntary Leavers) Rate (%)':
+        total = max(len(df), 1)
+        sub = df[df['End_Date'].notna() & _attrition_flag(df)]
+        mask = sub['End_Date'] >= start_date
+        counts = sub[mask].set_index('End_Date').resample(freq)['Name'].count()
+        raw = (counts / total * 100).round(2)
     else:
         return pd.Series(dtype=float)
 
@@ -356,6 +384,8 @@ def snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
         return df.groupby(col).size().rename('Value')
     elif metric == 'Overall Turnover Rate (%)':
         return (df.groupby(col)['Turnover'].mean() * 100).round(1).rename('Value')
+    elif metric == 'Attrition (Voluntary Leavers) Rate (%)':
+        return (_attrition_flag(df).groupby(df[col]).mean() * 100).round(1).rename('Value')
     elif metric == 'Average Salary ($)':
         return df.groupby(col)['Salary'].mean().round(0).rename('Value')
     elif metric == 'Average Tenure (yrs)':

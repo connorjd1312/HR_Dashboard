@@ -122,27 +122,27 @@ Roy Powell,1974-11-28,Operations,Systems Administrator,2024-03-25,2025-12-27,102
 Betty Cole,1993-05-15,Operations,IT Support Specialist,2022-06-07,2025-09-04,85500.0,Resigned,9,13.3,F,White
 Brenda Cox,1979-11-13,Operations,Operations Manager,2019-09-15,2024-09-24,93900.0,Resigned,5,15.7,F,Hispanic
 Zachary Garcia,1980-10-02,Operations,IT Manager,2021-01-14,2022-08-31,100400.0,Resigned,3,19.3,M,White
-Amanda Jenkins,1985-09-26,Operations,IT Manager,2022-12-16,2025-06-05,114200.0,Resigned,9,10.8,F,Hispanic
+Amanda Jenkins,1985-09-26,Operations,IT Manager,2022-12-16,2025-06-05,114200.0,Terminated,9,10.8,F,Hispanic
 Richard Russell,1993-06-08,Operations,Operations Analyst,2023-12-14,2024-05-08,78000.0,Resigned,9,12.4,M,Hispanic
 Emily Wilson,1974-04-09,Operations,Director of Operations,2022-04-13,2024-01-09,121100.0,Resigned,13,9.5,F,White
-Carolyn Moreno,1979-03-22,Operations,IT Support Specialist,2020-02-15,2021-10-23,78300.0,Resigned,14,12.1,F,White
-Charlotte Wallace,1991-04-16,Operations,Operations Manager,2019-06-28,2024-05-11,101900.0,Resigned,8,14.3,F,Asian
+Carolyn Moreno,1979-03-22,Operations,IT Support Specialist,2020-02-15,2021-10-23,78300.0,Terminated,14,12.1,F,White
+Charlotte Wallace,1991-04-16,Operations,Operations Manager,2019-06-28,2024-05-11,101900.0,Terminated,8,14.3,F,Asian
 Alice Hamilton,1996-02-03,Operations,Operations Analyst,2022-08-12,2025-06-01,80900.0,Resigned,9,9.2,F,White
-Carl Butler,1993-02-18,Operations,IT Manager,2023-10-17,2024-11-05,113300.0,Resigned,3,12.2,M,White
+Carl Butler,1993-02-18,Operations,IT Manager,2023-10-17,2024-11-05,113300.0,Terminated,3,12.2,M,White
 Brian Sanchez,1998-06-05,Operations,Operations Coordinator,2024-02-26,2025-03-06,63400.0,Resigned,1,16.0,M,White
-Judy Myers,1986-09-21,Operations,IT Support Specialist,2018-10-08,2021-03-10,92800.0,Resigned,10,18.3,F,Asian
+Judy Myers,1986-09-21,Operations,IT Support Specialist,2018-10-08,2021-03-10,92800.0,Terminated,10,18.3,F,Asian
 Julie Castillo,2002-05-28,Operations,Operations Coordinator,2024-05-16,2025-12-11,66400.0,Resigned,13,11.4,F,White
 Betty Sullivan,1995-07-26,Operations,Operations Analyst,2022-12-09,2025-12-27,71100.0,Resigned,7,15.1,F,Asian
 Jacob Jackson,2000-07-21,Operations,Operations Analyst,2022-12-20,2023-11-27,74700.0,Resigned,9,12.2,M,White
 Martha Mendoza,1988-12-19,Operations,Operations Manager,2021-12-24,2022-07-22,99600.0,Resigned,4,11.0,F,White
-Russell Walker,1976-07-09,Operations,Operations Manager,2019-08-11,2022-10-12,102100.0,Resigned,7,12.6,M,Black
+Russell Walker,1976-07-09,Operations,Operations Manager,2019-08-11,2022-10-12,102100.0,Terminated,7,12.6,M,Black
 Alexis Ruiz,1967-11-05,Operations,Systems Administrator,2022-04-27,2024-01-22,99200.0,Resigned,12,13.3,F,White
 Robert Medina,1985-09-05,Operations,IT Support Specialist,2023-11-07,2024-06-16,79200.0,Resigned,11,12.9,M,White
-Aisha Alvarez,1969-05-15,Operations,Systems Administrator,2019-11-25,2023-12-29,107600.0,Resigned,7,15.7,F,Asian
+Aisha Alvarez,1969-05-15,Operations,Systems Administrator,2019-11-25,2023-12-29,107600.0,Retired,7,15.7,F,Asian
 Doris Reed,1981-11-27,Operations,Systems Administrator,2022-06-11,2025-01-10,84700.0,Resigned,8,16.9,F,Black
-Jose Nelson,1995-08-01,Operations,Operations Analyst,2021-11-04,2024-08-12,83400.0,Resigned,11,7.6,M,Hispanic
+Jose Nelson,1995-08-01,Operations,Operations Analyst,2021-11-04,2024-08-12,83400.0,Terminated,11,7.6,M,Hispanic
 William Young,1991-10-27,Operations,IT Support Specialist,2025-06-23,,73600.0,On Leave,15,8.1,M,Black
-Kayla Taylor,1980-09-01,Operations,Director of Operations,2023-12-19,2025-12-31,100100.0,Resigned,10,12.2,F,White
+Kayla Taylor,1980-09-01,Operations,Director of Operations,2023-12-19,2025-12-31,100100.0,Terminated,10,12.2,F,White
 Betty Castillo,1993-08-07,Operations,Operations Coordinator,2021-05-03,,70600.0,On Leave,15,5.0,F,White
 Gary Turner,1993-01-04,Operations,Operations Analyst,2019-02-09,2024-03-28,84800.0,Resigned,11,13.3,M,White
 Victoria Herrera,1989-11-14,Operations,Operations Manager,2019-10-12,2020-12-29,104900.0,Resigned,9,9.6,F,White
@@ -151,14 +151,14 @@ Barbara Mendoza,1986-10-22,Operations,Operations Manager,2021-10-20,2023-05-15,1
 Amber Robinson,1981-11-02,Operations,Operations Manager,2023-04-10,2023-10-28,98100.0,Resigned,9,10.1,F,Hispanic
 Cheryl Brooks,1997-01-14,Operations,Operations Analyst,2020-06-18,2023-04-24,84700.0,Resigned,7,15.8,F,Asian
 Frank Young,1998-12-03,Operations,Operations Coordinator,2022-04-25,2022-12-22,72400.0,Resigned,11,15.5,M,White
-Joseph Chavez,1994-12-13,Operations,Operations Coordinator,2020-06-14,2021-08-29,73100.0,Resigned,11,13.5,M,Black
+Joseph Chavez,1994-12-13,Operations,Operations Coordinator,2020-06-14,2021-08-29,73100.0,Terminated,11,13.5,M,Black
 Scott Bryant,1992-02-04,Operations,IT Support Specialist,2023-06-27,2025-04-06,79400.0,Resigned,9,10.5,M,Black
 William Hamilton,1977-08-20,Operations,IT Manager,2019-07-26,2020-03-09,107800.0,Resigned,9,12.7,M,Hispanic
 Lauren Gonzales,1985-03-12,Operations,Operations Manager,2022-01-11,2022-05-12,116900.0,Resigned,2,13.8,F,Asian
-Helen Ross,1990-10-27,Operations,Operations Manager,2023-05-26,2026-02-16,96800.0,Resigned,6,11.6,F,White
+Helen Ross,1990-10-27,Operations,Operations Manager,2023-05-26,2026-02-16,96800.0,Terminated,6,11.6,F,White
 Bobby Smith,1990-06-10,Operations,Operations Coordinator,2019-03-24,2022-06-08,78000.0,Resigned,10,13.2,M,Asian
 Kyle Gray,1984-02-12,Operations,Systems Administrator,2019-05-13,2025-12-06,99500.0,Resigned,6,15.1,M,Black
-Frances Castillo,1990-04-07,Operations,Operations Analyst,2020-12-13,2023-03-15,73700.0,Resigned,9,16.8,F,White
+Frances Castillo,1990-04-07,Operations,Operations Analyst,2020-12-13,2023-03-15,73700.0,Terminated,9,16.8,F,White
 Michelle Clark,1993-06-26,Operations,Operations Analyst,2020-08-19,2023-03-16,86200.0,Resigned,3,13.2,F,Hispanic
 Tyler James,1983-08-28,Operations,IT Manager,2019-08-06,2026-03-03,117200.0,Resigned,9,15.3,M,White
 Theresa Herrera,1991-06-08,Operations,Operations Manager,2021-07-22,,107500.0,On Leave,18,8.4,F,White
@@ -167,15 +167,15 @@ Aisha Smith,1992-06-02,Operations,IT Support Specialist,2022-06-05,2022-11-24,83
 Brandon Carter,1981-01-17,Operations,Operations Manager,2022-08-15,2026-02-09,110300.0,Resigned,10,13.0,M,Asian
 Julie Adams,1990-09-02,Operations,IT Support Specialist,2023-11-19,2024-06-25,83000.0,Resigned,7,15.8,F,Hispanic
 Jack Cox,1980-01-28,Operations,Systems Administrator,2019-03-27,2022-05-05,97700.0,Resigned,7,11.3,M,White
-Barbara Stevens,1982-11-19,Operations,COO,2018-01-11,2024-05-14,148900.0,Resigned,11,12.4,F,White
+Barbara Stevens,1982-11-19,Operations,COO,2018-01-11,2024-05-14,148900.0,Terminated,11,12.4,F,White
 Steven James,1983-04-01,Operations,IT Support Specialist,2023-04-17,2025-09-05,85300.0,Resigned,6,13.2,M,White
 Janice Allen,1986-05-16,Operations,IT Support Specialist,2023-02-28,,90200.0,On Leave,4,5.5,F,White
 Albert Cox,1997-01-05,Operations,Operations Analyst,2021-08-13,2023-03-27,78200.0,Resigned,7,8.7,M,White
-Scott Foster,1996-02-18,Operations,Operations Coordinator,2019-08-08,2021-06-22,71500.0,Resigned,6,16.0,M,Hispanic
+Scott Foster,1996-02-18,Operations,Operations Coordinator,2019-08-08,2021-06-22,71500.0,Terminated,6,16.0,M,Hispanic
 Alexis Morgan,1971-01-13,Operations,Systems Administrator,2019-05-26,2022-07-09,87700.0,Resigned,11,16.9,F,Black
 Jeffrey Reed,2001-04-25,Operations,Operations Coordinator,2024-05-03,2024-10-16,74800.0,Resigned,13,14.2,M,White
 Ryan Green,2002-08-28,Operations,Operations Analyst,2025-06-03,,68000.0,On Leave,12,6.1,M,White
-Jerry Griffin,1988-08-17,Operations,Operations Coordinator,2018-12-09,2019-05-07,75900.0,Resigned,11,16.2,M,White
+Jerry Griffin,1988-08-17,Operations,Operations Coordinator,2018-12-09,2019-05-07,75900.0,Terminated,11,16.2,M,White
 Katherine Cole,1985-08-24,Operations,Systems Administrator,2021-03-25,2022-08-22,85500.0,Resigned,11,21.2,F,White
 Joe Reynolds,1996-04-20,Operations,Operations Coordinator,2021-11-19,2023-05-01,60500.0,Resigned,15,12.4,M,Black
 Heather Jones,1994-08-12,Operations,Operations Analyst,2022-05-03,2022-11-12,76600.0,Resigned,7,9.9,F,White
@@ -183,12 +183,12 @@ Gary Henderson,1994-01-15,Operations,Operations Manager,2022-08-01,,109200.0,On 
 Jonathan Ward,1994-06-28,Operations,Operations Analyst,2021-01-06,2023-06-18,80700.0,Resigned,6,12.5,M,Hispanic
 Julie Patel,1996-12-04,Operations,Operations Analyst,2024-10-06,2025-07-25,74000.0,Resigned,10,9.6,F,White
 Jonathan Stevens,1989-04-26,Operations,IT Support Specialist,2021-07-23,2025-06-06,95200.0,Resigned,9,15.9,M,Black
-Christina White,2001-04-09,Operations,Operations Analyst,2024-11-26,2025-09-07,81800.0,Resigned,12,9.9,F,Hispanic
-Cynthia Gray,1990-02-23,Operations,IT Support Specialist,2022-09-21,2023-08-26,83200.0,Resigned,7,14.9,F,Black
+Christina White,2001-04-09,Operations,Operations Analyst,2024-11-26,2025-09-07,81800.0,Terminated,12,9.9,F,Hispanic
+Cynthia Gray,1990-02-23,Operations,IT Support Specialist,2022-09-21,2023-08-26,83200.0,Terminated,7,14.9,F,Black
 Tyler Chavez,1981-01-04,Operations,IT Support Specialist,2023-04-12,2024-10-09,81100.0,Resigned,9,7.7,M,White
 Matthew Coleman,1989-06-11,Operations,IT Support Specialist,2021-03-16,2026-01-16,89300.0,Resigned,8,19.2,M,White
 Sandra Anderson,1991-07-03,Operations,Operations Coordinator,2018-01-22,2024-10-14,77500.0,Resigned,4,15.9,F,Black
-Christopher Scott,1983-01-02,Operations,Director of Operations,2025-12-20,2026-03-14,106400.0,Resigned,4,11.4,M,White
+Christopher Scott,1983-01-02,Operations,Director of Operations,2025-12-20,2026-03-14,106400.0,Terminated,4,11.4,M,White
 Fred Henderson,1990-11-07,Operations,IT Support Specialist,2024-10-02,2025-04-15,78800.0,Resigned,5,6.5,M,Mixed
 Patrick Gray,1995-10-05,Operations,Operations Manager,2025-04-21,2025-06-30,97200.0,Resigned,4,11.3,M,Asian
 Judith Russell,1997-01-05,Operations,Operations Coordinator,2022-07-27,2024-03-14,74200.0,Resigned,9,9.1,F,White
@@ -204,15 +204,15 @@ Kyle Jordan,1995-06-18,Operations,Operations Coordinator,2019-06-13,2021-05-29,7
 Hannah Nguyen,1978-11-09,Operations,Systems Administrator,2018-07-08,2019-02-14,95900.0,Resigned,5,19.1,F,Black
 Ronald Perez,1995-04-23,Operations,Operations Coordinator,2024-11-23,2025-02-23,72000.0,Resigned,9,11.8,M,White
 Gloria Cole,2000-07-22,Operations,Operations Analyst,2023-01-18,2025-01-17,74300.0,Resigned,12,13.3,F,White
-Robert Foster,1993-09-04,Operations,IT Manager,2022-02-22,2022-07-29,112100.0,Resigned,14,16.6,M,White
+Robert Foster,1993-09-04,Operations,IT Manager,2022-02-22,2022-07-29,112100.0,Terminated,14,16.6,M,White
 Steven King,1996-03-24,Operations,Operations Analyst,2018-07-01,2021-09-27,82700.0,Resigned,11,14.7,M,Black
 Terry Robinson,1967-03-28,Operations,COO,2020-08-11,,115900.0,On Leave,6,6.7,M,White
 Ann Cole,1987-01-08,Operations,Operations Manager,2024-07-20,,93400.0,On Leave,5,7.9,F,White
-Janice Moreno,1988-05-10,Operations,Operations Coordinator,2018-02-14,2024-10-16,80300.0,Resigned,5,13.5,F,White
+Janice Moreno,1988-05-10,Operations,Operations Coordinator,2018-02-14,2024-10-16,80300.0,Terminated,5,13.5,F,White
 Keith King,2002-06-01,Operations,Operations Analyst,2025-12-06,2026-03-02,80000.0,Resigned,4,12.4,M,Mixed
-Christine Adams,1980-03-23,Operations,Operations Manager,2019-12-25,2021-12-20,115600.0,Resigned,13,13.4,F,White
+Christine Adams,1980-03-23,Operations,Operations Manager,2019-12-25,2021-12-20,115600.0,Terminated,13,13.4,F,White
 Scott Rogers,1996-12-02,Operations,Operations Analyst,2022-08-21,2024-09-15,77200.0,Resigned,9,20.5,M,White
-Sandra Hughes,1985-06-17,Operations,Operations Manager,2023-01-25,2024-03-22,90300.0,Resigned,7,13.5,F,Hispanic
+Sandra Hughes,1985-06-17,Operations,Operations Manager,2023-01-25,2024-03-22,90300.0,Terminated,7,13.5,F,Hispanic
 Brandon King,1997-06-23,Operations,Operations Coordinator,2022-02-26,2026-03-14,71200.0,Resigned,4,9.7,M,White
 Katherine Hamilton,1993-02-22,Operations,IT Support Specialist,2023-06-19,2024-11-19,93600.0,Resigned,15,12.1,F,White
 Emily Hamilton,1985-11-04,Operations,IT Manager,2023-06-15,2024-09-15,117800.0,Resigned,9,14.3,F,White
@@ -222,16 +222,16 @@ Raymond Bell,1981-04-17,Operations,Director of Operations,2023-08-04,2024-02-29,
 Tyler Clark,1982-04-19,Operations,Systems Administrator,2025-09-28,2026-02-17,87500.0,Resigned,11,13.0,M,Hispanic
 Philip Brooks,1985-08-22,Operations,Operations Manager,2023-10-19,2024-01-31,99600.0,Resigned,4,10.7,M,White
 Judy Castillo,1999-05-25,Operations,Operations Analyst,2024-12-14,2026-03-28,76500.0,Resigned,9,10.1,F,White
-Roger Hughes,1968-12-28,Operations,Director of Operations,2023-09-07,2025-01-18,109300.0,Resigned,4,8.7,M,Hispanic
-Henry Jackson,1978-05-27,Operations,IT Support Specialist,2022-04-22,2024-03-09,95200.0,Resigned,7,10.4,M,Asian
+Roger Hughes,1968-12-28,Operations,Director of Operations,2023-09-07,2025-01-18,109300.0,Retired,4,8.7,M,Hispanic
+Henry Jackson,1978-05-27,Operations,IT Support Specialist,2022-04-22,2024-03-09,95200.0,Terminated,7,10.4,M,Asian
 Fred West,1980-02-22,Operations,IT Support Specialist,2020-08-21,2024-01-28,84000.0,Resigned,9,16.8,M,White
 Arthur Mendoza,1994-04-14,Operations,Operations Analyst,2019-04-07,2026-03-15,75000.0,Resigned,16,12.4,M,Hispanic
-Tyler Bennett,1991-04-11,Operations,Operations Analyst,2020-03-27,2023-05-06,89700.0,Resigned,8,12.1,M,White
+Tyler Bennett,1991-04-11,Operations,Operations Analyst,2020-03-27,2023-05-06,89700.0,Terminated,8,12.1,M,White
 Andrea Martin,1992-01-19,Operations,Operations Analyst,2019-03-08,2023-05-08,81700.0,Resigned,8,16.7,F,White
-Brandon White,1985-08-22,Operations,Director of Operations,2024-02-18,2025-06-06,123300.0,Resigned,10,10.2,M,White
+Brandon White,1985-08-22,Operations,Director of Operations,2024-02-18,2025-06-06,123300.0,Terminated,10,10.2,M,White
 Marie Miller,1987-05-14,Operations,IT Support Specialist,2024-09-21,2025-05-04,84400.0,Resigned,10,6.6,F,White
 Christine Romero,1993-08-25,Operations,Operations Coordinator,2022-03-14,2023-02-17,66200.0,Resigned,2,17.2,F,White
-Beverly Gonzales,1990-03-23,Operations,Operations Coordinator,2020-12-20,2025-10-25,72700.0,Resigned,14,12.1,F,Mixed
+Beverly Gonzales,1990-03-23,Operations,Operations Coordinator,2020-12-20,2025-10-25,72700.0,Terminated,14,12.1,F,Mixed
 Danielle Mitchell,1995-06-11,Operations,Operations Coordinator,2024-10-01,2026-03-25,76300.0,Resigned,9,12.7,F,White
 Barbara Anderson,1998-05-10,Operations,Operations Analyst,2023-06-22,2024-09-15,76000.0,Resigned,9,9.3,F,Asian
 Ryan Jackson,1990-10-13,Operations,Operations Manager,2023-11-08,2025-05-12,101900.0,Resigned,11,15.4,M,White
@@ -239,11 +239,11 @@ Emily Cook,1973-12-09,Operations,Systems Administrator,2022-01-18,2022-07-07,968
 Albert Nguyen,1998-03-06,Operations,Operations Coordinator,2023-09-15,2025-06-26,65700.0,Resigned,6,19.1,M,White
 Victoria Foster,1985-03-24,Operations,IT Support Specialist,2023-05-09,2025-12-31,92300.0,Resigned,3,14.4,F,Hispanic
 Julia Peterson,1986-03-12,Operations,IT Manager,2024-05-15,2025-10-09,100600.0,Resigned,9,6.5,F,White
-Henry Gray,1976-01-14,Operations,IT Support Specialist,2018-12-23,2026-01-13,82900.0,Resigned,8,16.1,M,White
+Henry Gray,1976-01-14,Operations,IT Support Specialist,2018-12-23,2026-01-13,82900.0,Terminated,8,16.1,M,White
 Ryan Nguyen,1992-12-21,Operations,IT Manager,2022-01-26,2024-12-30,109600.0,Resigned,13,13.2,M,White
 Tyler Williams,1992-12-27,Operations,Operations Manager,2022-06-13,2024-09-03,105900.0,Resigned,7,15.6,M,Asian
-Phillip Reed,1996-04-12,Operations,Operations Coordinator,2023-04-04,2023-11-25,67000.0,Resigned,13,8.8,M,White
+Phillip Reed,1996-04-12,Operations,Operations Coordinator,2023-04-04,2023-11-25,67000.0,Terminated,13,8.8,M,White
 Billy Walker,1977-12-22,Operations,IT Support Specialist,2021-01-17,2026-02-06,87200.0,Resigned,11,12.2,M,White
-Ethan Ward,1997-04-14,Operations,Operations Coordinator,2022-02-24,2024-08-16,69700.0,Resigned,9,11.7,M,Asian
-Daniel Rodriguez,1966-01-02,Operations,Director of Operations,2019-01-11,2019-09-24,134400.0,Resigned,13,12.0,M,White
+Ethan Ward,1997-04-14,Operations,Operations Coordinator,2022-02-24,2024-08-16,69700.0,Terminated,9,11.7,M,Asian
+Daniel Rodriguez,1966-01-02,Operations,Director of Operations,2019-01-11,2019-09-24,134400.0,Retired,13,12.0,M,White
 George Murphy,1986-01-03,Operations,Operations Manager,2019-11-10,2021-12-14,95600.0,Resigned,4,11.9,M,Hispanic

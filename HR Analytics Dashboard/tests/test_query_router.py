@@ -122,7 +122,8 @@ def test_execute_general_summary_has_expected_keys():
     df = _sample_df()
     result = query_router.execute(query_router.RouterResult('general_summary', {}), df)
     assert set(result.keys()) == {
-        'total_employees', 'active_employees', 'turnover_rate', 'avg_tenure_years', 'avg_salary',
+        'total_employees', 'active_employees', 'turnover_rate', 'attrition_rate',
+        'avg_tenure_years', 'avg_salary',
     }
 
 
