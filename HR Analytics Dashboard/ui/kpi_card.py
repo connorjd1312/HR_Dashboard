@@ -30,11 +30,11 @@ class KPICard(QFrame):
         top.setSpacing(6)
 
         self._label = QLabel(metric)
+        self._label.setWordWrap(True)
         self._label.setStyleSheet(
             'color: white; font-size: 11px; font-family: Arial; background: transparent;'
         )
-        top.addWidget(self._label)
-        top.addStretch()
+        top.addWidget(self._label, 1)
 
         rm = QPushButton('✕')
         rm.setFixedSize(20, 20)

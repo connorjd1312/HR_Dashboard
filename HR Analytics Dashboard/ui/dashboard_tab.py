@@ -476,11 +476,11 @@ class DashboardTab(QWidget):
             table_df = analytics.kpi_relevant_employees(df, metric)
 
             count_metrics = {
-                'Active Employees':          'active employees',
-                'On Leave Count':            'employees on leave',
-                'Resigned Count':            'resigned employees',
-                'Overall Turnover Rate (%)': 'employees who have left',
-                'Attrition Rate (%)':        'employees who left voluntarily',
+                'Active Employees':                       'active employees',
+                'On Leave Count':                         'employees on leave',
+                'Resigned Count':                         'resigned employees',
+                'Overall Turnover Rate (%)':              'employees who have left',
+                'Attrition (Voluntary Leavers) Rate (%)': 'employees who left voluntarily',
             }
             descriptor = count_metrics.get(metric, 'employees')
             note = QLabel(f'Showing {len(table_df)} {descriptor}')
