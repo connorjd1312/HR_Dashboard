@@ -5,6 +5,10 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import pyqtSignal, QDate
 
 
+# Default start of the Hire Date filter when data is first loaded or reset
+DEFAULT_HIRE_FROM = QDate(2025, 1, 1)
+
+
 class FilterPanel(QWidget):
     filters_changed = pyqtSignal(dict)
 
@@ -95,7 +99,7 @@ class FilterPanel(QWidget):
         cl.addSpacing(4)
 
         cl.addWidget(self._field_label('Hire Date From'))
-        self.date_from = QDateEdit(QDate(2015, 1, 1))
+        self.date_from = QDateEdit(DEFAULT_HIRE_FROM)
         self.date_from.setCalendarPopup(True)
         self.date_from.setStyleSheet(self._date_style())
         cl.addWidget(self.date_from)
@@ -129,7 +133,7 @@ class FilterPanel(QWidget):
             QPushButton:hover   { background-color: #2E75B6; }
             QPushButton:pressed { background-color: #163060; }
         ''')
-        apply_btn.clicked.connect(self._emit)
+        apply_btn.clicked.connect(self.emit_filters)
 
         reset_btn = QPushButton('Reset Filters')
         reset_btn.setFixedHeight(34)
@@ -190,11 +194,11 @@ class FilterPanel(QWidget):
         self.sex_combo.setCurrentIndex(0)
         self.ethnicity_combo.setCurrentIndex(0)
         self.age_group_combo.setCurrentIndex(0)
-        self.date_from.setDate(QDate(2015, 1, 1))
+        self.date_from.setDate(DEFAULT_HIRE_FROM)
         self.date_to.setDate(QDate.currentDate())
-        self._emit()
+        self.emit_filters()
 
-    def _emit(self):
+    def emit_filters(self):
         self.filters_changed.emit({
             'department': self.dept_combo.currentText(),
             'job_role':   self.role_combo.currentText(),
