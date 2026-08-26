@@ -307,6 +307,7 @@ class MainWindow(QMainWindow):
             if self.stack.currentIndex() == 0:
                 self.stack.setCurrentIndex(1)
 
+            self._set_period(None, pd.Timestamp.today())
             self._refresh_all(self._df_full)
 
             action = 'Added' if (append and self._file_count > len(paths)) else 'Loaded'
@@ -476,8 +477,16 @@ class MainWindow(QMainWindow):
             (df['Hire_Date'].dt.date <= f['date_to'])
         ]
 
+        self._set_period(f['date_from'], f['date_to'])
         self._refresh_all(df)
         self.statusBar().showMessage(f'Showing {len(df)} records')
+
+    def _set_period(self, date_from, date_to):
+        # Show the hire-date range on the dashboard. The start is clamped to the
+        # earliest hire in the data so the banner never claims a range we don't have.
+        earliest = self._df_full['Hire_Date'].min()
+        start = earliest if date_from is None else max(pd.Timestamp(date_from), earliest)
+        self.dashboard_tab.set_period(start, pd.Timestamp(date_to))
 
     def _on_tab_changed(self, index):
         # Show sidebar on Dashboard tab, hide it on Analytics/Forecasting tabs —

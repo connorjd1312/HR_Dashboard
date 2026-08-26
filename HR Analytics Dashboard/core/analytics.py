@@ -114,6 +114,17 @@ _MAX_VERTICAL_BARS  = 6   # above this, switch to horizontal bars for readabilit
 DRILL_CASCADE = ['Department', 'Job Role', 'Status', 'Sex', 'Ethnicity', 'Age Group']
 
 
+def format_date(d) -> str:
+    # Human-readable date, e.g. '9 Oct 2026'.
+    d = pd.Timestamp(d)
+    return f'{d.day} {d:%b %Y}'
+
+
+def format_period(start, end) -> str:
+    # Human-readable date range, e.g. '1 Jan 2015 – 9 Oct 2026'.
+    return f'{format_date(start)} – {format_date(end)}'
+
+
 def _attrition_flag(df: pd.DataFrame) -> pd.Series:
     # True for employees who left voluntarily (resigned or retired).
     return df['Status'].isin(ATTRITION_STATUSES)

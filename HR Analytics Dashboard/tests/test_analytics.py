@@ -140,3 +140,9 @@ class TestAttritionRate:
         )
         # Jan: 1 resigned, Feb: 1 resigned + 1 retired, Mar: termination only.
         assert list(series) == [12.5, 25.0, 0.0]
+
+
+# ── Period formatting ─────────────────────────────────────────────────────
+
+def test_format_period():
+    assert analytics.format_period('2015-01-01', '2026-10-09') == '1 Jan 2015 – 9 Oct 2026'

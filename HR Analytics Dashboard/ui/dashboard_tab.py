@@ -85,6 +85,7 @@ class DashboardTab(QWidget):
         self._kpi_metrics: list[str] = list(analytics.DEFAULT_KPIS)
         self._chart_panels: list[ChartPanel] = []
         self._multi_mode: bool = False
+        self._period: tuple | None = None  # (start, end) of the hire-date filter
 
         # Drill-down state
         # KPI mode:   {'mode':'kpi',   'metric':str, 'focused_dim':str|None, 'removed_dims':set, 'show_charts':bool, 'show_table':bool}
@@ -101,6 +102,15 @@ class DashboardTab(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
+
+        # Time period banner — visible on both the dashboard and drill-down pages
+        self._period_label = QLabel()
+        self._period_label.setStyleSheet(
+            'background: #E8EEF7; color: #1F3864; font-size: 12px; font-family: Arial;'
+            'border-radius: 6px; padding: 6px 10px; margin: 8px 8px 0 8px;'
+        )
+        self._period_label.hide()
+        outer.addWidget(self._period_label)
 
         self._stack = QStackedWidget()
         outer.addWidget(self._stack)
@@ -162,8 +172,32 @@ class DashboardTab(QWidget):
     # Public API, called by MainWindow whenever the dataset changes
 
 
+    def set_period(self, start, end):
+        # Hire-date range currently applied; shown in the banner and under chart titles.
+        self._period = (start, end)
+        for panel in self._chart_panels:
+            panel.set_period_text(self._period_subtitle())
+
+    def _period_subtitle(self) -> str | None:
+        if not self._period:
+            return None
+        return f'Hired {analytics.format_period(*self._period)}'
+
+    def _refresh_period_label(self):
+        if not self._period or self._df is None:
+            self._period_label.hide()
+            return
+        today = pd.Timestamp.today()
+        self._period_label.setText(
+            f'<b>Time period:</b> employees hired {analytics.format_period(*self._period)}'
+            f'&nbsp;&nbsp;·&nbsp;&nbsp;{len(self._df):,} employees'
+            f'&nbsp;&nbsp;·&nbsp;&nbsp;figures as at {analytics.format_date(today)}'
+        )
+        self._period_label.show()
+
     def update_data(self, df: pd.DataFrame):
         self._df = df
+        self._refresh_period_label()
         self._refresh_kpi_row()
         for panel in self._chart_panels:
             panel.update_data(df)
@@ -243,6 +277,7 @@ class DashboardTab(QWidget):
             chart_type=chart_type,
         )
         panel.bar_clicked.connect(self._on_chart_bar_clicked)
+        panel.set_period_text(self._period_subtitle())
         if allow_close:
             panel.close_requested.connect(self._on_chart_closed)
         if self._df is not None:
