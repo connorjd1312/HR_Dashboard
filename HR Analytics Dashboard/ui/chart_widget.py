@@ -9,6 +9,17 @@ from matplotlib.figure import Figure
 from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout
 
 
+def set_title_with_period(ax, title, period=None, **title_kwargs):
+    # Chart title with an optional smaller grey line underneath showing the
+    # time period the chart covers.
+    title_kwargs.setdefault('fontsize', 11)
+    title_kwargs.setdefault('fontweight', 'bold')
+    ax.set_title(title, pad=20 if period else 6, **title_kwargs)
+    if period:
+        ax.text(0.5, 1.012, period, transform=ax.transAxes, ha='center',
+                va='bottom', fontsize=9, color='#555555')
+
+
 class ChartWidget(FigureCanvasQTAgg):
     def __init__(self, width=6, height=4, dpi=100, parent=None):
         # Create a Matplotlib figure at the given size and resolution

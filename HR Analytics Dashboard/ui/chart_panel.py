@@ -8,7 +8,7 @@ from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 
 from core import analytics
-from ui.chart_widget import ChartWithToolbar
+from ui.chart_widget import ChartWithToolbar, set_title_with_period
 
 _LABEL_STYLE = 'font-size: 11px; color: #555555; font-family: Arial;'
 
@@ -44,6 +44,7 @@ class ChartPanel(QFrame):
     ):
         super().__init__(parent)
         self._df = None
+        self._period_text: str | None = None
         self._allow_close = allow_close
         self._artist_to_label: dict = {}
         # Cache of Auto-resolved chart types keyed by (metric, dimension) so the
@@ -126,6 +127,10 @@ class ChartPanel(QFrame):
     def update_data(self, df):
         self._df = df
         self._refresh()
+
+    def set_period_text(self, text: str | None):
+        # Shown under the chart title; applied on the next redraw.
+        self._period_text = text
 
     def set_config(self, metric: str | None = None, dimension: str | None = None, chart_type: str | None = None):
         # Block signals so we don't trigger refresh three times
@@ -222,7 +227,8 @@ class ChartPanel(QFrame):
             ax.set_ylabel(metric)
             ax.tick_params(axis='x', rotation=20)
 
-        ax.set_title(f'{metric} by {dimension}{auto_label}', fontsize=11, fontweight='bold')
+        set_title_with_period(ax, f'{metric} by {dimension}{auto_label}',
+                              self._period_text)
         self.chart.refresh()
 
     # ── Click handling ────────────────────────────────────────────────────

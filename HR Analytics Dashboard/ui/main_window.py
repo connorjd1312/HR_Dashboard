@@ -307,7 +307,11 @@ class MainWindow(QMainWindow):
             if self.stack.currentIndex() == 0:
                 self.stack.setCurrentIndex(1)
 
-            self._refresh_all(self._df_full)
+            # Analytics and Forecasting use the full dataset; the dashboard
+            # starts with the sidebar's default filters applied.
+            self.analytics_tab.update_data(self._df_full)
+            self.forecasting_tab.update_data(self._df_full)
+            self.filter_panel.emit_filters()
 
             action = 'Added' if (append and self._file_count > len(paths)) else 'Loaded'
             self.statusBar().showMessage(
@@ -450,7 +454,8 @@ class MainWindow(QMainWindow):
 
 
     def _apply_filters(self, f: dict):
-        # Filter the full dataset and push the result to both tabs.
+        # Filter the full dataset and push the result to the dashboard. Analytics
+        # and Forecasting have their own filtering, so they keep the full dataset.
         df = self._df_full.copy()
 
         if f['department'] != 'All':
@@ -476,8 +481,15 @@ class MainWindow(QMainWindow):
             (df['Hire_Date'].dt.date <= f['date_to'])
         ]
 
-        self._refresh_all(df)
+        self._set_period(f['date_from'], f['date_to'])
+        self.dashboard_tab.update_data(df)
         self.statusBar().showMessage(f'Showing {len(df)} records')
+
+    def _set_period(self, date_from, date_to):
+        # Show the hire-date range on the dashboard. The start is clamped to the
+        # earliest hire in the data so the banner never claims a range we don't have.
+        start = max(pd.Timestamp(date_from), self._df_full['Hire_Date'].min())
+        self.dashboard_tab.set_period(start, pd.Timestamp(date_to))
 
     def _on_tab_changed(self, index):
         # Show sidebar on Dashboard tab, hide it on Analytics/Forecasting tabs —
@@ -491,9 +503,3 @@ class MainWindow(QMainWindow):
         else:
             self.filter_panel.hide()
             self.splitter.setSizes([0, 1280])
-
-    def _refresh_all(self, df):
-        # Push updated data to all tabs so they redraw charts and KPIs.
-        self.dashboard_tab.update_data(df)
-        self.analytics_tab.update_data(df)
-        self.forecasting_tab.update_data(df)

@@ -21,7 +21,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 
 from core import analytics
-from ui.chart_widget import ChartWithToolbar
+from ui.chart_widget import ChartWithToolbar, set_title_with_period
 from ui.series_dialog import SeriesDialog
 
 # ── Colour / style constants ──────────────────────────────────────────────────
@@ -177,6 +177,7 @@ class AnalyticsTab(QWidget):
         self._active_idx = -1
         self._left_visible = True
         self._hover_cid = None
+        self._show_period = False
 
         self._build_ui()
         self._add_new_chart()
@@ -609,7 +610,7 @@ class AnalyticsTab(QWidget):
         fig = self._main_widget.figure
         fig.clear()
 
-        self._draw_on_figure(fig, chart, self._df)
+        self._draw_on_figure(fig, chart, self._df, show_period=True)
 
         try:
             fig.tight_layout(pad=2.0)
@@ -629,8 +630,10 @@ class AnalyticsTab(QWidget):
 
         self._update_data_table()
 
-    def _draw_on_figure(self, fig, chart_dict, df):
-        # Draw all series in chart_dict onto fig.
+    def _draw_on_figure(self, fig, chart_dict, df, show_period=False):
+        # Draw all series in chart_dict onto fig. show_period adds the time
+        # period under each chart title (skipped on small thumbnails).
+        self._show_period = show_period
         series_list = chart_dict.get('series_list', [])
         if not series_list:
             return
@@ -691,12 +694,29 @@ class AnalyticsTab(QWidget):
         ax.tick_params(axis='x', rotation=30)
         ax.grid(axis='y', linestyle='--', alpha=0.35)
         ax.set_xlabel('Date', fontsize=9)
+        title = series_list[0]['label'] if len(series_list) == 1 else 'Series Comparison'
+        set_title_with_period(ax, title, self._time_period_text(series_list))
         if len(series_list) == 1:
-            ax.set_title(series_list[0]['label'], fontsize=11, fontweight='bold')
             ax.set_ylabel(series_list[0]['metric'], fontsize=9)
         else:
-            ax.set_title('Series Comparison', fontsize=11, fontweight='bold')
             ax.legend(fontsize=9, loc='best')
+
+    def _time_period_text(self, series_list):
+        # e.g. '1 Jan 2025 – 30 Jun 2026 · Monthly' across all time series on the chart.
+        if not self._show_period:
+            return None
+        start = min(pd.Timestamp(s['start_date']) for s in series_list)
+        end = max(pd.Timestamp(s['end_date']) for s in series_list)
+        text = analytics.format_period(start, end)
+        grans = {s.get('granularity', 'Monthly') for s in series_list}
+        if len(grans) == 1:
+            text += f'  ·  {grans.pop()}'
+        return text
+
+    def _snapshot_period_text(self):
+        if not self._show_period:
+            return None
+        return f'Current snapshot as at {analytics.format_date(pd.Timestamp.today())}'
 
     # ── Snapshot rendering ────────────────────────────────────────────────────
 
@@ -717,7 +737,7 @@ class AnalyticsTab(QWidget):
     def _draw_snapshot_single(self, ax, s, df):
         data = self._series_data(s, df)
         if data is None or data.empty:
-            ax.set_title(s['label'], fontsize=11, fontweight='bold')
+            set_title_with_period(ax, s['label'], self._snapshot_period_text())
             return
 
         style = s.get('style', 'Vertical Bar')
@@ -743,7 +763,7 @@ class AnalyticsTab(QWidget):
             ax.set_ylabel(s['metric'], fontsize=9)
             ax.tick_params(axis='x', rotation=20)
 
-        ax.set_title(s['label'], fontsize=11, fontweight='bold')
+        set_title_with_period(ax, s['label'], self._snapshot_period_text())
         if style not in ('Pie',):
             ax.grid(axis='x' if style == 'Horizontal Bar' else 'y',
                     linestyle='--', alpha=0.35)
@@ -770,7 +790,7 @@ class AnalyticsTab(QWidget):
         ax.set_xticks(x)
         ax.set_xticklabels(categories, rotation=20, ha='right', fontsize=9)
         ax.legend(fontsize=9)
-        ax.set_title(f'Comparison by {group_by}', fontsize=11, fontweight='bold')
+        set_title_with_period(ax, f'Comparison by {group_by}', self._snapshot_period_text())
         ax.grid(axis='y', linestyle='--', alpha=0.35)
 
     # ── Series data helper ────────────────────────────────────────────────────

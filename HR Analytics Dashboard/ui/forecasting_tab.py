@@ -19,7 +19,7 @@ from PyQt6.QtCore import Qt, QTimer
 
 from core import analytics, forecasting
 from core.local_llm_client import LocalLLMClient
-from ui.chart_widget import ChartWithToolbar
+from ui.chart_widget import ChartWithToolbar, set_title_with_period
 from ui.advisor_worker import AdvisorWorker
 from ui.model_download_worker import ModelDownloadWorker
 
@@ -222,7 +222,10 @@ class ForecastingTab(QWidget):
                 bridge_y = [history.values[-1]] + list(fc.values)
                 ax.plot(bridge_x, bridge_y, color=_NAVY_HOVER, linewidth=2, linestyle='--',
                          marker='o', markersize=3, label='Forecast')
-            ax.set_title(f'{metric} — {method} Forecast', fontsize=11, color=_NAVY)
+            period = f'History: {analytics.format_period(history.index[0], history.index[-1])}'
+            if len(fc):
+                period += f'   ·   Forecast to {analytics.format_date(fc.index[-1])}'
+            set_title_with_period(ax, f'{metric} — {method} Forecast', period, color=_NAVY)
             ax.tick_params(axis='x', rotation=30, labelsize=8)
             ax.legend(fontsize=9)
 
