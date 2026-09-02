@@ -12,7 +12,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
 
 from core import analytics
-from ui.chart_widget import ChartWithToolbar
+from ui.chart_widget import ChartWithToolbar, make_splitter
 from ui.kpi_card import KPICard, AddKPIButton
 from ui.chart_panel import ChartPanel
 
@@ -85,6 +85,7 @@ class DashboardTab(QWidget):
         self._kpi_metrics: list[str] = list(analytics.DEFAULT_KPIS)
         self._chart_panels: list[ChartPanel] = []
         self._multi_mode: bool = False
+        self._expanded_panel: ChartPanel | None = None
         self._period: tuple | None = None  # (start, end) of the hire-date filter
 
         # Drill-down state
@@ -133,12 +134,20 @@ class DashboardTab(QWidget):
         v.setSpacing(8)
 
         #KPI cards row
-        self._kpi_row = QHBoxLayout()
+        self._kpi_widget = QWidget()
+        self._kpi_row = QHBoxLayout(self._kpi_widget)
+        self._kpi_row.setContentsMargins(0, 0, 0, 0)
         self._kpi_row.setSpacing(8)
-        v.addLayout(self._kpi_row)
+        v.addWidget(self._kpi_widget)
 
         # Toggle row above charts
-        toggle_row = QHBoxLayout()
+        self._toggle_widget = QWidget()
+        toggle_row = QHBoxLayout(self._toggle_widget)
+        toggle_row.setContentsMargins(0, 0, 0, 0)
+        self._resize_tip = QLabel('Tip: drag the grey bars between charts to resize them')
+        self._resize_tip.setStyleSheet('color: #777; font-size: 11px; background: transparent;')
+        self._resize_tip.hide()
+        toggle_row.addWidget(self._resize_tip)
         toggle_row.addStretch()
 
         self._add_chart_btn = QPushButton('+ Add Chart')
@@ -152,13 +161,13 @@ class DashboardTab(QWidget):
         self._multi_toggle_btn.clicked.connect(self._toggle_multi_mode)
         toggle_row.addWidget(self._multi_toggle_btn)
 
-        v.addLayout(toggle_row)
+        v.addWidget(self._toggle_widget)
 
-        # Chart area 
+        # Chart area — rebuilt as resizable splitters by _relayout_charts
         self._chart_area = QWidget()
-        self._chart_layout = QGridLayout(self._chart_area)
+        self._chart_layout = QVBoxLayout(self._chart_area)
         self._chart_layout.setContentsMargins(0, 0, 0, 0)
-        self._chart_layout.setSpacing(8)
+        self._chart_splitter = None
         v.addWidget(self._chart_area, stretch=1)
 
         # Initial single chart
@@ -277,6 +286,7 @@ class DashboardTab(QWidget):
             chart_type=chart_type,
         )
         panel.bar_clicked.connect(self._on_chart_bar_clicked)
+        panel.expand_requested.connect(self._on_chart_expand)
         panel.set_period_text(self._period_subtitle())
         if allow_close:
             panel.close_requested.connect(self._on_chart_closed)
@@ -285,26 +295,53 @@ class DashboardTab(QWidget):
         return panel
 
     def _relayout_charts(self):
-        # Detach all current panels from the layout (without deleting them)
-        while self._chart_layout.count():
-            item = self._chart_layout.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
+        # Lay charts out two per row inside splitters so the user can drag the
+        # dividers to resize them. Panels are detached first so deleting the old
+        # splitters doesn't delete them.
+        self._set_expanded(None)
+        for panel in self._chart_panels:
+            panel.setParent(None)
+        if self._chart_splitter is not None:
+            self._chart_splitter.deleteLater()
 
-        for i, panel in enumerate(self._chart_panels):
-            row, col = divmod(i, 2)
-            self._chart_layout.addWidget(panel, row, col)
+        self._chart_splitter = make_splitter(Qt.Orientation.Vertical)
+        for start in range(0, len(self._chart_panels), 2):
+            row = make_splitter(Qt.Orientation.Horizontal)
+            for panel in self._chart_panels[start:start + 2]:
+                row.addWidget(panel)
+            row.setSizes([1000] * row.count())
+            self._chart_splitter.addWidget(row)
+        self._chart_splitter.setSizes([1000] * self._chart_splitter.count())
+        self._chart_layout.addWidget(self._chart_splitter)
+
+    def _on_chart_expand(self, panel):
+        self._set_expanded(None if self._expanded_panel is panel else panel)
+
+    def _set_expanded(self, panel):
+        # Enlarge one chart to fill the dashboard (hides KPI cards and the other
+        # charts), or restore the normal layout when panel is None.
+        self._expanded_panel = panel
+        self._kpi_widget.setVisible(panel is None)
+        self._toggle_widget.setVisible(panel is None)
+        for p in self._chart_panels:
+            p.setVisible(panel is None or p is panel)
+            p.set_expanded(p is panel)
+        if self._chart_splitter is not None:
+            for i in range(self._chart_splitter.count()):
+                row = self._chart_splitter.widget(i)
+                row.setVisible(panel is None or panel.parent() is row)
 
     def _toggle_multi_mode(self):
         self._multi_mode = not self._multi_mode
         if self._multi_mode:
             self._multi_toggle_btn.setText('Show Single Chart')
             self._add_chart_btn.show()
+            self._resize_tip.show()
             self._rebuild_charts(allow_close=True)
         else:
             self._multi_toggle_btn.setText('Show 4 Charts')
             self._add_chart_btn.hide()
+            self._resize_tip.hide()
             # Drop everything except the first chart
             for extra in self._chart_panels[1:]:
                 extra.deleteLater()
@@ -339,6 +376,7 @@ class DashboardTab(QWidget):
         if len(self._chart_panels) <= 1:
             return  # never let the user close the last chart in multi mode
         self._chart_panels.remove(panel)
+        panel.setParent(None)
         panel.deleteLater()
         self._relayout_charts()
 

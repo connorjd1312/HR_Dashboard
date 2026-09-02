@@ -21,7 +21,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 
 from core import analytics
-from ui.chart_widget import ChartWithToolbar, set_title_with_period
+from ui.chart_widget import ChartWithToolbar, make_splitter, set_title_with_period
 from ui.series_dialog import SeriesDialog
 
 # ── Colour / style constants ──────────────────────────────────────────────────
@@ -176,6 +176,7 @@ class AnalyticsTab(QWidget):
         self._charts = []          # list of {'id', 'title', 'series_list'}
         self._active_idx = -1
         self._left_visible = True
+        self._focus_mode = False
         self._hover_cid = None
         self._show_period = False
 
@@ -193,7 +194,8 @@ class AnalyticsTab(QWidget):
         root.addWidget(self._left_panel)
 
         root.addWidget(self._build_center_panel(), stretch=1)
-        root.addWidget(self._build_right_strip())
+        self._right_strip = self._build_right_strip()
+        root.addWidget(self._right_strip)
 
     # ── Left panel (collapsible) ──────────────────────────────────────────────
 
@@ -283,6 +285,22 @@ class AnalyticsTab(QWidget):
 
         return panel
 
+    def _toggle_focus_mode(self):
+        # Focus mode hides the builder and My Charts panels so the chart fills the tab.
+        self._focus_mode = not self._focus_mode
+        self._left_panel.setVisible(not self._focus_mode)
+        self._right_strip.setVisible(not self._focus_mode)
+        self._focus_btn.setText('⤡ Exit Focus' if self._focus_mode else '⤢ Focus')
+
+    def _set_table_section_open(self, is_open: bool):
+        # Collapsed: only the toggle button shows. Open: table gets ~a third of the height.
+        if is_open:
+            self._table_section.setMaximumHeight(16777215)
+            total = sum(self._chart_table_split.sizes()) or 600
+            self._chart_table_split.setSizes([total * 2 // 3, total // 3])
+        else:
+            self._table_section.setMaximumHeight(28)
+
     def _toggle_left_panel(self):
         if self._left_visible:
             self._left_panel.setFixedWidth(0)
@@ -350,6 +368,19 @@ class AnalyticsTab(QWidget):
             btn.clicked.connect(slot)
             tb.addWidget(btn)
 
+        self._focus_btn = QPushButton('⤢ Focus')
+        self._focus_btn.setToolTip('Hide the side panels to make the chart bigger')
+        self._focus_btn.setFixedHeight(32)
+        self._focus_btn.setStyleSheet(f'''
+            QPushButton {{
+                font-size: 12px; background: {_NAVY}; color: white;
+                border: none; border-radius: 4px; padding: 0 10px;
+            }}
+            QPushButton:hover {{ background: {_NAVY_HOVER}; }}
+        ''')
+        self._focus_btn.clicked.connect(self._toggle_focus_mode)
+        tb.addWidget(self._focus_btn)
+
         cv.addWidget(top_bar)
 
         # ── Main chart widget ─────────────────────────────────────────────
@@ -364,9 +395,23 @@ class AnalyticsTab(QWidget):
         self._placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._placeholder.setStyleSheet('font-size: 13px; color: #888888; line-height: 1.8;')
 
-        cv.addWidget(self._main_widget, stretch=1)
-        cv.addWidget(self._placeholder, stretch=1)
+        chart_area = QWidget()
+        ca = QVBoxLayout(chart_area)
+        ca.setContentsMargins(0, 0, 0, 0)
+        ca.addWidget(self._main_widget, stretch=1)
+        ca.addWidget(self._placeholder, stretch=1)
         self._main_widget.hide()
+
+        # Chart and data table share a splitter so the user can drag the
+        # divider to give either one more room.
+        self._chart_table_split = make_splitter(Qt.Orientation.Vertical)
+        self._chart_table_split.addWidget(chart_area)
+        cv.addWidget(self._chart_table_split, stretch=1)
+
+        self._table_section = QWidget()
+        ts = QVBoxLayout(self._table_section)
+        ts.setContentsMargins(0, 0, 0, 0)
+        ts.setSpacing(0)
 
         # ── Data table (collapsible) ──────────────────────────────────────
         self._table_visible = False
@@ -381,10 +426,10 @@ class AnalyticsTab(QWidget):
             QPushButton:hover {{ background: #EAECF0; }}
         ''')
         self._table_toggle_btn.clicked.connect(self._toggle_table)
-        cv.addWidget(self._table_toggle_btn)
+        ts.addWidget(self._table_toggle_btn)
 
         self._table = QTableWidget()
-        self._table.setFixedHeight(180)
+        self._table.setMinimumHeight(80)
         self._table.setStyleSheet('''
             QTableWidget {
                 font-size: 11px; gridline-color: #E8E8E8;
@@ -398,7 +443,9 @@ class AnalyticsTab(QWidget):
         ''')
         self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self._table.hide()
-        cv.addWidget(self._table)
+        ts.addWidget(self._table, stretch=1)
+        self._chart_table_split.addWidget(self._table_section)
+        self._set_table_section_open(False)
 
         return panel
 
@@ -602,6 +649,7 @@ class AnalyticsTab(QWidget):
             if self._table_visible:
                 self._table_toggle_btn.setText('▼ Data Table')
                 self._table_visible = False
+                self._set_table_section_open(False)
             return
 
         self._placeholder.hide()
@@ -612,10 +660,8 @@ class AnalyticsTab(QWidget):
 
         self._draw_on_figure(fig, chart, self._df, show_period=True)
 
-        try:
-            fig.tight_layout(pad=2.0)
-        except Exception:
-            pass
+        # Keep re-fitting the layout as the chart is resized (splitter / focus mode)
+        fig.set_layout_engine('tight', pad=2.0)
 
         self._main_widget.redraw()
 
@@ -983,10 +1029,12 @@ class AnalyticsTab(QWidget):
         if self._table_visible:
             self._table_toggle_btn.setText('▲ Data Table')
             self._table.show()
+            self._set_table_section_open(True)
             self._update_data_table()
         else:
             self._table_toggle_btn.setText('▼ Data Table')
             self._table.hide()
+            self._set_table_section_open(False)
 
     def _update_data_table(self):
         if not self._table_visible:

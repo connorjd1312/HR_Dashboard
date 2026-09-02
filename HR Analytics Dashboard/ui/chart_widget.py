@@ -6,7 +6,23 @@
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
-from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout
+from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter
+
+
+# Drag handle between resizable charts — turns blue on hover so it's discoverable.
+SPLITTER_STYLE = '''
+    QSplitter::handle { background: #E5E7EB; border-radius: 2px; }
+    QSplitter::handle:hover { background: #2E75B6; }
+'''
+
+
+def make_splitter(orientation) -> QSplitter:
+    # QSplitter the user can drag to resize charts; panes can't collapse to nothing.
+    splitter = QSplitter(orientation)
+    splitter.setHandleWidth(6)
+    splitter.setChildrenCollapsible(False)
+    splitter.setStyleSheet(SPLITTER_STYLE)
+    return splitter
 
 
 def set_title_with_period(ax, title, period=None, **title_kwargs):
@@ -23,7 +39,9 @@ def set_title_with_period(ax, title, period=None, **title_kwargs):
 class ChartWidget(FigureCanvasQTAgg):
     def __init__(self, width=6, height=4, dpi=100, parent=None):
         # Create a Matplotlib figure at the given size and resolution
-        fig = Figure(figsize=(width, height), dpi=dpi)
+        # 'tight' layout re-fits titles and labels every time the chart is
+        # resized, so nothing gets clipped when the user drags a divider.
+        fig = Figure(figsize=(width, height), dpi=dpi, layout='tight')
 
         # axes is the area where the chart is actually drawn
         self.axes = fig.add_subplot(111)
@@ -48,8 +66,10 @@ class ChartWidget(FigureCanvasQTAgg):
         self.axes = self.figure.add_subplot(111, polar=polar)
 
     def refresh(self):
-        # Tighten layout to prevent label clipping, then repaint the canvas.
-        self.figure.tight_layout()
+        # Repaint the canvas. The 'tight' layout engine prevents label clipping;
+        # it's re-set here because a one-off fig.tight_layout() call elsewhere
+        # would otherwise switch automatic re-fitting off.
+        self.figure.set_layout_engine('tight')
         self.draw()
 
 
