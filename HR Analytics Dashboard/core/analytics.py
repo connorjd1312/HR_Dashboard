@@ -106,6 +106,9 @@ PARTS_OF_WHOLE_METRICS = [
 # ordering is lost.
 ORDERED_DIMENSIONS = ['Age Group']
 
+# Display order for the Age Group buckets created in data_cleaner.clean()
+AGE_GROUP_ORDER = ['Under 30', '30–39', '40–49', '50–59', '60+', 'Unknown']
+
 # Chart-type recommender thresholds (named so they're easy to tune).
 _MAX_PIE_CATEGORIES = 5   # pie/donut only when categories ≤ this
 _MAX_VERTICAL_BARS  = 6   # above this, switch to horizontal bars for readability
@@ -187,8 +190,22 @@ def kpi_relevant_employees(df: pd.DataFrame, metric: str) -> pd.DataFrame:
     return df
 
 
+def _in_natural_order(result: pd.Series, group_by: str) -> pd.Series:
+    # groupby sorts alphabetically ('30–39' before 'Under 30'); put age buckets
+    # back in youngest-to-oldest order.
+    if group_by != 'Age Group' or result.empty:
+        return result
+    order = [g for g in AGE_GROUP_ORDER if g in result.index]
+    order += [g for g in result.index if g not in order]
+    return result.reindex(order)
+
+
 def kpi_breakdown(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
     # Return a per-group Series for a KPI metric, used in drill-down breakdown charts.
+    return _in_natural_order(_kpi_breakdown(df, metric, group_by), group_by)
+
+
+def _kpi_breakdown(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
     col = _COL_MAP.get(group_by, group_by)
     if df is None or col not in df.columns or len(df) == 0:
         return pd.Series(dtype=float)
@@ -389,6 +406,10 @@ def time_series_data(
 
 def snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
     # Compute a snapshot metric grouped by one dimension.
+    return _in_natural_order(_snapshot_data(df, metric, group_by), group_by)
+
+
+def _snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
     col = _COL_MAP.get(group_by, group_by)
 
     if metric == 'Employee Count':

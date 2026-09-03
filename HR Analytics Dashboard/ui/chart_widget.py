@@ -6,6 +6,7 @@
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
+from matplotlib.patches import Circle
 from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter
 
 
@@ -34,6 +35,27 @@ def set_title_with_period(ax, title, period=None, **title_kwargs):
     if period:
         ax.text(0.5, 1.012, period, transform=ax.transAxes, ha='center',
                 va='bottom', fontsize=9, color='#555555')
+
+
+def draw_pie(ax, labels, values, colors, donut=False, value_fmt=None):
+    # Pie/donut with percentages inside the larger slices and a legend beside
+    # it, so labels on small neighbouring slices can't overlap each other.
+    total = float(sum(values)) or 1.0
+    wedges, _texts, _pcts = ax.pie(
+        values, colors=colors, startangle=90, counterclock=False,
+        autopct=lambda p: f'{p:.0f}%' if p >= 6 else '',
+        pctdistance=0.78 if donut else 0.65,
+        textprops={'fontsize': 8, 'color': 'white', 'fontweight': 'bold'},
+        wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
+    )
+    if donut:
+        ax.add_artist(Circle((0, 0), 0.55, fc='white'))
+    fmt = value_fmt or (lambda v: f'{v:,.0f}')
+    legend_labels = [f'{lbl}  {fmt(v)} ({v / total:.0%})' for lbl, v in zip(labels, values)]
+    ax.legend(wedges, legend_labels, loc='center left', bbox_to_anchor=(1.0, 0.5),
+              fontsize=8, frameon=False)
+    ax.set_aspect('equal')
+    return wedges
 
 
 class ChartWidget(FigureCanvasQTAgg):
@@ -104,6 +126,10 @@ class ChartWithToolbar(QWidget):
 
     def redraw(self):
         self._chart.draw()
+
+    def set_toolbar_visible(self, visible: bool):
+        # Small charts hide the zoom/pan toolbar to give the chart more room.
+        self._toolbar.setVisible(visible)
 
     def refresh(self):
         self._chart.refresh()

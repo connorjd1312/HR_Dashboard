@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pandas as pd
-from matplotlib.patches import Circle
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
@@ -12,7 +11,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
 
 from core import analytics
-from ui.chart_widget import ChartWithToolbar, make_splitter
+from ui.chart_widget import ChartWithToolbar, draw_pie, make_splitter
 from ui.kpi_card import KPICard, AddKPIButton
 from ui.chart_panel import ChartPanel
 
@@ -37,7 +36,11 @@ _PIE_COLORS = [
 # Above this many categories, a horizontal-bar breakdown switches to a tall,
 # scrollable canvas so every label stays readable (instead of hiding any in an
 # 'Other' bucket).
-_SCROLL_BAR_THRESHOLD = 7
+# Breakdown chart sizing in the KPI drill-down grid. Charts keep a readable
+# height and the grid scrolls, instead of squashing every chart onto one screen.
+_BREAKDOWN_MIN_H = 300
+_BAR_ROW_PX = 24          # height per category for horizontal bar charts
+_OVERVIEW_MAX_BARS = 10   # overview grid shows the top N; the focused view shows all
 
 _BTN_PRIMARY = '''
     QPushButton {
@@ -524,11 +527,16 @@ class DashboardTab(QWidget):
         # Charts area
         if s['show_charts']:
             if s.get('focused_dim'):
-                v.addWidget(self._make_breakdown_chart(metric, s['focused_dim'], df, focused=True), stretch=2)
+                focused_scroll = QScrollArea()
+                focused_scroll.setWidgetResizable(True)
+                focused_scroll.setFrameShape(QFrame.Shape.NoFrame)
+                focused_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+                focused_scroll.setWidget(self._make_breakdown_chart(metric, s['focused_dim'], df, focused=True))
+                v.addWidget(focused_scroll, stretch=2)
             else:
                 grid_widget = QWidget()
                 grid = QGridLayout(grid_widget)
-                grid.setContentsMargins(0, 0, 0, 0)
+                grid.setContentsMargins(0, 0, 4, 0)
                 grid.setSpacing(8)
 
                 visible_dims = [d for d in analytics.DRILL_CASCADE if d not in s['removed_dims']]
@@ -542,7 +550,12 @@ class DashboardTab(QWidget):
                     empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     grid.addWidget(empty, 0, 0)
 
-                v.addWidget(grid_widget, stretch=2)
+                grid_scroll = QScrollArea()
+                grid_scroll.setWidgetResizable(True)
+                grid_scroll.setFrameShape(QFrame.Shape.NoFrame)
+                grid_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+                grid_scroll.setWidget(grid_widget)
+                v.addWidget(grid_scroll, stretch=2)
 
         # Table — show only employees relevant to this KPI
         if s['show_table']:
@@ -622,16 +635,19 @@ class DashboardTab(QWidget):
             ctype = (analytics.recommend_chart_type(metric, dimension, data)
                      if not data.empty else 'Vertical Bar')
 
-        # A horizontal bar chart with many categories gets a tall, scrollable
-        # canvas so every label is readable — nothing is hidden or bucketed.
-        n = len(data)
-        scrollable = ctype == 'Horizontal Bar' and n > _SCROLL_BAR_THRESHOLD
-        if scrollable:
-            per_bar = 34 if focused else 26
-            tall_px = n * per_bar + 70
-            chart = ChartWithToolbar(width=5 if not focused else 9, height=tall_px / 100)
-        else:
-            chart = ChartWithToolbar(width=5 if not focused else 9, height=3 if not focused else 5)
+        # In the overview grid, long breakdowns (e.g. Job Role) show only the
+        # top categories so the chart stays readable; 🔍 focus shows them all.
+        hidden = 0
+        if (not focused and ctype in ('Horizontal Bar', 'Vertical Bar')
+                and dimension not in analytics.ORDERED_DIMENSIONS
+                and len(data) > _OVERVIEW_MAX_BARS):
+            hidden = len(data) - _OVERVIEW_MAX_BARS
+            data = data.sort_values(ascending=False).head(_OVERVIEW_MAX_BARS)
+            ctype = 'Horizontal Bar'
+
+        chart = ChartWithToolbar(width=5 if not focused else 9, height=3 if not focused else 5)
+        # The zoom/pan toolbar is only worth its space on the focused chart.
+        chart.set_toolbar_visible(focused)
 
         ax = chart.axes
         chart.clear_axes()
@@ -643,24 +659,26 @@ class DashboardTab(QWidget):
             self._draw_snapshot(ax, data, metric, dimension, ctype)
         chart.refresh()
 
-        if scrollable:
-            # Fixed tall canvas inside a vertical scroll area; width still tracks
-            # the panel so bars use the full available width.
-            chart.setMinimumHeight(tall_px)
-            scroll = QScrollArea()
-            scroll.setWidgetResizable(True)
-            scroll.setFrameShape(QFrame.Shape.NoFrame)
-            scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-            scroll.setStyleSheet('QScrollArea { background: transparent; }')
-            scroll.setWidget(chart)
-            layout.addWidget(scroll, stretch=1)
-        else:
-            layout.addWidget(chart, stretch=1)
+        layout.addWidget(chart, stretch=1)
 
-        if focused:
-            frame.setMinimumHeight(420)
-        else:
-            frame.setMinimumHeight(220)
+        if hidden:
+            more = QPushButton(f'Showing top {_OVERVIEW_MAX_BARS} of {len(data) + hidden}  —  🔍 see all {dimension.lower()}s')
+            more.setCursor(Qt.CursorShape.PointingHandCursor)
+            more.setStyleSheet(
+                'QPushButton { color: #2E75B6; background: transparent; border: none;'
+                ' font-size: 11px; text-align: left; padding: 2px 4px; }'
+                'QPushButton:hover { text-decoration: underline; }'
+            )
+            more.clicked.connect(lambda _, d=dimension: self._kpi_focus(d))
+            layout.addWidget(more)
+
+        # Horizontal bars grow taller with more categories (e.g. Job Role) so
+        # every label stays readable — nothing is hidden or bucketed. The
+        # drill-down page scrolls rather than squashing the chart.
+        min_h = 420 if focused else _BREAKDOWN_MIN_H
+        if ctype == 'Horizontal Bar':
+            min_h = max(min_h, len(data) * _BAR_ROW_PX + 110)
+        frame.setMinimumHeight(min_h)
 
         return frame
 
@@ -681,28 +699,30 @@ class DashboardTab(QWidget):
             # Show every category (no 'Other' bucket); barh stacks bottom-to-top,
             # so reverse to put the largest on top.
             labels, values = labels[::-1], values[::-1]
-            ax.barh(labels, values, color='#2E75B6')
+            ax.barh(labels, values, color='#2E75B6', height=0.7)
             for i, val in enumerate(values):
                 ax.text(val, i, f' {self._fmt_val(metric, val)}',
-                        va='center', fontsize=7, color='#333')
+                        va='center', fontsize=8, color='#333')
             ax.set_xlabel(metric, fontsize=9)
-            ax.tick_params(axis='y', labelsize=8)
-            ax.margins(x=0.15)
+            ax.tick_params(axis='y', labelsize=9)
+            ax.margins(x=0.15, y=0.02)
+            ax.spines[['top', 'right']].set_visible(False)
         elif ctype in ('Pie', 'Donut'):
             colors = [_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(labels))]
-            ax.pie(values, labels=labels, colors=colors, startangle=90,
-                   textprops={'fontsize': 8})
-            if ctype == 'Donut':
-                ax.add_artist(Circle((0, 0), 0.55, fc='white'))
-            ax.set_aspect('equal')
+            draw_pie(ax, labels, values, colors, donut=(ctype == 'Donut'),
+                     value_fmt=lambda v: self._fmt_val(metric, v))
         elif ctype == 'Line':
             ax.plot(labels, values, color='#2E75B6', linewidth=2, marker='o')
             ax.set_ylabel(metric, fontsize=9)
             ax.tick_params(axis='x', rotation=20, labelsize=8)
         else:  # Vertical Bar (safe default)
-            ax.bar(labels, values, color='#2E75B6')
-            ax.tick_params(axis='x', rotation=20, labelsize=8)
+            bars = ax.bar(labels, values, color='#2E75B6', width=0.65)
+            ax.bar_label(bars, labels=[self._fmt_val(metric, v) for v in values],
+                         padding=2, fontsize=8, color='#333')
+            ax.tick_params(axis='x', rotation=20, labelsize=9)
             ax.set_ylabel(metric, fontsize=9)
+            ax.margins(y=0.15)
+            ax.spines[['top', 'right']].set_visible(False)
 
     def _fmt_val(self, metric: str, val: float) -> str:
         # Compact value label for bar ends.

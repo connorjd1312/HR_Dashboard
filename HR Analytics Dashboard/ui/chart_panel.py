@@ -5,11 +5,10 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
-from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 
 from core import analytics
-from ui.chart_widget import ChartWithToolbar, set_title_with_period
+from ui.chart_widget import ChartWithToolbar, draw_pie, set_title_with_period
 
 _LABEL_STYLE = 'font-size: 11px; color: #555555; font-family: Arial;'
 
@@ -249,13 +248,10 @@ class ChartPanel(QFrame):
             ax.set_xlabel(metric)
         elif ctype in ('Pie', 'Donut'):
             colors = [_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(labels))]
-            wedges, _ = ax.pie(values, labels=labels, colors=colors, startangle=90)
+            wedges = draw_pie(ax, labels, values, colors, donut=(ctype == 'Donut'))
             for w, lbl in zip(wedges, labels):
                 w.set_picker(True)
                 self._artist_to_label[w] = lbl
-            if ctype == 'Donut':
-                ax.add_artist(Circle((0, 0), 0.55, fc='white'))
-            ax.set_aspect('equal')
         elif ctype == 'Line':
             ax.plot(labels, values, color='#2E75B6', linewidth=2)
             sc = ax.scatter(range(len(labels)), values, color='#1F3864',

@@ -69,11 +69,19 @@ _SEX_MAP = {
 }
 
 
+# Acronyms that Title Casing would otherwise turn into 'Hr', 'It', 'Cmo', etc.
+_ACRONYMS = ['HR', 'IT', 'VP', 'AE', 'QA', 'UX', 'UI', 'CEO', 'CFO', 'CTO', 'CMO', 'COO']
+_ACRONYM_PATTERN = r'\b(' + '|'.join(a.title() for a in _ACRONYMS) + r')\b'
+
+
 def _normalise_text_fields(df: pd.DataFrame) -> pd.DataFrame:
     # Strip whitespace, apply Title Casing to text columns, and map Sex to standard labels.
     for col in ['Name', 'Department', 'Job_Role', 'Ethnicity']:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.title()
+    for col in ['Department', 'Job_Role']:
+        if col in df.columns:
+            df[col] = df[col].str.replace(_ACRONYM_PATTERN, lambda m: m.group(0).upper(), regex=True)
     if 'Sex' in df.columns:
         df['Sex'] = (
             df['Sex']
