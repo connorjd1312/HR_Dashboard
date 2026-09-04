@@ -93,7 +93,7 @@ class DashboardTab(QWidget):
 
         # Drill-down state
         # KPI mode:   {'mode':'kpi',   'metric':str, 'focused_dim':str|None, 'removed_dims':set, 'show_charts':bool, 'show_table':bool}
-        # Chart mode: {'mode':'chart', 'metric':str, 'path':[(dim,val), ...], 'override_dim':str|None}
+        # Chart mode: {'mode':'chart', 'metric':str, 'path':[(dim,val), ...], 'override_dim':str|None, 'show_table':bool}
         self._drill_state: dict | None = None
 
         self._build_ui()
@@ -246,7 +246,7 @@ class DashboardTab(QWidget):
             'focused_dim':  None,
             'removed_dims': set(),
             'show_charts':  True,
-            'show_table':   True,
+            'show_table':   False,   # employee table starts hidden so the charts get the room
             'chart_types':  {},   # {dimension: chart_type}; missing = 'Auto'
         }
         self._render_drill()
@@ -397,6 +397,7 @@ class DashboardTab(QWidget):
             'metric':        cfg['metric'],
             'path':          [(cfg['dimension'], label)],
             'override_dim':  None,
+            'show_table':    False,
         }
         self._render_drill()
         self._stack.setCurrentIndex(1)
@@ -516,7 +517,7 @@ class DashboardTab(QWidget):
 
         table_toggle = QPushButton('Hide Table' if s['show_table'] else 'Show Table')
         table_toggle.setStyleSheet(_BTN_SECONDARY)
-        table_toggle.clicked.connect(self._kpi_toggle_table)
+        table_toggle.clicked.connect(self._toggle_table)
         toggle_row.addWidget(table_toggle)
 
         v.addLayout(toggle_row)
@@ -764,7 +765,7 @@ class DashboardTab(QWidget):
         self._drill_state['show_charts'] = not self._drill_state['show_charts']
         self._render_drill()
 
-    def _kpi_toggle_table(self):
+    def _toggle_table(self):
         if not self._drill_state:
             return
         self._drill_state['show_table'] = not self._drill_state['show_table']
@@ -815,6 +816,11 @@ class DashboardTab(QWidget):
             dim_combo.currentTextChanged.connect(self._chart_set_override)
             row.addWidget(dim_combo)
             row.addStretch()
+
+            table_toggle = QPushButton('Hide Table' if s.get('show_table') else 'Show Table')
+            table_toggle.setStyleSheet(_BTN_SECONDARY)
+            table_toggle.clicked.connect(self._toggle_table)
+            row.addWidget(table_toggle)
             v.addLayout(row)
 
         # Body: chart by next_dim, OR table when no dims remain
@@ -834,10 +840,15 @@ class DashboardTab(QWidget):
                 chart_type='Auto',
             )
             chart_panel.bar_clicked.connect(self._on_drill_chart_bar_clicked)
+            chart_panel.set_period_text(self._period_subtitle())
             chart_panel.update_data(df)
             v.addWidget(chart_panel, stretch=2)
 
-            v.addWidget(self._build_employee_table(df), stretch=1)
+            if s.get('show_table'):
+                note = QLabel(f'Showing {len(df)} employee(s) matching {crumb}')
+                note.setStyleSheet('color: #555; font-size: 12px; padding: 4px 2px; background: transparent;')
+                v.addWidget(note)
+                v.addWidget(self._build_employee_table(df), stretch=1)
 
         return wrap
 
