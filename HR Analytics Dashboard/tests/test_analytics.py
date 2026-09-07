@@ -146,3 +146,21 @@ class TestAttritionRate:
 
 def test_format_period():
     assert analytics.format_period('2015-01-01', '2026-10-09') == '1 Jan 2015 – 9 Oct 2026'
+
+
+# ── Readable labels ───────────────────────────────────────────────────────
+
+def test_cleaner_keeps_role_acronyms():
+    from core import data_cleaner
+    df = pd.DataFrame({'Job_Role': ['hr coordinator', 'IT Manager', 'cmo', 'Senior AE'],
+                       'Department': ['human resources', 'it', 'marketing', 'sales']})
+    out = data_cleaner._normalise_text_fields(df)
+    assert list(out['Job_Role']) == ['HR Coordinator', 'IT Manager', 'CMO', 'Senior AE']
+    assert out['Department'][1] == 'IT'
+
+
+def test_age_group_breakdown_in_natural_order():
+    df = pd.DataFrame({'Age_Group': ['50–59', 'Under 30', '30–39', '40–49', 'Under 30'],
+                       'Status': ['Active'] * 5, 'Turnover': [False] * 5})
+    result = analytics.kpi_breakdown(df, 'Total Employees', 'Age Group')
+    assert list(result.index) == ['Under 30', '30–39', '40–49', '50–59']

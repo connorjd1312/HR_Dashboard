@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFrame,
+    QSizePolicy,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
-from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 
 from core import analytics
-from ui.chart_widget import ChartWithToolbar, set_title_with_period
+from ui.chart_widget import ChartWithToolbar, draw_pie, set_title_with_period
 
 _LABEL_STYLE = 'font-size: 11px; color: #555555; font-family: Arial;'
 
@@ -31,8 +31,9 @@ _PIE_COLORS = [
 # Chart with metric/dimension/type dropdowns; emits bar_clicked and close_requested.
 class ChartPanel(QFrame):
 
-    bar_clicked     = pyqtSignal(str)
-    close_requested = pyqtSignal(object)
+    bar_clicked      = pyqtSignal(str)
+    close_requested  = pyqtSignal(object)
+    expand_requested = pyqtSignal(object)
 
     def __init__(
         self,
@@ -92,7 +93,33 @@ class ChartPanel(QFrame):
         self.type_combo.currentIndexChanged.connect(self._refresh)
         bar.addWidget(self.type_combo)
 
+        # Let the dropdowns shrink when charts sit side by side; the popup
+        # list still shows the full names.
+        for combo, max_w, stretch in ((self.metric_combo, 280, 3),
+                                      (self.dim_combo, 160, 2),
+                                      (self.type_combo, 150, 2)):
+            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            combo.setMinimumContentsLength(8)
+            combo.setMaximumWidth(max_w)
+            combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            combo.view().setMinimumWidth(combo.view().sizeHintForColumn(0) + 24)
+            bar.setStretchFactor(combo, stretch)
+
         bar.addStretch()
+
+        self._expand_btn = QPushButton()
+        self._expand_btn.setFixedHeight(24)
+        self._expand_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._expand_btn.setStyleSheet('''
+            QPushButton {
+                color: #1F3864; background: white; border: 1px solid #CCC;
+                border-radius: 4px; font-size: 11px; padding: 0 8px;
+            }
+            QPushButton:hover { background: #F0F4FF; border-color: #2E75B6; }
+        ''')
+        self._expand_btn.clicked.connect(lambda: self.expand_requested.emit(self))
+        bar.addWidget(self._expand_btn)
+        self.set_expanded(False)
 
         if self._allow_close:
             close_btn = QPushButton('✕')
@@ -127,6 +154,15 @@ class ChartPanel(QFrame):
     def update_data(self, df):
         self._df = df
         self._refresh()
+
+    def set_expanded(self, expanded: bool):
+        # Update the enlarge button to match the dashboard's current state.
+        if expanded:
+            self._expand_btn.setText('⤡ Restore')
+            self._expand_btn.setToolTip('Return the chart to its normal size')
+        else:
+            self._expand_btn.setText('⤢ Enlarge')
+            self._expand_btn.setToolTip('Enlarge this chart to fill the dashboard')
 
     def set_period_text(self, text: str | None):
         # Shown under the chart title; applied on the next redraw.
@@ -197,7 +233,7 @@ class ChartPanel(QFrame):
                 # let it re-resolve once real data arrives.
                 if len(data) > 1:
                     self._auto_cache[key] = ctype
-            auto_label = f'  (Auto: {ctype})'
+            auto_label = f'Auto chart: {ctype}'
 
         if ctype == 'Vertical Bar':
             bars = ax.bar(labels, values, color='#2E75B6', picker=True)
@@ -212,13 +248,10 @@ class ChartPanel(QFrame):
             ax.set_xlabel(metric)
         elif ctype in ('Pie', 'Donut'):
             colors = [_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(labels))]
-            wedges, _ = ax.pie(values, labels=labels, colors=colors, startangle=90)
+            wedges = draw_pie(ax, labels, values, colors, donut=(ctype == 'Donut'))
             for w, lbl in zip(wedges, labels):
                 w.set_picker(True)
                 self._artist_to_label[w] = lbl
-            if ctype == 'Donut':
-                ax.add_artist(Circle((0, 0), 0.55, fc='white'))
-            ax.set_aspect('equal')
         elif ctype == 'Line':
             ax.plot(labels, values, color='#2E75B6', linewidth=2)
             sc = ax.scatter(range(len(labels)), values, color='#1F3864',
@@ -227,8 +260,10 @@ class ChartPanel(QFrame):
             ax.set_ylabel(metric)
             ax.tick_params(axis='x', rotation=20)
 
-        set_title_with_period(ax, f'{metric} by {dimension}{auto_label}',
-                              self._period_text)
+        # Auto-picked chart type goes in the subtitle to keep the title short
+        # enough for side-by-side charts.
+        subtitle = '  ·  '.join(t for t in (self._period_text, auto_label) if t)
+        set_title_with_period(ax, f'{metric} by {dimension}', subtitle or None)
         self.chart.refresh()
 
     # ── Click handling ────────────────────────────────────────────────────

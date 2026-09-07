@@ -6,7 +6,24 @@
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
-from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout
+from matplotlib.patches import Circle
+from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter
+
+
+# Drag handle between resizable charts — turns blue on hover so it's discoverable.
+SPLITTER_STYLE = '''
+    QSplitter::handle { background: #E5E7EB; border-radius: 2px; }
+    QSplitter::handle:hover { background: #2E75B6; }
+'''
+
+
+def make_splitter(orientation) -> QSplitter:
+    # QSplitter the user can drag to resize charts; panes can't collapse to nothing.
+    splitter = QSplitter(orientation)
+    splitter.setHandleWidth(6)
+    splitter.setChildrenCollapsible(False)
+    splitter.setStyleSheet(SPLITTER_STYLE)
+    return splitter
 
 
 def set_title_with_period(ax, title, period=None, **title_kwargs):
@@ -20,10 +37,33 @@ def set_title_with_period(ax, title, period=None, **title_kwargs):
                 va='bottom', fontsize=9, color='#555555')
 
 
+def draw_pie(ax, labels, values, colors, donut=False, value_fmt=None):
+    # Pie/donut with percentages inside the larger slices and a legend beside
+    # it, so labels on small neighbouring slices can't overlap each other.
+    total = float(sum(values)) or 1.0
+    wedges, _texts, _pcts = ax.pie(
+        values, colors=colors, startangle=90, counterclock=False,
+        autopct=lambda p: f'{p:.0f}%' if p >= 6 else '',
+        pctdistance=0.78 if donut else 0.65,
+        textprops={'fontsize': 8, 'color': 'white', 'fontweight': 'bold'},
+        wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
+    )
+    if donut:
+        ax.add_artist(Circle((0, 0), 0.55, fc='white'))
+    fmt = value_fmt or (lambda v: f'{v:,.0f}')
+    legend_labels = [f'{lbl}  {fmt(v)} ({v / total:.0%})' for lbl, v in zip(labels, values)]
+    ax.legend(wedges, legend_labels, loc='center left', bbox_to_anchor=(1.0, 0.5),
+              fontsize=8, frameon=False)
+    ax.set_aspect('equal')
+    return wedges
+
+
 class ChartWidget(FigureCanvasQTAgg):
     def __init__(self, width=6, height=4, dpi=100, parent=None):
         # Create a Matplotlib figure at the given size and resolution
-        fig = Figure(figsize=(width, height), dpi=dpi)
+        # 'tight' layout re-fits titles and labels every time the chart is
+        # resized, so nothing gets clipped when the user drags a divider.
+        fig = Figure(figsize=(width, height), dpi=dpi, layout='tight')
 
         # axes is the area where the chart is actually drawn
         self.axes = fig.add_subplot(111)
@@ -48,8 +88,10 @@ class ChartWidget(FigureCanvasQTAgg):
         self.axes = self.figure.add_subplot(111, polar=polar)
 
     def refresh(self):
-        # Tighten layout to prevent label clipping, then repaint the canvas.
-        self.figure.tight_layout()
+        # Repaint the canvas. The 'tight' layout engine prevents label clipping;
+        # it's re-set here because a one-off fig.tight_layout() call elsewhere
+        # would otherwise switch automatic re-fitting off.
+        self.figure.set_layout_engine('tight')
         self.draw()
 
 
@@ -84,6 +126,10 @@ class ChartWithToolbar(QWidget):
 
     def redraw(self):
         self._chart.draw()
+
+    def set_toolbar_visible(self, visible: bool):
+        # Small charts hide the zoom/pan toolbar to give the chart more room.
+        self._toolbar.setVisible(visible)
 
     def refresh(self):
         self._chart.refresh()
