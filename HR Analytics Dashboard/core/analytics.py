@@ -128,6 +128,17 @@ def format_period(start, end) -> str:
     return f'{format_date(start)} – {format_date(end)}'
 
 
+def format_metric_value(metric: str, val: float) -> str:
+    # Compact display value for chart labels, e.g. '23.2%', '$86,754', '27'.
+    if '%' in metric:
+        return f'{val:.1f}%'
+    if '$' in metric or 'Salary' in metric:
+        return f'${val:,.0f}'
+    if float(val).is_integer():
+        return f'{int(val):,}'
+    return f'{val:.1f}'
+
+
 def _attrition_flag(df: pd.DataFrame) -> pd.Series:
     # True for employees who left voluntarily (resigned or retired).
     return df['Status'].isin(ATTRITION_STATUSES)
