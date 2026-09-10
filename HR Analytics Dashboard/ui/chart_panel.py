@@ -254,9 +254,10 @@ class ChartPanel(QFrame):
                 self._artist_to_label[w] = lbl
         elif ctype == 'Line':
             ax.plot(labels, values, color='#2E75B6', linewidth=2)
-            sc = ax.scatter(range(len(labels)), values, color='#1F3864',
-                            s=70, picker=True, zorder=3)
-            self._artist_to_label[sc] = labels  # special: scatter, use event.ind
+            for lbl, val in zip(labels, values):
+                point, = ax.plot([lbl], [val], 'o', color='#1F3864', markersize=8,
+                                 picker=True, pickradius=6, zorder=3)
+                self._artist_to_label[point] = lbl
             ax.set_ylabel(metric)
             ax.tick_params(axis='x', rotation=20)
 
@@ -264,6 +265,12 @@ class ChartPanel(QFrame):
         # enough for side-by-side charts.
         subtitle = '  ·  '.join(t for t in (self._period_text, auto_label) if t)
         set_title_with_period(ax, f'{metric} by {dimension}', subtitle or None)
+
+        value_of = dict(zip(labels, values))
+        self.chart.set_hover_items({
+            artist: f'{lbl}: {analytics.format_metric_value(metric, value_of[lbl])}\nClick to drill down'
+            for artist, lbl in self._artist_to_label.items()
+        })
         self.chart.refresh()
 
     # ── Click handling ────────────────────────────────────────────────────
@@ -271,12 +278,5 @@ class ChartPanel(QFrame):
     def _on_pick(self, event):
         artist = event.artist
         entry = self._artist_to_label.get(artist)
-        if entry is None:
-            return
-        if isinstance(entry, list):
-            # Scatter on a line chart — use the first picked index
-            idx = event.ind[0] if len(event.ind) else 0
-            if 0 <= idx < len(entry):
-                self.bar_clicked.emit(entry[idx])
-        else:
+        if entry is not None:
             self.bar_clicked.emit(str(entry))

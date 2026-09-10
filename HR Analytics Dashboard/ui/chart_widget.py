@@ -5,6 +5,8 @@
 # Every chart in the application (bar, pie, line) is drawn using an instance of this class.
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
+from matplotlib.colors import to_rgba
+from PyQt6.QtCore import Qt
 from matplotlib.figure import Figure
 from matplotlib.patches import Circle
 from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter
@@ -56,6 +58,116 @@ def draw_pie(ax, labels, values, colors, donut=False, value_fmt=None):
               fontsize=8, frameon=False)
     ax.set_aspect('equal')
     return wedges
+
+
+# Hover highlight for clickable bars / slices / points
+_HOVER_EDGE = '#F5A623'   # amber outline — stands out against the blues and navy
+_HOVER_DARKEN = 0.75      # hovered fill is darkened to this fraction
+
+
+class HoverHighlighter:
+    # Highlights the clickable chart element under the mouse (darker fill,
+    # amber outline, hand cursor) and shows a tooltip, so users can tell which
+    # parts of a chart they can click to drill down.
+
+    def __init__(self, canvas):
+        self._canvas = canvas
+        self._items: dict = {}        # artist -> tooltip text
+        self._hovered = None
+        self._saved_style = None
+        self._tooltip = None
+        canvas.mpl_connect('motion_notify_event', self._on_move)
+        canvas.mpl_connect('figure_leave_event', lambda _e: self._set_hovered(None, None))
+
+    def set_items(self, items: dict):
+        # Called after every redraw with the new clickable artists.
+        self._items = items
+        self._hovered = None
+        self._saved_style = None
+        self._tooltip = None
+        self._canvas.unsetCursor()
+
+    def _on_move(self, event):
+        hit = None
+        if event.inaxes is not None:
+            for artist in self._items:
+                if artist.axes is event.inaxes and artist.contains(event)[0]:
+                    hit = artist
+                    break
+        self._set_hovered(hit, event)
+
+    def _set_hovered(self, artist, event):
+        if artist is self._hovered:
+            if artist is not None:
+                self._move_tooltip(event)
+            return
+        changed = self._hovered is not None or artist is not None
+        self._restore()
+        self._hovered = artist
+        if artist is None:
+            self._canvas.unsetCursor()
+        else:
+            self._saved_style = (artist.get_facecolor() if hasattr(artist, 'get_facecolor') else None,
+                                 artist.get_edgecolor() if hasattr(artist, 'get_edgecolor') else None,
+                                 artist.get_linewidth() if hasattr(artist, 'get_linewidth') else None,
+                                 artist.get_zorder())
+            if hasattr(artist, 'set_facecolor') and not hasattr(artist, 'get_xydata'):
+                r, g, b, a = to_rgba(artist.get_facecolor())
+                artist.set_facecolor((r * _HOVER_DARKEN, g * _HOVER_DARKEN, b * _HOVER_DARKEN, a))
+                artist.set_edgecolor(_HOVER_EDGE)
+                artist.set_linewidth(2.5)
+            else:  # line marker
+                artist.set_markeredgecolor(_HOVER_EDGE)
+                artist.set_markeredgewidth(2.5)
+                artist.set_markersize(artist.get_markersize() * 1.4)
+            artist.set_zorder(5)
+            self._canvas.setCursor(Qt.CursorShape.PointingHandCursor)
+            self._show_tooltip(artist, event)
+        if changed:
+            self._canvas.draw_idle()
+
+    def _restore(self):
+        artist = self._hovered
+        if artist is None or self._saved_style is None:
+            if self._tooltip is not None:
+                self._tooltip.set_visible(False)
+            return
+        face, edge, width, zorder = self._saved_style
+        if hasattr(artist, 'get_xydata'):
+            artist.set_markeredgecolor(artist.get_color())
+            artist.set_markeredgewidth(1.0)
+            artist.set_markersize(artist.get_markersize() / 1.4)
+        else:
+            artist.set_facecolor(face)
+            artist.set_edgecolor(edge)
+            artist.set_linewidth(width)
+        artist.set_zorder(zorder)
+        if self._tooltip is not None:
+            self._tooltip.set_visible(False)
+        self._saved_style = None
+
+    def _show_tooltip(self, artist, event):
+        ax = artist.axes
+        if self._tooltip is None or self._tooltip.axes is not ax:
+            self._tooltip = ax.annotate(
+                '', xy=(0, 0), xycoords='figure pixels', xytext=(12, 12),
+                textcoords='offset points', fontsize=9, zorder=10,
+                bbox=dict(boxstyle='round,pad=0.4', fc='#1F3864', ec='none', alpha=0.92),
+                color='white', annotation_clip=False,
+            )
+        self._tooltip.set_text(self._items[artist])
+        self._tooltip.set_visible(True)
+        self._move_tooltip(event)
+
+    def _move_tooltip(self, event):
+        if self._tooltip is None or event is None:
+            return
+        fig_w = self._canvas.figure.bbox.width
+        # Flip the tooltip to the left of the cursor near the right edge
+        self._tooltip.set_position((-12, 12) if event.x > fig_w * 0.65 else (12, 12))
+        self._tooltip.set_horizontalalignment('right' if event.x > fig_w * 0.65 else 'left')
+        self._tooltip.xy = (event.x, event.y)
+        self._canvas.draw_idle()
 
 
 class ChartWidget(FigureCanvasQTAgg):
@@ -126,6 +238,12 @@ class ChartWithToolbar(QWidget):
 
     def redraw(self):
         self._chart.draw()
+
+    def set_hover_items(self, items: dict):
+        # items: {artist: tooltip text} for the clickable parts of the chart.
+        if not hasattr(self, '_hover'):
+            self._hover = HoverHighlighter(self._chart)
+        self._hover.set_items(items)
 
     def set_toolbar_visible(self, visible: bool):
         # Small charts hide the zoom/pan toolbar to give the chart more room.
