@@ -32,7 +32,7 @@ class KPICard(QFrame):
         self._label = QLabel(metric)
         self._label.setWordWrap(True)
         self._label.setStyleSheet(
-            'color: white; font-size: 11px; font-family: Arial; background: transparent;'
+            'color: white; font-size: 11px; background: transparent;'
         )
         top.addWidget(self._label, 1)
 
@@ -54,7 +54,7 @@ class KPICard(QFrame):
 
         self._value = QLabel(value)
         self._value.setStyleSheet(
-            'color: white; font-size: 22px; font-weight: bold; font-family: Arial; background: transparent;'
+            'color: white; font-size: 22px; font-weight: bold; background: transparent;'
         )
         v.addWidget(self._value)
         v.addStretch()

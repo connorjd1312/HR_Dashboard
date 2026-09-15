@@ -20,52 +20,22 @@ from PyQt6.QtWidgets import (
     QFileDialog, QFrame, QWidget,
 )
 
-from ui import message_box
+from ui import message_box, theme
 
 SUPPORTED = ('.csv', '.xlsx')
 
-_NAVY = '#1F3864'
-_BLUE = '#2E75B6'
-_GREEN = '#1E8449'
-_RED = '#C0392B'
-_BG = '#F5F7FA'
+_NAVY = theme.NAVY
+_BLUE = theme.BLUE
+_GREEN = theme.GREEN
+_RED = theme.RED
+_BG = theme.BG
 
 _HEADER_STYLE = f'background-color: {_NAVY};'
-_HEADER_TITLE_STYLE = (
-    'font-size: 15px; font-weight: bold; color: white; '
-    'font-family: Arial; background: transparent;'
-)
+_HEADER_TITLE_STYLE = 'font-size: 15px; font-weight: bold; color: white; background: transparent;'
 
-_PRIMARY_BTN = f'''
-    QPushButton {{
-        background-color: {_NAVY}; color: white;
-        border-radius: 6px; padding: 9px 16px;
-        font-size: 12px; font-weight: bold; border: none;
-    }}
-    QPushButton:hover  {{ background-color: {_BLUE}; }}
-    QPushButton:pressed {{ background-color: #163060; }}
-    QPushButton:disabled {{ background-color: #B7C2D6; color: #EEEEEE; }}
-'''
-
-_DANGER_BTN = f'''
-    QPushButton {{
-        background-color: white; color: {_RED};
-        border: 1px solid {_RED}; border-radius: 6px;
-        padding: 8px 16px; font-size: 12px; font-weight: bold;
-    }}
-    QPushButton:hover  {{ background-color: #FDECEA; }}
-    QPushButton:pressed {{ background-color: #FADBD8; }}
-    QPushButton:disabled {{ color: #C9A6A1; border-color: #E6C6C2; background-color: white; }}
-'''
-
-_TEXT_BTN = '''
-    QPushButton {
-        border: none; color: #666666;
-        padding: 8px 16px; font-size: 12px; background: transparent;
-    }
-    QPushButton:hover { color: #333333; text-decoration: underline; }
-'''
-
+_PRIMARY_BTN = theme.BTN_PRIMARY
+_DANGER_BTN = theme.BTN_DANGER_OUTLINE
+_TEXT_BTN = theme.BTN_LINK
 
 def _format_size(num_bytes: int) -> str:
     size = float(num_bytes)

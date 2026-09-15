@@ -21,18 +21,19 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 
 from core import analytics
+from ui import theme
 from ui.chart_widget import ChartWithToolbar, make_splitter, set_title_with_period
 from ui.series_dialog import SeriesDialog
 
 # ── Colour / style constants ──────────────────────────────────────────────────
 
-_NAVY = '#1F3864'
-_NAVY_HOVER = '#2E75B6'
-_NAVY_PRESS = '#163060'
-_GREY_BG = '#F5F7FA'
-_BORDER = '#E0E0E0'
-_RED = '#C0392B'
-_RED_HOVER = '#FADBD8'
+_NAVY = theme.NAVY
+_NAVY_HOVER = theme.BLUE
+_NAVY_PRESS = theme.NAVY_PRESS
+_GREY_BG = theme.BG
+_BORDER = theme.BORDER
+_RED = theme.RED
+_RED_HOVER = theme.RED_BG
 
 
 # ── _SeriesCard ───────────────────────────────────────────────────────────────

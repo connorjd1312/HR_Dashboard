@@ -4,6 +4,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSignal, QDate
 
+from ui import theme
+
 
 # Default start of the Hire Date filter when data is first loaded or reset
 DEFAULT_HIRE_FROM = QDate(2025, 1, 1)
@@ -31,7 +33,7 @@ class FilterPanel(QWidget):
         hl.setContentsMargins(14, 0, 14, 0)
         title = QLabel('Filters')
         title.setStyleSheet(
-            'color: white; font-size: 14px; font-weight: bold; font-family: Arial;'
+            'color: white; font-size: 14px; font-weight: bold;'
         )
         hl.addWidget(title)
         outer.addWidget(header)
@@ -155,37 +157,14 @@ class FilterPanel(QWidget):
 
     def _field_label(self, text):
         lbl = QLabel(text)
-        lbl.setStyleSheet(
-            'font-size: 11px; font-weight: bold; color: #444444;'
-        )
+        lbl.setStyleSheet(theme.LABEL_FIELD)
         return lbl
 
     def _style_combo(self, combo):
-        combo.setStyleSheet('''
-            QComboBox {
-                border: 1px solid #CCCCCC;
-                border-radius: 4px;
-                padding: 5px 8px;
-                background: white;
-                font-size: 12px;
-                color: #333333;
-            }
-            QComboBox:focus { border-color: #2E75B6; }
-            QComboBox::drop-down { border: none; }
-        ''')
+        combo.setStyleSheet(theme.COMBO_STYLE)
 
     def _date_style(self):
-        return '''
-            QDateEdit {
-                border: 1px solid #CCCCCC;
-                border-radius: 4px;
-                padding: 5px 8px;
-                font-size: 12px;
-                color: #333333;
-                background: white;
-            }
-            QDateEdit:focus { border-color: #2E75B6; }
-        '''
+        return theme.COMBO_STYLE
 
     def _reset(self):
         self.dept_combo.setCurrentIndex(0)

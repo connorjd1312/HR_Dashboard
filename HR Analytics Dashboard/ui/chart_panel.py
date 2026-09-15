@@ -8,24 +8,12 @@ from PyQt6.QtCore import Qt, pyqtSignal
 import matplotlib.pyplot as plt
 
 from core import analytics
+from ui import theme
 from ui.chart_widget import ChartWithToolbar, draw_pie, set_title_with_period
 
-_LABEL_STYLE = 'font-size: 11px; color: #555555; font-family: Arial;'
-
-_COMBO_STYLE = '''
-    QComboBox {
-        border: 1px solid #CCCCCC; border-radius: 4px;
-        padding: 4px 6px; background: white; font-size: 12px; color: #333;
-    }
-    QComboBox:focus { border-color: #2E75B6; }
-    QComboBox::drop-down { border: none; }
-'''
-
-_PIE_COLORS = [
-    '#1F3864', '#2E75B6', '#1E8449', '#C0392B',
-    '#D4AC0D', '#5B2C6F', '#117A65', '#E67E22',
-    '#7F8C8D', '#34495E',
-]
+_LABEL_STYLE = theme.LABEL_TAG
+_COMBO_STYLE = theme.COMBO_STYLE
+_PIE_COLORS = theme.CHART_COLORS
 
 
 # Chart with metric/dimension/type dropdowns; emits bar_clicked and close_requested.

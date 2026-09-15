@@ -19,41 +19,24 @@ from PyQt6.QtCore import Qt, QTimer
 
 from core import analytics, forecasting
 from core.local_llm_client import LocalLLMClient
+from ui import theme
 from ui.chart_widget import ChartWithToolbar, set_title_with_period
 from ui.advisor_worker import AdvisorWorker
 from ui.model_download_worker import ModelDownloadWorker
 
 # Colour / style constants — matches dashboard_tab.py / series_dialog.py
 
-_NAVY = '#1F3864'
-_NAVY_HOVER = '#2E75B6'
-_NAVY_PRESS = '#163060'
-_GREY_BG = '#F5F7FA'
-_BORDER = '#E0E0E0'
-_GREEN = '#1E8449'
-_RED = '#C0392B'
-_RED_BG = '#FADBD8'
+_NAVY = theme.NAVY
+_NAVY_HOVER = theme.BLUE
+_NAVY_PRESS = theme.NAVY_PRESS
+_GREY_BG = theme.BG
+_BORDER = theme.BORDER
+_GREEN = theme.GREEN
+_RED = theme.RED
+_RED_BG = theme.RED_BG
 
-_BTN_PRIMARY = '''
-    QPushButton {
-        background-color: #1F3864; color: white;
-        border-radius: 5px; padding: 6px 14px;
-        font-size: 12px; border: none;
-    }
-    QPushButton:hover  { background-color: #2E75B6; }
-    QPushButton:pressed { background-color: #163060; }
-    QPushButton:disabled { background-color: #9AA5B1; }
-'''
-
-_BTN_SECONDARY = '''
-    QPushButton {
-        background-color: white; color: #444;
-        border-radius: 5px; padding: 6px 14px;
-        font-size: 12px; border: 1px solid #CCC;
-    }
-    QPushButton:hover { background-color: #F0F0F0; }
-    QPushButton:disabled { color: #AAA; }
-'''
+_BTN_PRIMARY = theme.BTN_PRIMARY
+_BTN_SECONDARY = theme.BTN_SECONDARY
 
 _CHIP_STYLE = '''
     QPushButton {
@@ -64,14 +47,7 @@ _CHIP_STYLE = '''
     QPushButton:hover { background-color: #EBF5FB; }
 '''
 
-_COMBO_STYLE = '''
-    QComboBox {
-        border: 1px solid #CCCCCC; border-radius: 4px;
-        padding: 4px 8px; background: white; font-size: 12px; color: #333;
-    }
-    QComboBox:focus { border-color: #2E75B6; }
-    QComboBox::drop-down { border: none; }
-'''
+_COMBO_STYLE = theme.COMBO_STYLE
 
 
 class ForecastingTab(QWidget):
@@ -168,7 +144,7 @@ class ForecastingTab(QWidget):
         self.periods_spin = QSpinBox()
         self.periods_spin.setRange(1, 24)
         self.periods_spin.setValue(3)
-        self.periods_spin.setStyleSheet(_COMBO_STYLE)
+        self.periods_spin.setMinimumHeight(28)
         self.periods_spin.valueChanged.connect(self._redraw_forecast)
         controls.addWidget(self.periods_spin)
 
