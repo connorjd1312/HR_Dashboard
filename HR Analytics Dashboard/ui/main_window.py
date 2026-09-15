@@ -17,7 +17,7 @@ import pandas as pd
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
     QTabWidget, QFileDialog, QMessageBox, QStatusBar, QDialog,
-    QLabel, QPushButton, QStackedWidget, QFrame,
+    QLabel, QPushButton, QStackedWidget, QFrame, QApplication,
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QDragEnterEvent, QDropEvent
@@ -28,7 +28,7 @@ from ui.filter_panel import FilterPanel
 from ui.dashboard_tab import DashboardTab
 from ui.analytics_tab import AnalyticsTab
 from ui.data_manager_dialog import DataOptionsDialog, DefaultDocumentsDialog
-from ui import message_box
+from ui import message_box, theme
 from ui.forecasting_tab import ForecastingTab
 
 SUPPORTED = ('.csv', '.xlsx')
@@ -56,6 +56,8 @@ _DROP_ZONE_ACTIVE = '''
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        # Shared fonts, colours and chart style for the whole app
+        theme.apply_app_theme(QApplication.instance())
         self.setWindowTitle('HR Employee Analytics Dashboard')
         self.resize(1280, 800)
         self.setAcceptDrops(True)
@@ -128,7 +130,7 @@ class MainWindow(QMainWindow):
         h_layout.setContentsMargins(32, 0, 32, 0)
         app_title = QLabel('HR Employee Analytics Dashboard')
         app_title.setStyleSheet(
-            'font-size: 22px; font-weight: bold; color: white; font-family: Arial;'
+            'font-size: 22px; font-weight: bold; color: white;'
         )
         app_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         h_layout.addWidget(app_title)
@@ -139,7 +141,7 @@ class MainWindow(QMainWindow):
 
         subtitle = QLabel('Import your employee data file to get started')
         subtitle.setStyleSheet(
-            'font-size: 14px; color: #555555; font-family: Arial; background: transparent;'
+            'font-size: 14px; color: #555555; background: transparent;'
         )
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outer.addWidget(subtitle)

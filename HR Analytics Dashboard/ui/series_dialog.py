@@ -10,30 +10,16 @@ from PyQt6.QtCore import Qt, QDate
 from PyQt6.QtGui import QColor
 
 from core import analytics
+from ui import theme
 
 PALETTE = [
     '#1F3864', '#2E75B6', '#1E8449', '#C0392B',
     '#D4AC0D', '#5B2C6F', '#117A65', '#E67E22',
 ]
 
-_SECTION_STYLE = 'font-size: 11px; font-weight: bold; color: #444444; margin-top: 4px;'
-_COMBO_STYLE = '''
-    QComboBox {
-        border: 1px solid #CCCCCC; border-radius: 4px;
-        padding: 5px 8px; background: white; font-size: 12px; color: #333;
-    }
-    QComboBox:focus { border-color: #2E75B6; }
-    QComboBox::drop-down { border: none; }
-'''
-
-_DATE_EDIT_STYLE = '''
-    QDateEdit {
-        border: 1px solid #CCCCCC; border-radius: 4px;
-        padding: 5px 8px; background: white; font-size: 12px; color: #333;
-    }
-    QDateEdit:focus { border-color: #2E75B6; }
-    QDateEdit::drop-down { border: none; }
-'''
+_SECTION_STYLE = theme.LABEL_FIELD + ' margin-top: 4px;'
+_COMBO_STYLE = theme.COMBO_STYLE
+_DATE_EDIT_STYLE = theme.COMBO_STYLE
 
 
 def _color_btn_style(color: str) -> str:

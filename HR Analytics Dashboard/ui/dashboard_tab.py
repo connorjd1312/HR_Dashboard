@@ -11,6 +11,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QCursor
 
 from core import analytics
+from ui import theme
 from ui.chart_widget import ChartWithToolbar, draw_pie, make_splitter
 from ui.kpi_card import KPICard, AddKPIButton
 from ui.chart_panel import ChartPanel
@@ -27,56 +28,18 @@ EMPLOYEE_TABLE_COLS = [
     ('Tenure_Years',  'Tenure (yrs)'),
 ]
 
-_PIE_COLORS = [
-    '#1F3864', '#2E75B6', '#1E8449', '#C0392B',
-    '#D4AC0D', '#5B2C6F', '#117A65', '#E67E22',
-    '#7F8C8D', '#34495E',
-]
+_PIE_COLORS = theme.CHART_COLORS
 
-# Above this many categories, a horizontal-bar breakdown switches to a tall,
-# scrollable canvas so every label stays readable (instead of hiding any in an
-# 'Other' bucket).
 # Breakdown chart sizing in the KPI drill-down grid. Charts keep a readable
 # height and the grid scrolls, instead of squashing every chart onto one screen.
 _BREAKDOWN_MIN_H = 300
 _BAR_ROW_PX = 24          # height per category for horizontal bar charts
 _OVERVIEW_MAX_BARS = 10   # overview grid shows the top N; the focused view shows all
 
-_BTN_PRIMARY = '''
-    QPushButton {
-        background-color: #1F3864; color: white;
-        border-radius: 5px; padding: 6px 14px;
-        font-size: 12px; border: none;
-    }
-    QPushButton:hover  { background-color: #2E75B6; }
-    QPushButton:pressed { background-color: #163060; }
-'''
-
-_BTN_SECONDARY = '''
-    QPushButton {
-        background-color: white; color: #444;
-        border-radius: 5px; padding: 6px 14px;
-        font-size: 12px; border: 1px solid #CCC;
-    }
-    QPushButton:hover { background-color: #F0F0F0; }
-'''
-
-_BTN_DANGER = '''
-    QPushButton {
-        color: #555; background: #F0F0F0; border: 1px solid #CCC;
-        border-radius: 11px; font-size: 11px; font-weight: bold;
-    }
-    QPushButton:hover { background: #E74C3C; color: white; border-color: #C0392B; }
-'''
-
-_COMBO_STYLE = '''
-    QComboBox {
-        border: 1px solid #CCCCCC; border-radius: 4px;
-        padding: 4px 8px; background: white; font-size: 12px; color: #333;
-    }
-    QComboBox:focus { border-color: #2E75B6; }
-    QComboBox::drop-down { border: none; }
-'''
+_BTN_PRIMARY = theme.BTN_PRIMARY
+_BTN_SECONDARY = theme.BTN_SECONDARY
+_BTN_DANGER = theme.BTN_ICON_CLOSE
+_COMBO_STYLE = theme.COMBO_STYLE
 
 
 # Dashboard tab: customisable KPI cards, charts, and drill-down.
@@ -111,7 +74,7 @@ class DashboardTab(QWidget):
         # Time period banner — visible on both the dashboard and drill-down pages
         self._period_label = QLabel()
         self._period_label.setStyleSheet(
-            'background: #E8EEF7; color: #1F3864; font-size: 12px; font-family: Arial;'
+            'background: #E8EEF7; color: #1F3864; font-size: 12px;'
             'border-radius: 6px; padding: 6px 10px; margin: 8px 8px 0 8px;'
         )
         self._period_label.hide()
