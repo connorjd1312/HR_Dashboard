@@ -88,6 +88,72 @@ DEFAULT_KPIS = [
     'Avg Salary ($)',
 ]
 
+# Plain-English explanation of each metric, shown in tooltips and dialogs so
+# users know exactly what a number means and how it's worked out.
+METRIC_DESCRIPTIONS = {
+    'Total Employees':      'Number of employee records in the selected period, including people who have left.',
+    'Employee Count':       'Number of employee records in each group, including people who have left.',
+    'Active Employees':     'Employees whose status is Active (excludes people on leave and leavers).',
+    'On Leave Count':       'Employees whose status is On Leave.',
+    'Resigned Count':       'Employees whose status is Resigned.',
+    'Overall Turnover Rate (%)':
+        'Share of employees who have left for any reason (resigned, terminated or retired).',
+    'Attrition (Voluntary Leavers) Rate (%)':
+        'Share of employees who chose to leave (resigned or retired). Unlike overall turnover, '
+        'it does not count terminations.',
+    'Avg Tenure (yrs)':     'Average number of years since each employee was hired.',
+    'Average Tenure (yrs)': 'Average number of years since each employee was hired.',
+    'Avg Salary ($)':       'Average annual salary.',
+    'Average Salary ($)':   'Average annual salary.',
+    'Average Age':          'Average age in years, from date of birth.',
+    'Avg Absenteeism Days': 'Average number of days absent per employee.',
+    'Avg Leave Balance':    'Average number of leave days each employee has remaining.',
+    'Hires per Month':      'Number of people hired in each period.',
+    'Departures per Month': 'Number of people who left in each period (any reason).',
+    'Monthly Turnover Rate (%)':
+        'People who left in each period as a share of all employees.',
+    'Monthly Attrition (Voluntary Leavers) Rate (%)':
+        'People who resigned or retired in each period as a share of all employees.',
+}
+
+
+def describe_metric(metric: str) -> str:
+    return METRIC_DESCRIPTIONS.get(metric, '')
+
+
+# Plain-English explanation of each metric, shown in tooltips and dialogs so
+# users know exactly what a number means and how it's worked out.
+METRIC_DESCRIPTIONS = {
+    'Total Employees':      'Number of employee records in the selected period, including people who have left.',
+    'Employee Count':       'Number of employee records in each group, including people who have left.',
+    'Active Employees':     'Employees whose status is Active (excludes people on leave and leavers).',
+    'On Leave Count':       'Employees whose status is On Leave.',
+    'Resigned Count':       'Employees whose status is Resigned.',
+    'Overall Turnover Rate (%)':
+        'Share of employees who have left for any reason (resigned, terminated or retired).',
+    'Attrition (Voluntary Leavers) Rate (%)':
+        'Share of employees who chose to leave (resigned or retired). Unlike overall turnover, '
+        'it does not count terminations.',
+    'Avg Tenure (yrs)':     'Average number of years since each employee was hired.',
+    'Average Tenure (yrs)': 'Average number of years since each employee was hired.',
+    'Avg Salary ($)':       'Average annual salary.',
+    'Average Salary ($)':   'Average annual salary.',
+    'Average Age':          'Average age in years, from date of birth.',
+    'Avg Absenteeism Days': 'Average number of days absent per employee.',
+    'Avg Leave Balance':    'Average number of leave days each employee has remaining.',
+    'Hires per Month':      'Number of people hired in each period.',
+    'Departures per Month': 'Number of people who left in each period (any reason).',
+    'Monthly Turnover Rate (%)':
+        'People who left in each period as a share of all employees.',
+    'Monthly Attrition (Voluntary Leavers) Rate (%)':
+        'People who resigned or retired in each period as a share of all employees.',
+}
+
+
+def describe_metric(metric: str) -> str:
+    return METRIC_DESCRIPTIONS.get(metric, '')
+
+
 CHART_TYPES = ['Auto', 'Vertical Bar', 'Horizontal Bar', 'Pie', 'Donut', 'Line']
 
 # Metrics whose category values sum to a meaningful whole (so a pie/donut is

@@ -387,11 +387,11 @@ class AnalyticsTab(QWidget):
         # ── Main chart widget ─────────────────────────────────────────────
         self._main_widget = ChartWithToolbar(width=10, height=6)
         self._placeholder = QLabel(
-            'Click  "+ Add Series"  to start building your chart.\n\n'
-            'Examples:\n'
-            '  • Monthly Hires — Last 2 Years\n'
-            '  • Compare Overall Turnover Rate across departments\n'
-            '  • Overlay multiple series on the same chart'
+            'Build your own chart in three steps:\n\n'
+            '1.  Click  "+ Add Series"  on the left\n'
+            '2.  Choose  Over Time  (a trend across dates) or  Snapshot  (compare groups today)\n'
+            '3.  Pick a metric, then click OK — add more series to compare them on one chart\n\n'
+            'Use  "+ New Chart"  on the right to keep several charts and switch between them.'
         )
         self._placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._placeholder.setStyleSheet('font-size: 13px; color: #888888; line-height: 1.8;')

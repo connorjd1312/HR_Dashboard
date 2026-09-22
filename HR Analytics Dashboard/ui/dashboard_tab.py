@@ -118,12 +118,14 @@ class DashboardTab(QWidget):
         toggle_row.addStretch()
 
         self._add_chart_btn = QPushButton('+ Add Chart')
+        self._add_chart_btn.setToolTip('Add another chart (up to 4)')
         self._add_chart_btn.setStyleSheet(_BTN_SECONDARY)
         self._add_chart_btn.clicked.connect(self._add_chart)
         self._add_chart_btn.hide()
         toggle_row.addWidget(self._add_chart_btn)
 
-        self._multi_toggle_btn = QPushButton('Show 4 Charts')
+        self._multi_toggle_btn = QPushButton('Compare Charts')
+        self._multi_toggle_btn.setToolTip('Show up to 4 charts side by side')
         self._multi_toggle_btn.setStyleSheet(_BTN_SECONDARY)
         self._multi_toggle_btn.clicked.connect(self._toggle_multi_mode)
         toggle_row.addWidget(self._multi_toggle_btn)
@@ -302,12 +304,14 @@ class DashboardTab(QWidget):
     def _toggle_multi_mode(self):
         self._multi_mode = not self._multi_mode
         if self._multi_mode:
-            self._multi_toggle_btn.setText('Show Single Chart')
+            self._multi_toggle_btn.setText('Single Chart')
+            self._multi_toggle_btn.setToolTip('Go back to one large chart')
             self._add_chart_btn.show()
             self._resize_tip.show()
             self._rebuild_charts(allow_close=True)
         else:
-            self._multi_toggle_btn.setText('Show 4 Charts')
+            self._multi_toggle_btn.setText('Compare Charts')
+            self._multi_toggle_btn.setToolTip('Show up to 4 charts side by side')
             self._add_chart_btn.hide()
             self._resize_tip.hide()
             # Drop everything except the first chart
