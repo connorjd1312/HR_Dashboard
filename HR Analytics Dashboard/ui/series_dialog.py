@@ -115,8 +115,13 @@ class SeriesDialog(QDialog):
         tw.addWidget(QLabel('Metric', styleSheet=_SECTION_STYLE))
         self.time_metric_combo = QComboBox()
         self.time_metric_combo.addItems(analytics.TIME_SERIES_METRICS)
+        self.time_metric_desc = self._description_label()
+        self.time_metric_combo.currentTextChanged.connect(
+            lambda m: self.time_metric_desc.setText(analytics.describe_metric(m)))
         self.time_metric_combo.setStyleSheet(_COMBO_STYLE)
         tw.addWidget(self.time_metric_combo)
+        tw.addWidget(self.time_metric_desc)
+        self.time_metric_desc.setText(analytics.describe_metric(self.time_metric_combo.currentText()))
 
         tw.addWidget(QLabel('Filter By', styleSheet=_SECTION_STYLE))
         self.filter_by_combo = QComboBox()
@@ -182,8 +187,13 @@ class SeriesDialog(QDialog):
         sw.addWidget(QLabel('Metric', styleSheet=_SECTION_STYLE))
         self.snap_metric_combo = QComboBox()
         self.snap_metric_combo.addItems(analytics.SNAPSHOT_METRICS)
+        self.snap_metric_desc = self._description_label()
+        self.snap_metric_combo.currentTextChanged.connect(
+            lambda m: self.snap_metric_desc.setText(analytics.describe_metric(m)))
         self.snap_metric_combo.setStyleSheet(_COMBO_STYLE)
         sw.addWidget(self.snap_metric_combo)
+        sw.addWidget(self.snap_metric_desc)
+        self.snap_metric_desc.setText(analytics.describe_metric(self.snap_metric_combo.currentText()))
 
         sw.addWidget(QLabel('Group By', styleSheet=_SECTION_STYLE))
         self.group_by_combo = QComboBox()
@@ -245,6 +255,13 @@ class SeriesDialog(QDialog):
         outer.addWidget(scroll)
 
     # ── Helpers ───────────────────────────────────────────────────────────
+
+    def _description_label(self) -> QLabel:
+        # Grey text under a metric dropdown explaining what the metric means.
+        lbl = QLabel()
+        lbl.setWordWrap(True)
+        lbl.setStyleSheet(theme.LABEL_HINT)
+        return lbl
 
     def _divider(self):
         line = QFrame()

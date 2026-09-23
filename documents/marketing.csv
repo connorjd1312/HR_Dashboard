@@ -6,26 +6,26 @@ Robert Baker,1989-11-12,Marketing,Digital Marketing Manager,2023-03-11,,108000.0
 Victoria Chavez,1983-07-03,Marketing,Marketing Specialist,2022-01-03,,83900.0,Active,5,11.8,F,Black
 Teresa Murphy,1996-05-01,Marketing,Marketing Coordinator,2022-08-19,,72100.0,Active,9,10.5,F,White
 Paul James,1999-03-09,Marketing,Marketing Coordinator,2025-04-24,,74000.0,Active,8,12.2,M,White
-Janet Roberts,1993-06-04,Marketing,Marketing Coordinator,2019-12-01,,81100.0,Active,6,13.7,F,White
+Janet Roberts,1993-06-04,Marketing,Marketing Coordinator,2019-12-01,2026-04-07,81100.0,Resigned,6,13.7,F,White
 Emma Davis,2003-05-05,Marketing,Marketing Coordinator,2025-11-12,,79500.0,Active,7,11.8,F,Black
 Mark Allen,1989-10-28,Marketing,Marketing Specialist,2021-03-05,,97600.0,Active,5,13.5,M,White
 David Sullivan,1978-04-09,Marketing,Digital Marketing Manager,2021-08-24,,107400.0,Active,7,13.2,M,White
 Ralph Martinez,1991-07-20,Marketing,Marketing Specialist,2021-02-26,,95500.0,Active,4,15.8,M,White
-Rose Bennett,1971-01-05,Marketing,Content Strategist,2020-09-12,,94800.0,Active,5,15.4,F,Other
+Rose Bennett,1971-01-05,Marketing,Content Strategist,2020-09-12,2026-06-23,94800.0,Retired,5,15.4,F,Other
 Stephanie Hill,1984-04-28,Marketing,Marketing Specialist,2026-02-21,,82400.0,Active,3,7.3,F,White
 Patricia Myers,1983-09-25,Marketing,Marketing Specialist,2021-08-09,,93300.0,Active,4,12.5,F,Hispanic
 Gloria Romero,1977-02-06,Marketing,Content Strategist,2022-07-12,,90300.0,Active,5,11.9,F,White
-Grace Ward,1978-09-27,Marketing,Marketing Specialist,2022-04-23,,83900.0,Active,6,12.9,F,Asian
+Grace Ward,1978-09-27,Marketing,Marketing Specialist,2022-04-23,2026-09-02,83900.0,Resigned,6,12.9,F,Asian
 Roger Harris,1988-08-01,Marketing,Marketing Specialist,2019-03-20,,96300.0,Active,7,8.2,M,Black
 Jack Hayes,1985-05-24,Marketing,Marketing Specialist,2026-02-23,,79700.0,Active,7,13.3,M,White
-Cheryl Stewart,1981-01-18,Marketing,Brand Manager,2022-04-01,,120900.0,Active,5,14.8,F,White
+Cheryl Stewart,1981-01-18,Marketing,Brand Manager,2022-04-01,2026-04-20,120900.0,Resigned,5,14.8,F,White
 Michael Scott,1984-02-27,Marketing,Brand Manager,2026-02-07,,126300.0,Active,7,11.7,M,White
 Nicholas Alexander,1987-02-05,Marketing,Marketing Specialist,2018-07-23,,84000.0,Active,4,14.0,M,Hispanic
 Christopher Myers,1983-07-17,Marketing,Content Strategist,2022-05-04,,92300.0,Active,7,14.8,M,Asian
 Matthew Evans,1995-01-12,Marketing,Marketing Coordinator,2019-01-21,,85300.0,Active,8,12.4,M,Hispanic
-Betty Kim,1977-11-20,Marketing,CMO,2018-11-23,,138300.0,Active,1,15.4,F,Mixed
+Betty Kim,1977-11-20,Marketing,CMO,2018-11-23,2026-07-09,138300.0,Terminated,1,15.4,F,Mixed
 Brian Coleman,1979-04-05,Marketing,Brand Manager,2023-02-28,,130700.0,Active,7,10.0,M,White
-Sarah Lewis,1969-07-28,Marketing,Marketing Director,2018-04-03,,132500.0,Active,9,11.0,F,White
+Sarah Lewis,1969-07-28,Marketing,Marketing Director,2018-04-03,2026-08-23,132500.0,Retired,9,11.0,F,White
 Pamela Aguilar,1992-02-23,Marketing,Digital Marketing Manager,2024-01-09,,105500.0,Active,7,14.8,F,White
 Patricia West,1997-08-21,Marketing,Marketing Coordinator,2024-08-15,,86000.0,Active,8,10.8,F,White
 Linda Hughes,1995-01-24,Marketing,Marketing Coordinator,2024-10-11,,79100.0,Active,7,8.8,F,White
@@ -37,7 +37,7 @@ Dylan James,1998-12-16,Marketing,Marketing Coordinator,2023-07-04,,72600.0,Activ
 Martha Brooks,1995-04-02,Marketing,Marketing Coordinator,2024-10-03,,69000.0,Active,7,17.1,F,Asian
 Jack Henderson,1969-09-21,Marketing,Marketing Director,2021-07-19,,140100.0,Active,9,12.5,M,White
 Virginia Patel,1995-08-25,Marketing,Marketing Coordinator,2022-05-22,,79200.0,Active,9,18.4,F,White
-Nicole Rodriguez,1980-01-12,Marketing,Digital Marketing Manager,2022-10-13,,111900.0,Active,6,10.3,F,Mixed
+Nicole Rodriguez,1980-01-12,Marketing,Digital Marketing Manager,2022-10-13,2026-10-03,111900.0,Resigned,6,10.3,F,Mixed
 Brittany Patterson,1995-02-18,Marketing,Brand Manager,2024-04-25,,127800.0,Active,4,7.1,F,Asian
 Susan Romero,1994-12-06,Marketing,Marketing Coordinator,2022-10-21,,79200.0,Active,8,11.9,F,White
 Tyler Murphy,1989-06-11,Marketing,Marketing Specialist,2022-04-06,,88200.0,Active,7,14.9,M,White
@@ -48,8 +48,8 @@ Shirley Martin,2001-10-12,Marketing,Marketing Coordinator,2023-07-11,,72000.0,Ac
 Beverly Ruiz,1967-11-07,Marketing,Content Strategist,2022-05-28,,89700.0,Active,10,13.4,F,Black
 Michelle Ward,1996-09-20,Marketing,Marketing Coordinator,2021-12-12,,86300.0,Active,7,14.9,F,Asian
 Nicole Miller,1987-01-09,Marketing,Marketing Specialist,2022-08-02,,79200.0,Active,4,14.1,F,Black
-Amanda Rodriguez,1997-06-16,Marketing,Marketing Coordinator,2024-03-10,,78300.0,Active,9,11.7,F,White
-Roger Bailey,1994-08-24,Marketing,Marketing Coordinator,2022-10-24,,80700.0,Active,5,11.4,M,Other
+Amanda Rodriguez,1997-06-16,Marketing,Marketing Coordinator,2024-03-10,2026-10-01,78300.0,Resigned,9,11.7,F,White
+Roger Bailey,1994-08-24,Marketing,Marketing Coordinator,2022-10-24,2026-10-03,80700.0,Resigned,5,11.4,M,Other
 Marilyn Henderson,1994-02-07,Marketing,Marketing Specialist,2023-06-17,,84100.0,Active,6,10.9,F,White
 Alexander Stewart,1988-06-25,Marketing,Marketing Specialist,2024-12-13,,87000.0,Active,11,7.0,M,Black
 Fred Alexander,1993-07-05,Marketing,Brand Manager,2024-09-09,,126800.0,Active,8,8.0,M,White
@@ -61,31 +61,31 @@ Justin West,1982-07-17,Marketing,Digital Marketing Manager,2025-06-23,,100400.0,
 Jacob Jenkins,1979-07-20,Marketing,Marketing Director,2018-05-18,,133800.0,Active,7,16.1,M,Asian
 Ryan Allen,1980-07-22,Marketing,Marketing Director,2022-04-15,,129200.0,Active,8,12.1,M,White
 Brenda Tran,1982-11-02,Marketing,Content Strategist,2020-04-13,,104400.0,Active,6,14.3,F,White
-Nicole Martinez,1975-12-02,Marketing,Content Strategist,2021-07-01,,103900.0,Active,9,13.9,F,White
+Nicole Martinez,1975-12-02,Marketing,Content Strategist,2021-07-01,2026-09-10,103900.0,Resigned,9,13.9,F,White
 Justin Watson,1995-03-13,Marketing,Marketing Coordinator,2023-06-05,,85200.0,Active,6,8.9,M,Black
 Benjamin Coleman,1998-04-17,Marketing,Marketing Coordinator,2025-08-14,,72100.0,Active,11,11.6,M,White
 Rose Nguyen,1995-05-26,Marketing,Digital Marketing Manager,2026-02-17,,109500.0,Active,2,11.8,F,Mixed
 Patricia Murphy,1996-01-28,Marketing,Marketing Specialist,2025-04-08,,80200.0,Active,7,11.6,F,White
-Gary Ortiz,1991-12-21,Marketing,Marketing Specialist,2024-01-15,,82900.0,Active,6,10.1,M,Mixed
+Gary Ortiz,1991-12-21,Marketing,Marketing Specialist,2024-01-15,2026-08-28,82900.0,Resigned,6,10.1,M,Mixed
 Charlotte King,1968-11-25,Marketing,CMO,2023-02-19,,144400.0,Active,5,10.3,F,Black
 Joan Mendoza,1982-11-19,Marketing,Marketing Specialist,2022-11-06,,91900.0,Active,8,13.7,F,Asian
-Catherine Miller,1980-06-18,Marketing,Marketing Specialist,2020-12-09,,92000.0,Active,9,13.9,F,White
+Catherine Miller,1980-06-18,Marketing,Marketing Specialist,2020-12-09,2026-05-12,92000.0,Resigned,9,13.9,F,White
 Sandra Hughes,1988-04-15,Marketing,Brand Manager,2021-03-15,,121600.0,Active,2,10.5,F,White
 Brittany Garcia,1993-12-11,Marketing,Brand Manager,2023-03-20,,113400.0,Active,3,10.9,F,White
 Ronald Campbell,1998-03-04,Marketing,Brand Manager,2026-04-21,,113400.0,Active,6,6.6,M,White
-Frank Wallace,1983-01-22,Marketing,Marketing Specialist,2025-05-26,,86900.0,Active,6,11.9,M,White
+Frank Wallace,1983-01-22,Marketing,Marketing Specialist,2025-05-26,2026-08-05,86900.0,Resigned,6,11.9,M,White
 Katherine Powell,1981-02-21,Marketing,Brand Manager,2022-09-03,,113900.0,Active,9,12.9,F,White
-Alexis Wright,1986-05-27,Marketing,Marketing Specialist,2024-02-13,,75400.0,Active,4,9.8,F,White
+Alexis Wright,1986-05-27,Marketing,Marketing Specialist,2024-02-13,2026-09-04,75400.0,Resigned,4,9.8,F,White
 Catherine Nelson,1994-11-07,Marketing,Marketing Coordinator,2024-05-17,,86500.0,Active,4,13.9,F,White
 Bruce Alvarez,1988-05-11,Marketing,Marketing Specialist,2021-08-04,,80500.0,Active,5,11.7,M,White
 Kathryn Cole,1986-01-24,Marketing,Digital Marketing Manager,2025-06-20,,95900.0,Active,8,12.9,F,White
 Heather Brooks,1988-01-09,Marketing,Brand Manager,2018-01-09,,134300.0,Active,8,14.9,F,White
 Megan Bell,1971-12-04,Marketing,Marketing Director,2023-09-08,,141300.0,Active,7,9.1,F,White
 Victoria Young,1979-01-20,Marketing,Brand Manager,2023-10-21,,110000.0,Active,7,12.8,F,White
-James Henderson,1993-06-21,Marketing,Marketing Coordinator,2021-10-13,,68300.0,Active,6,12.3,M,Hispanic
+James Henderson,1993-06-21,Marketing,Marketing Coordinator,2021-10-13,2026-09-07,68300.0,Resigned,6,12.3,M,Hispanic
 Stephanie Sanchez,1979-07-10,Marketing,Marketing Specialist,2022-01-10,,85300.0,Active,4,13.8,F,White
 Linda Adams,1978-10-23,Marketing,Content Strategist,2022-05-19,,109700.0,Active,5,14.0,F,Asian
-Deborah Edwards,1975-09-12,Marketing,Content Strategist,2025-12-21,,102000.0,Active,3,11.5,F,Hispanic
+Deborah Edwards,1975-09-12,Marketing,Content Strategist,2025-12-21,2026-04-10,102000.0,Resigned,3,11.5,F,Hispanic
 Gloria Foster,1984-08-16,Marketing,Marketing Director,2022-05-05,,131700.0,Active,8,16.6,F,White
 Nicholas Gonzales,1986-03-02,Marketing,Marketing Specialist,2024-04-02,,84500.0,Active,6,10.0,M,Black
 Mary Mendoza,2001-03-17,Marketing,Marketing Coordinator,2023-03-06,,72100.0,Active,6,12.2,F,White
@@ -94,14 +94,14 @@ Kayla Jenkins,1982-12-14,Marketing,Digital Marketing Manager,2023-09-16,,113700.
 Kevin Russell,1984-02-02,Marketing,Digital Marketing Manager,2025-04-04,,107600.0,Active,7,10.2,M,Black
 Hannah Thompson,1976-10-21,Marketing,Content Strategist,2025-02-18,,94100.0,Active,4,10.6,F,Asian
 Roy Cox,1990-02-26,Marketing,Digital Marketing Manager,2021-11-23,,127500.0,Active,7,16.0,M,Hispanic
-William Jordan,1993-06-07,Marketing,Marketing Coordinator,2023-02-23,,77600.0,Active,6,11.9,M,White
-Mark Jordan,1984-05-04,Marketing,Digital Marketing Manager,2023-12-11,,103600.0,Active,5,9.1,M,White
+William Jordan,1993-06-07,Marketing,Marketing Coordinator,2023-02-23,2026-04-14,77600.0,Resigned,6,11.9,M,White
+Mark Jordan,1984-05-04,Marketing,Digital Marketing Manager,2023-12-11,2026-04-20,103600.0,Resigned,5,9.1,M,White
 Barbara Richardson,1988-04-25,Marketing,Brand Manager,2022-11-15,,126400.0,Active,7,14.9,F,White
 Beverly Russell,1989-05-10,Marketing,Marketing Specialist,2020-08-12,,79000.0,Active,8,13.8,F,Black
 Wayne Garcia,2000-12-23,Marketing,Marketing Coordinator,2023-09-17,,77600.0,Active,3,15.1,M,Black
-Henry Gonzales,1997-10-08,Marketing,Marketing Specialist,2025-07-19,,88500.0,Active,9,10.9,M,Black
+Henry Gonzales,1997-10-08,Marketing,Marketing Specialist,2025-07-19,2026-10-08,88500.0,Terminated,9,10.9,M,Black
 Rebecca White,1984-08-09,Marketing,Digital Marketing Manager,2023-12-11,,112800.0,Active,6,6.1,F,White
-Samuel Alvarez,1975-05-02,Marketing,Content Strategist,2022-04-09,,92700.0,Active,7,7.2,M,White
+Samuel Alvarez,1975-05-02,Marketing,Content Strategist,2022-04-09,2026-08-01,92700.0,Resigned,7,7.2,M,White
 Julie Tran,1984-08-06,Marketing,Digital Marketing Manager,2021-09-18,,107800.0,Active,9,11.4,F,White
 Diana Wallace,1966-10-11,Marketing,Content Strategist,2021-02-20,,105200.0,Active,4,12.3,F,White
 Hannah Kim,1991-08-11,Marketing,CMO,2026-03-28,,130300.0,Active,8,11.1,F,White
@@ -110,7 +110,7 @@ Joan Herrera,1985-02-14,Marketing,Content Strategist,2022-06-21,,87500.0,Active,
 Janice Foster,1979-08-27,Marketing,Marketing Specialist,2023-05-03,,84000.0,Active,11,13.1,F,White
 Denise Brooks,1992-11-21,Marketing,Marketing Specialist,2022-05-27,,95600.0,Active,12,13.1,F,Hispanic
 Laura Henderson,1990-04-24,Marketing,Marketing Specialist,2021-02-18,,86200.0,Active,6,14.1,F,Hispanic
-John Murphy,1983-11-02,Marketing,Digital Marketing Manager,2022-08-19,,106900.0,Active,7,9.4,M,Black
+John Murphy,1983-11-02,Marketing,Digital Marketing Manager,2022-08-19,2026-06-08,106900.0,Resigned,7,9.4,M,Black
 Rebecca Carter,1971-01-12,Marketing,CMO,2024-10-13,,142400.0,On Leave,9,6.9,F,Hispanic
 Eric Green,1982-02-03,Marketing,Marketing Director,2023-07-27,2023-10-06,122200.0,Resigned,5,9.5,M,White
 Lisa Torres,1969-10-28,Marketing,Content Strategist,2024-05-22,2025-11-03,93600.0,Retired,10,10.9,F,White
@@ -259,3 +259,13 @@ Andrea Medina,1981-08-22,Marketing,Content Strategist,2021-09-09,2022-06-13,1053
 Helen Green,1988-11-20,Marketing,Marketing Specialist,2025-04-14,2025-08-17,84000.0,Resigned,2,12.5,F,Hispanic
 Rebecca Ruiz,1981-11-16,Marketing,Digital Marketing Manager,2019-08-12,2021-03-14,129900.0,Resigned,14,12.8,F,White
 Jacob Morgan,1973-01-11,Marketing,Content Strategist,2023-04-23,2024-11-05,94200.0,Resigned,1,8.5,M,White
+Jeffrey Harris,1993-02-07,Marketing,Digital Marketing Manager,2026-05-09,,124100.0,Active,2,1.3,F,Mixed
+Anthony Green,1987-09-19,Marketing,Marketing Specialist,2026-05-31,,75100.0,Active,0,0.7,M,Black
+Sandra Carter,1990-12-19,Marketing,Digital Marketing Manager,2026-06-28,,116600.0,Active,2,0.2,F,Hispanic
+Madison Hall,1986-09-21,Marketing,Marketing Specialist,2026-07-11,,90300.0,Active,0,5.9,F,Asian
+Sandra Roberts,1983-08-27,Marketing,Content Strategist,2026-08-09,,103300.0,Active,3,0.5,F,White
+Kathleen Hall,2000-07-04,Marketing,Digital Marketing Manager,2026-08-27,,107400.0,Active,3,6.1,M,White
+Melissa Scott,1981-04-21,Marketing,Marketing Specialist,2026-08-29,,91300.0,Active,3,2.8,M,Mixed
+John King,1997-02-13,Marketing,Marketing Specialist,2026-09-16,,82900.0,Active,3,1.9,F,White
+Melissa Cook,1980-09-02,Marketing,Marketing Specialist,2026-10-03,,92600.0,Active,3,2.8,M,Black
+Steven Martin,2004-03-11,Marketing,Marketing Coordinator,2026-10-06,,68600.0,Active,2,2.7,M,White

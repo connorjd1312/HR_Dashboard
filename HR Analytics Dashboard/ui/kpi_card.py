@@ -1,6 +1,8 @@
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PyQt6.QtCore import Qt, pyqtSignal
 
+from core import analytics
+
 
 # Clickable KPI card; emits clicked(metric) on body click, remove_clicked(metric) on ✕.
 class KPICard(QFrame):
@@ -19,6 +21,9 @@ class KPICard(QFrame):
         ''')
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setMinimumHeight(86)
+        description = analytics.describe_metric(metric)
+        self.setToolTip(f'{description}\n\nClick to see the breakdown.' if description
+                        else 'Click to see the breakdown.')
 
         v = QVBoxLayout(self)
         v.setContentsMargins(12, 8, 10, 10)

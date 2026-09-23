@@ -50,6 +50,10 @@ _CHIP_STYLE = '''
 _COMBO_STYLE = theme.COMBO_STYLE
 
 
+# Word used for one forecast step at each granularity
+_PERIOD_UNITS = {'Weekly': 'week', 'Monthly': 'month', 'Quarterly': 'quarter', 'Yearly': 'year'}
+
+
 class ForecastingTab(QWidget):
 
     def __init__(self, parent=None):
@@ -116,6 +120,8 @@ class ForecastingTab(QWidget):
         self.metric_combo.addItems(forecasting.FORECAST_METRICS)
         self.metric_combo.setStyleSheet(_COMBO_STYLE)
         self.metric_combo.currentTextChanged.connect(self._redraw_forecast)
+        self.metric_combo.currentTextChanged.connect(
+            lambda m: self.metric_combo.setToolTip(analytics.describe_metric(m)))
         controls.addWidget(self.metric_combo)
 
         controls.addWidget(self._tag('Department'))
@@ -130,6 +136,8 @@ class ForecastingTab(QWidget):
         self.method_combo.addItems(forecasting.FORECAST_METHODS)
         self.method_combo.setStyleSheet(_COMBO_STYLE)
         self.method_combo.currentTextChanged.connect(self._redraw_forecast)
+        for i, m in enumerate(forecasting.FORECAST_METHODS):
+            self.method_combo.setItemData(i, forecasting.METHOD_DESCRIPTIONS[m], Qt.ItemDataRole.ToolTipRole)
         controls.addWidget(self.method_combo)
 
         controls.addWidget(self._tag('Granularity'))
@@ -140,7 +148,8 @@ class ForecastingTab(QWidget):
         self.gran_combo.currentTextChanged.connect(self._redraw_forecast)
         controls.addWidget(self.gran_combo)
 
-        controls.addWidget(self._tag('Periods Ahead'))
+        self._ahead_label = self._tag('Months Ahead')
+        controls.addWidget(self._ahead_label)
         self.periods_spin = QSpinBox()
         self.periods_spin.setRange(1, 24)
         self.periods_spin.setValue(3)
@@ -150,6 +159,12 @@ class ForecastingTab(QWidget):
 
         controls.addStretch()
         v.addLayout(controls)
+
+        # Explains the chosen method in plain English
+        self._method_hint = QLabel()
+        self._method_hint.setWordWrap(True)
+        self._method_hint.setStyleSheet(theme.LABEL_HINT)
+        v.addWidget(self._method_hint)
 
         self._stats_label = QLabel('Load data to see a forecast.')
         self._stats_label.setStyleSheet(
@@ -171,6 +186,10 @@ class ForecastingTab(QWidget):
         granularity = self.gran_combo.currentText()
         periods = self.periods_spin.value()
         dept = self.dept_combo.currentText()
+
+        unit = _PERIOD_UNITS.get(granularity, 'period')
+        self._ahead_label.setText(f'{unit.title()}s Ahead')
+        self._method_hint.setText(f'{method}: {forecasting.METHOD_DESCRIPTIONS.get(method, "")}')
 
         df = self._df
         if dept and dept != 'All Departments' and 'Department' in df.columns:
@@ -213,9 +232,21 @@ class ForecastingTab(QWidget):
         else:
             arrow = {'up': '▲', 'down': '▼', 'flat': '→'}.get(summary['direction'], '→')
             color = {'up': _GREEN, 'down': _RED, 'flat': '#555'}.get(summary['direction'], '#555')
+            # Plain-English summary, e.g. "▲ Hires per Month is expected to rise 12.5%
+            # over the next 3 months (latest: 8 → forecast: 9)"
+            latest = summary['last_historical']
+            end_value = summary['forecast_points'][-1]['value'] if summary['forecast_points'] else latest
+            if summary['direction'] == 'flat':
+                trend = 'stay about the same'
+            elif latest == 0:
+                # A % change from zero is meaningless — describe the actual change instead
+                trend = f'{"rise" if end_value > latest else "fall"} from 0 to {end_value:.1f}'
+            else:
+                trend = f'{"rise" if summary["direction"] == "up" else "fall"} {abs(summary["percent_change"]):.1f}%'
             self._stats_label.setText(
-                f'{arrow} {summary["percent_change"]:+.1f}% projected over the next '
-                f'{periods} period(s) (from {summary["last_historical"]})'
+                f'{arrow} {metric} is expected to {trend} over the next {periods} '
+                f'{unit}{"s" if periods != 1 else ""}'
+                f'  (latest: {latest:.1f} → forecast: {end_value:.1f})'
             )
             self._stats_label.setStyleSheet(
                 f'font-size: 13px; font-weight: bold; color: {color}; background: transparent;'

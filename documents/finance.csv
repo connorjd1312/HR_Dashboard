@@ -1,5 +1,5 @@
 Name,Date_of_Birth,Department,Job_Role,Hire_Date,End_Date,Salary,Status,Absenteeism_Days,Leave_Balance,Sex,Ethnicity
-Edward Foster,1976-12-13,Finance,CFO,2022-01-27,,157100.0,Active,4,12.5,M,Black
+Edward Foster,1976-12-13,Finance,CFO,2022-01-27,2026-08-15,157100.0,Terminated,4,12.5,M,Black
 Eric Martin,1985-01-05,Finance,Controller,2024-03-07,,132200.0,Active,3,16.2,M,White
 Helen Taylor,1995-06-10,Finance,Senior Analyst,2022-11-15,,94700.0,Active,7,19.5,F,White
 Martha Hernandez,1973-02-26,Finance,Accountant,2024-02-16,,110200.0,Active,6,15.9,F,White
@@ -13,8 +13,8 @@ Hannah Wallace,1990-02-03,Finance,Finance Manager,2023-01-07,,121000.0,Active,2,
 Catherine Stevens,1971-08-05,Finance,Controller,2024-09-26,,124700.0,Active,4,15.0,F,Black
 Ryan Davis,1992-09-13,Finance,Finance Manager,2022-10-10,,137200.0,Active,7,10.9,M,White
 Jonathan Stevens,1993-10-22,Finance,Financial Analyst,2021-03-20,,85500.0,Active,4,15.1,M,Hispanic
-Daniel Simmons,1992-01-16,Finance,Financial Analyst,2020-02-09,,89800.0,Active,6,20.1,M,Hispanic
-Christina Coleman,2000-10-14,Finance,Financial Analyst,2022-07-12,,78800.0,Active,3,14.3,F,White
+Daniel Simmons,1992-01-16,Finance,Financial Analyst,2020-02-09,2026-07-19,89800.0,Resigned,6,20.1,M,Hispanic
+Christina Coleman,2000-10-14,Finance,Financial Analyst,2022-07-12,2026-06-09,78800.0,Resigned,3,14.3,F,White
 Kelly James,1992-01-05,Finance,Financial Analyst,2021-10-14,,94800.0,Active,8,13.7,F,Black
 Cheryl Morris,1994-09-23,Finance,Senior Analyst,2022-09-18,,103000.0,Active,5,14.9,F,White
 Aisha Garcia,1975-05-25,Finance,Controller,2021-09-04,,145100.0,Active,5,16.1,F,White
@@ -23,59 +23,59 @@ Eric Simmons,1986-12-19,Finance,Senior Accountant,2021-03-13,,117400.0,Active,1,
 Shirley Bennett,1992-02-04,Finance,Finance Manager,2021-02-11,,130800.0,Active,4,15.5,F,White
 Marie Allen,1996-06-12,Finance,Financial Analyst,2022-07-11,,85200.0,Active,5,14.1,F,Black
 Emma Jenkins,1978-12-28,Finance,CFO,2021-10-09,,142400.0,Active,4,16.3,F,Black
-Brandon Bennett,1975-08-25,Finance,Accountant,2021-01-27,,116800.0,Active,5,20.7,M,Mixed
+Brandon Bennett,1975-08-25,Finance,Accountant,2021-01-27,2026-06-24,116800.0,Resigned,5,20.7,M,Mixed
 Adam King,1993-05-26,Finance,Senior Analyst,2020-09-26,,95100.0,Active,6,19.4,M,Black
 Ethan James,1979-10-03,Finance,Accountant,2024-07-16,,107300.0,Active,6,18.4,M,White
 Alexander Hamilton,1989-05-15,Finance,Controller,2024-03-19,,109100.0,Active,5,10.3,M,Hispanic
-Carol Wilson,1996-04-24,Finance,Senior Analyst,2022-03-24,,96400.0,Active,6,14.0,F,Black
+Carol Wilson,1996-04-24,Finance,Senior Analyst,2022-03-24,2026-05-14,96400.0,Resigned,6,14.0,F,Black
 Jonathan Gonzalez,1993-05-10,Finance,Financial Analyst,2021-05-12,,76800.0,Active,5,19.8,M,White
 Peter Ward,1976-11-20,Finance,Finance Manager,2019-04-05,,124000.0,Active,1,19.2,M,White
-Harry Nelson,1985-04-28,Finance,Accountant,2020-11-10,,104400.0,Active,1,18.6,M,White
+Harry Nelson,1985-04-28,Finance,Accountant,2020-11-10,2026-09-07,104400.0,Resigned,1,18.6,M,White
 Gary Hernandez,1997-01-13,Finance,Senior Analyst,2022-02-20,,92300.0,Active,5,20.0,M,White
 Cynthia Wood,1996-09-03,Finance,Financial Analyst,2019-10-08,,83600.0,Active,5,21.3,F,White
-Patrick Bailey,1997-09-07,Finance,Senior Analyst,2019-05-09,,93700.0,Active,4,14.9,M,Hispanic
+Patrick Bailey,1997-09-07,Finance,Senior Analyst,2019-05-09,2026-06-11,93700.0,Resigned,4,14.9,M,Hispanic
 Danielle Mendoza,1999-03-18,Finance,Senior Analyst,2022-09-04,,88200.0,Active,1,15.4,F,Hispanic
 Donna Thomas,1995-08-19,Finance,Senior Analyst,2022-10-17,,83600.0,Active,7,18.7,F,Hispanic
 Eugene Perry,1988-05-05,Finance,Senior Accountant,2021-04-02,,114100.0,Active,3,17.5,M,Hispanic
 Carl Davis,1979-10-07,Finance,Accountant,2019-02-21,,117600.0,Active,4,17.5,M,Hispanic
 Justin Gray,1989-10-17,Finance,Senior Accountant,2019-12-08,,120900.0,Active,8,17.5,M,White
-Benjamin Sanchez,1996-12-25,Finance,Financial Analyst,2021-07-28,,78400.0,Active,5,10.8,M,White
+Benjamin Sanchez,1996-12-25,Finance,Financial Analyst,2021-07-28,2026-04-09,78400.0,Resigned,5,10.8,M,White
 Keith Perry,1987-06-01,Finance,Accountant,2024-05-11,,89700.0,Active,6,13.5,M,White
 Nancy White,1990-05-01,Finance,Senior Accountant,2025-07-12,,114600.0,Active,7,16.4,F,Asian
-Doris Brown,1993-04-14,Finance,Senior Analyst,2023-10-16,,87300.0,Active,4,14.8,F,White
+Doris Brown,1993-04-14,Finance,Senior Analyst,2023-10-16,2026-08-04,87300.0,Resigned,4,14.8,F,White
 Jean Romero,1994-02-19,Finance,Financial Analyst,2023-06-01,,81200.0,Active,3,16.5,F,White
-Nicholas Mitchell,1979-02-18,Finance,Accountant,2023-06-15,,104900.0,Active,7,15.0,M,Asian
+Nicholas Mitchell,1979-02-18,Finance,Accountant,2023-06-15,2026-06-18,104900.0,Resigned,7,15.0,M,Asian
 Samantha Walker,1976-05-23,Finance,Accountant,2025-08-12,,93800.0,Active,5,14.7,F,White
 Nancy Henderson,1976-05-06,Finance,Controller,2024-11-18,,136900.0,Active,2,15.1,F,White
-Patrick Kelly,1980-09-12,Finance,Controller,2018-12-09,,150700.0,Active,4,15.0,M,White
+Patrick Kelly,1980-09-12,Finance,Controller,2018-12-09,2026-08-16,150700.0,Resigned,4,15.0,M,White
 Michelle Reed,1987-02-05,Finance,Senior Accountant,2022-11-27,,112600.0,Active,7,14.6,F,Asian
 Rachel Thomas,1997-01-20,Finance,Financial Analyst,2024-01-16,,86800.0,Active,0,13.9,F,White
 Helen Perez,1999-01-09,Finance,Senior Analyst,2022-03-16,,97100.0,Active,2,12.9,F,White
-Patrick Alexander,1999-06-28,Finance,Senior Analyst,2024-04-26,,97100.0,Active,8,16.9,M,Mixed
+Patrick Alexander,1999-06-28,Finance,Senior Analyst,2024-04-26,2026-09-09,97100.0,Terminated,8,16.9,M,Mixed
 Jean Morris,1979-05-18,Finance,CFO,2022-12-14,,158200.0,Active,4,16.5,F,Black
-Jack Gonzalez,2001-08-27,Finance,Senior Analyst,2023-05-13,,107200.0,Active,6,16.2,M,Hispanic
+Jack Gonzalez,2001-08-27,Finance,Senior Analyst,2023-05-13,2026-04-26,107200.0,Resigned,6,16.2,M,Hispanic
 Kathryn Campbell,1994-10-02,Finance,Senior Accountant,2022-06-13,,118000.0,Active,4,12.1,F,Black
 Sophia Rivera,2003-07-23,Finance,Financial Analyst,2025-11-13,,82600.0,Active,4,16.0,F,Asian
 Brittany Campbell,1972-11-22,Finance,Controller,2018-06-04,,141500.0,Active,3,19.9,F,Asian
-Dorothy Moreno,1993-06-23,Finance,Senior Accountant,2022-08-23,,118500.0,Active,2,11.5,F,Hispanic
+Dorothy Moreno,1993-06-23,Finance,Senior Accountant,2022-08-23,2026-06-01,118500.0,Resigned,2,11.5,F,Hispanic
 Larry Stewart,1989-04-23,Finance,CFO,2024-01-01,,146100.0,Active,5,16.9,M,White
 Nicole Harris,1968-06-20,Finance,Controller,2023-05-03,,139000.0,Active,3,14.8,F,Black
 Elizabeth Ross,1989-01-14,Finance,Accountant,2025-11-19,,92000.0,Active,4,12.7,F,White
 Heather Alexander,1989-12-08,Finance,Accountant,2025-09-02,,94900.0,Active,4,13.1,F,Asian
 Brandon Powell,1992-01-13,Finance,Finance Manager,2020-04-19,,137000.0,Active,4,16.2,M,Hispanic
 Zachary Price,1979-06-28,Finance,Senior Accountant,2021-11-11,,125000.0,Active,7,16.5,M,White
-Kevin Williams,1982-08-12,Finance,Controller,2021-04-14,,135100.0,Active,4,23.7,M,Asian
-Joe Young,1973-12-01,Finance,Accountant,2023-02-12,,113700.0,Active,2,17.3,M,White
+Kevin Williams,1982-08-12,Finance,Controller,2021-04-14,2026-04-09,135100.0,Terminated,4,23.7,M,Asian
+Joe Young,1973-12-01,Finance,Accountant,2023-02-12,2026-06-30,113700.0,Resigned,2,17.3,M,White
 Billy Stewart,1997-10-05,Finance,Financial Analyst,2025-08-18,,70800.0,Active,7,11.7,M,White
-Brenda Kim,1976-11-07,Finance,Accountant,2019-03-02,,125000.0,Active,6,14.4,F,White
-Ronald Williams,1997-03-02,Finance,Senior Accountant,2025-06-19,,109200.0,Active,7,17.3,M,White
+Brenda Kim,1976-11-07,Finance,Accountant,2019-03-02,2026-06-14,125000.0,Resigned,6,14.4,F,White
+Ronald Williams,1997-03-02,Finance,Senior Accountant,2025-06-19,2026-08-08,109200.0,Resigned,7,17.3,M,White
 Billy Clark,1997-01-25,Finance,Senior Analyst,2022-06-28,,104900.0,Active,1,18.5,M,White
-Joseph Sanders,1987-08-15,Finance,Senior Accountant,2022-01-22,,109400.0,Active,3,16.8,M,Hispanic
+Joseph Sanders,1987-08-15,Finance,Senior Accountant,2022-01-22,2026-06-17,109400.0,Terminated,3,16.8,M,Hispanic
 Danielle Jackson,1976-10-02,Finance,Accountant,2023-10-03,,115300.0,Active,4,12.2,F,White
 Carl Ramos,1996-07-06,Finance,Financial Analyst,2024-05-08,,89500.0,Active,1,14.6,M,White
 Diane Wallace,1986-07-08,Finance,Controller,2022-06-27,,140700.0,Active,6,17.4,F,White
 Alexis Peterson,2000-08-14,Finance,Senior Analyst,2022-05-19,,91700.0,Active,7,15.3,F,White
-Deborah King,1981-03-14,Finance,Finance Manager,2021-10-13,,119700.0,Active,4,17.6,F,White
+Deborah King,1981-03-14,Finance,Finance Manager,2021-10-13,2026-07-21,119700.0,Terminated,4,17.6,F,White
 Bruce Mendoza,1998-02-22,Finance,Senior Analyst,2022-03-27,,97000.0,Active,4,15.5,M,Hispanic
 Jose Nguyen,1986-12-03,Finance,Senior Accountant,2023-02-24,,97800.0,Active,4,16.8,M,Hispanic
 Patrick Medina,1977-12-09,Finance,Accountant,2023-02-03,,100000.0,Active,4,10.1,M,Hispanic
@@ -91,7 +91,7 @@ Madison Chavez,2001-04-25,Finance,Senior Analyst,2024-04-04,,89700.0,Active,3,15
 Brandon Collins,1984-03-05,Finance,Controller,2023-10-12,,123700.0,Active,5,16.4,M,Hispanic
 David Mitchell,1969-02-25,Finance,Accountant,2019-01-18,,117600.0,Active,3,20.0,M,White
 Albert Morris,1967-11-18,Finance,Controller,2019-11-28,,153100.0,Active,8,19.9,M,Hispanic
-Juan Bailey,1981-04-11,Finance,Finance Manager,2024-07-23,,137600.0,Active,8,21.8,M,Mixed
+Juan Bailey,1981-04-11,Finance,Finance Manager,2024-07-23,2026-04-13,137600.0,Resigned,8,21.8,M,Mixed
 Alexander Henderson,1999-10-11,Finance,Financial Analyst,2023-03-06,,86200.0,Active,4,19.1,M,White
 Kenneth Brown,1984-04-25,Finance,Controller,2021-02-21,,158800.0,Active,6,15.7,M,Black
 Natalie Ramos,1993-06-11,Finance,Finance Manager,2022-06-13,,123700.0,Active,6,19.1,F,White
@@ -209,3 +209,9 @@ Walter Gonzalez,2001-06-14,Finance,Financial Analyst,2024-04-11,2025-10-13,76200
 Brandon Morales,1991-03-19,Finance,Senior Analyst,2019-07-19,2023-07-16,102600.0,Resigned,9,20.5,M,White
 Susan Castillo,1970-01-18,Finance,Accountant,2023-01-23,2023-09-14,108200.0,Retired,4,13.5,F,White
 Jerry Ramos,1978-09-10,Finance,Senior Accountant,2022-05-06,2024-08-02,115900.0,Resigned,3,13.1,M,White
+Eugene Reynolds,2002-07-04,Finance,Accountant,2026-06-02,,108400.0,Active,3,4.8,M,White
+Dennis Moore,1971-06-12,Finance,Financial Analyst,2026-06-12,,78600.0,Active,0,5.3,M,White
+Daniel Thomas,1978-12-18,Finance,Accountant,2026-07-03,,114500.0,Active,3,7.4,M,White
+Aaron Cole,1972-11-18,Finance,Financial Analyst,2026-07-13,,87500.0,Active,1,1.6,F,White
+Kevin Chavez,1978-09-18,Finance,Financial Analyst,2026-10-04,,79400.0,Active,3,0.4,F,White
+Donna Butler,1972-07-23,Finance,Financial Analyst,2026-10-05,,86600.0,Active,3,7.8,F,White

@@ -30,6 +30,7 @@ from ui.analytics_tab import AnalyticsTab
 from ui.data_manager_dialog import DataOptionsDialog, DefaultDocumentsDialog
 from ui import message_box, theme
 from ui.forecasting_tab import ForecastingTab
+from ui.help_dialog import HelpDialog
 
 SUPPORTED = ('.csv', '.xlsx')
 
@@ -268,6 +269,12 @@ class MainWindow(QMainWindow):
         quit_action.setShortcut('Ctrl+Q')
         quit_action.triggered.connect(self.close)
         file_menu.addAction(quit_action)
+
+        help_menu = menu.addMenu('Help')
+        guide_action = QAction('Quick Guide', self)
+        guide_action.setShortcut('F1')
+        guide_action.triggered.connect(lambda: HelpDialog(self).exec())
+        help_menu.addAction(guide_action)
 
 
     # Core loading logic

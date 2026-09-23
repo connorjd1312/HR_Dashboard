@@ -15,6 +15,20 @@ FORECAST_METRICS = list(analytics.TIME_SERIES_METRICS)
 
 FORECAST_METHODS = ['Linear Trend', 'Moving Average']
 
+METHOD_DESCRIPTIONS = {
+    'Linear Trend':   'Fits a straight line through the last 2 years and extends it forward. '
+                      'Good when numbers are steadily rising or falling.',
+    'Moving Average': 'Projects the average of the most recent periods forward. '
+                      'Good when numbers go up and down without a clear direction.',
+}
+
+METHOD_DESCRIPTIONS = {
+    'Linear Trend':   'Fits a straight line through the last 2 years and extends it forward. '
+                      'Good when numbers are steadily rising or falling.',
+    'Moving Average': 'Projects the average of the most recent periods forward. '
+                      'Good when numbers go up and down without a clear direction.',
+}
+
 _FREQ_MAP = analytics._FREQ_MAP
 
 

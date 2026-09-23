@@ -65,6 +65,10 @@ class ChartPanel(QFrame):
         self.metric_combo.addItems(analytics.SNAPSHOT_METRICS)
         self.metric_combo.setStyleSheet(_COMBO_STYLE)
         self.metric_combo.currentIndexChanged.connect(self._refresh)
+        self.metric_combo.currentTextChanged.connect(
+            lambda m: self.metric_combo.setToolTip(analytics.describe_metric(m)))
+        for i, m in enumerate(analytics.SNAPSHOT_METRICS):
+            self.metric_combo.setItemData(i, analytics.describe_metric(m), Qt.ItemDataRole.ToolTipRole)
         bar.addWidget(self.metric_combo)
 
         bar.addWidget(self._tag('by'))
@@ -72,6 +76,7 @@ class ChartPanel(QFrame):
         self.dim_combo.addItems(analytics.GROUP_BY_OPTIONS)
         self.dim_combo.setStyleSheet(_COMBO_STYLE)
         self.dim_combo.currentIndexChanged.connect(self._refresh)
+        self.dim_combo.setToolTip('How to split the employees into groups')
         bar.addWidget(self.dim_combo)
 
         bar.addWidget(self._tag('as'))
@@ -79,6 +84,7 @@ class ChartPanel(QFrame):
         self.type_combo.addItems(analytics.CHART_TYPES)
         self.type_combo.setStyleSheet(_COMBO_STYLE)
         self.type_combo.currentIndexChanged.connect(self._refresh)
+        self.type_combo.setToolTip('Chart type. "Auto" picks the clearest type for the data.')
         bar.addWidget(self.type_combo)
 
         # Let the dropdowns shrink when charts sit side by side; the popup
