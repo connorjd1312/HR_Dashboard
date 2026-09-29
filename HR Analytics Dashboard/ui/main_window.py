@@ -30,6 +30,7 @@ from ui.analytics_tab import AnalyticsTab
 from ui.data_manager_dialog import DataOptionsDialog, DefaultDocumentsDialog
 from ui import message_box, theme
 from ui.forecasting_tab import ForecastingTab
+from ui.advisor_tab import AdvisorTab
 from ui.help_dialog import HelpDialog
 
 SUPPORTED = ('.csv', '.xlsx')
@@ -109,9 +110,11 @@ class MainWindow(QMainWindow):
         self.dashboard_tab = DashboardTab()
         self.analytics_tab = AnalyticsTab()
         self.forecasting_tab = ForecastingTab()
+        self.advisor_tab = AdvisorTab()
         self.tab_widget.addTab(self.dashboard_tab, 'Dashboard')
         self.tab_widget.addTab(self.analytics_tab, 'Analytics')
         self.tab_widget.addTab(self.forecasting_tab, 'Forecasting')
+        self.tab_widget.addTab(self.advisor_tab, 'AI Advisor')
         self.stack.addWidget(self.tab_widget)              # index 1
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
@@ -320,6 +323,7 @@ class MainWindow(QMainWindow):
             # starts with the sidebar's default filters applied.
             self.analytics_tab.update_data(self._df_full)
             self.forecasting_tab.update_data(self._df_full)
+            self.advisor_tab.update_data(self._df_full)
             self.filter_panel.emit_filters()
 
             action = 'Added' if (append and self._file_count > len(paths)) else 'Loaded'
