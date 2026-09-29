@@ -39,6 +39,14 @@ _GUIDE = '''
       numbers that go up and down. Forecasts are estimates, not guarantees.</li>
 </ul>
 
+<h3 style="color:{navy}">AI Advisor</h3>
+<ul>
+  <li>Ask questions about your workforce data in plain English, e.g. "What's our turnover by department?".
+      Click a suggestion to get started.</li>
+  <li>The advisor runs entirely on this computer — no data leaves the machine. The first time,
+      it needs a one-time model download.</li>
+</ul>
+
 <h3 style="color:{navy}">What the metrics mean</h3>
 <table cellspacing="0" cellpadding="5" style="border-collapse:collapse">
 {metrics}
