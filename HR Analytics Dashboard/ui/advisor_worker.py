@@ -30,16 +30,21 @@ class AdvisorWorker(QThread):
             self.stage.emit('Understanding your question…')
             route = query_router.route_query(self._client, self._model, self._question, self._df)
 
-            self.stage.emit('Running analytics…')
+            self.stage.emit('Looking up the data…')
             result = query_router.execute(route, self._df)
-            context = context_builder.build_context(
-                self._question, route.function, route.params, result,
-            )
+            debug = {'function': route.function, 'params': route.params,
+                     'source': query_router.source_note(route, self._df)}
 
-            self.stage.emit('Generating response…')
-            answer = query_router.explain_result(self._client, self._model, self._question, context)
+            # Exact answers (single KPIs, unsupported questions) skip the LLM entirely
+            answer = query_router.direct_answer(route, result)
+            if answer is None:
+                context = context_builder.build_context(
+                    self._question, route.function, route.params, result,
+                )
+                self.stage.emit('Writing the answer…')
+                answer = query_router.explain_result(self._client, self._model, self._question, context)
 
-            self.succeeded.emit(answer, {'function': route.function, 'params': route.params})
+            self.succeeded.emit(answer, debug)
         except LocalLLMError as e:
             self.failed.emit(str(e))
         except Exception as e:

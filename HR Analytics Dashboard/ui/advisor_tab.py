@@ -415,7 +415,15 @@ class AdvisorTab(QWidget):
 
     def _on_succeeded(self, answer: str, debug: dict):
         if self._pending_label is not None:
-            self._pending_label.setText(answer)
+            source = debug.get('source')
+            if source:
+                # Grey 'where this came from' line under the answer
+                self._pending_label.setTextFormat(Qt.TextFormat.RichText)
+                answer_html = answer.replace('&', '&amp;').replace('<', '&lt;').replace('\n', '<br>')
+                self._pending_label.setText(
+                    f'{answer_html}<br><span style="color:#888; font-size:11px">{source}</span>')
+            else:
+                self._pending_label.setText(answer)
             self._fit_bubble(self._pending_label)
         self._scroll_to_bottom()
 

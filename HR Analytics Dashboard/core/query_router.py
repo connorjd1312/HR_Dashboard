@@ -30,7 +30,13 @@ ROUTER_FUNCTIONS = {
     'time_series_trend': 'A trend of a metric over recent months/quarters.',
     'forecast': 'Projects a metric forward using statistical forecasting.',
     'general_summary': "Whole-dataset headline stats — fallback when nothing else clearly fits.",
+    'unsupported': ('The question needs something the dashboard does not calculate (what-if '
+                    'scenarios, reasons/causes, correlations, individual employees, or data '
+                    'that is not in the file).'),
 }
+
+# History used for forecasts — matches the Forecasting tab so both give the same answer.
+_FORECAST_HISTORY_MONTHS = 24
 
 
 @dataclass
@@ -72,6 +78,7 @@ Available functions:
 
 3. department_comparison(departments, metric) — {ROUTER_FUNCTIONS['department_comparison']}
    departments must be a JSON list drawn only from: {valid['departments']}
+   (for "which department is highest/lowest" questions use breakdown_kpi with group_by "Department")
    metric must be exactly one of: {analytics.COMPARISON_METRICS}
 
 4. time_series_trend(metric, filter_by, filter_val, granularity, months_back) — {ROUTER_FUNCTIONS['time_series_trend']}
@@ -88,10 +95,14 @@ Available functions:
 
 6. general_summary() — {ROUTER_FUNCTIONS['general_summary']} Takes no parameters.
 
+7. unsupported(reason) — {ROUTER_FUNCTIONS['unsupported']}
+   reason is a short phrase describing what was asked for.
+   Choose this instead of forcing the question into another function.
+
 Known job roles in the current dataset (for context only, not a function parameter): {valid['job_roles']}
 
 Respond with ONLY a JSON object, no other text, of the exact form:
-{{"function": "<one of the six names above>", "params": {{...}}}}"""
+{{"function": "<one of the seven names above>", "params": {{...}}}}"""
 
     return [
         {'role': 'system', 'content': system},
@@ -137,7 +148,9 @@ def _validate_params(function: str, params: dict, df: pd.DataFrame | None) -> di
     elif function == 'department_comparison':
         depts = p.get('departments')
         depts = [d for d in depts if d in valid['departments']] if isinstance(depts, list) else []
-        p['departments'] = depts or valid['departments'][:5]
+        # No valid departments named → compare all of them, so 'which department
+        # is highest' can never miss one
+        p['departments'] = depts or valid['departments']
         if p.get('metric') not in analytics.COMPARISON_METRICS:
             p['metric'] = 'Employee Count'
 
@@ -158,6 +171,9 @@ def _validate_params(function: str, params: dict, df: pd.DataFrame | None) -> di
         p['periods'] = _clamp_int(p.get('periods'), default=3, lo=1, hi=24)
         if p.get('method') not in forecasting.FORECAST_METHODS:
             p['method'] = 'Linear Trend'
+
+    elif function == 'unsupported':
+        p = {'reason': str(p.get('reason', ''))[:200]}
 
     return p
 
@@ -191,8 +207,11 @@ def execute(result: RouterResult, df: pd.DataFrame):
             start, end, p.get('granularity', 'Monthly'),
         )
 
+    if fn == 'unsupported':
+        return None
+
     if fn == 'forecast':
-        start, end = _resolve_time_range(12)
+        start, end = _resolve_time_range(_FORECAST_HISTORY_MONTHS)
         history = analytics.time_series_data(
             df, p['metric'], 'None', 'All', start, end, 'Monthly',
         )
@@ -227,16 +246,77 @@ def _general_summary(df: pd.DataFrame) -> dict:
 
 
 _EXPLAIN_SYSTEM_PROMPT = (
-    "You are the AI Workforce Advisor for an HR analytics dashboard. "
-    "You are given a JSON object containing the user's question and the ONLY "
-    "workforce data you are permitted to reference — it was already computed and "
-    "aggregated by the HR Analytics Engine. "
-    "Answer the question in clear, plain English (2-5 sentences unless the question "
-    "calls for a short list). Use only the numbers provided in the JSON — never invent, "
-    "estimate, or assume figures that aren't there. If the data doesn't actually answer "
-    "the question, say so plainly. You may add one brief, sensible HR observation or "
-    "recommendation, grounded strictly in the given numbers."
+    "You are the AI Workforce Advisor for an HR analytics dashboard. Your job is to "
+    "report what the dashboard's data says — not to do your own analysis. "
+    "You are given a JSON object with the user's question, the result already "
+    "calculated by the HR Analytics Engine, and 'key_facts' (highest, lowest, "
+    "ranking, change over time) that were also already calculated.\n"
+    "Rules:\n"
+    "- Quote numbers exactly as they appear in the JSON. Do NOT calculate anything "
+    "yourself: no adding, subtracting, averaging, ratios, percentages or differences "
+    "that are not already in the JSON.\n"
+    "- Use key_facts for 'highest', 'lowest' and 'how it changed' instead of working "
+    "them out.\n"
+    "- Do not guess causes, give recommendations or predict anything beyond the "
+    "forecast figures provided.\n"
+    "- If the JSON doesn't answer the question, say so in one sentence and suggest "
+    "where on the dashboard to look.\n"
+    "Answer in plain English in 1-4 sentences, or a short list if listing groups."
 )
+
+
+# Direct answers — no LLM needed, so the figures are exactly what the dashboard shows.
+
+
+def direct_answer(route: RouterResult, result) -> str | None:
+    # Return a ready-made answer when one can be given exactly from the data,
+    # otherwise None (the LLM then phrases the aggregated result).
+    if route.function == 'unsupported':
+        return (
+            "I can only answer from the figures this dashboard calculates — headcount, "
+            "turnover, attrition, tenure, salary, age, absenteeism, leave, hires and "
+            "departures, broken down by department, role and other groups, plus "
+            "forecasts. That question needs something the data doesn't cover"
+            + (f" ({route.params['reason']})" if route.params.get('reason') else '')
+            + ". Try asking, for example, \"What's our attrition rate by department?\""
+        )
+    if route.function == 'overall_kpi':
+        metric = route.params['metric']
+        description = analytics.describe_metric(metric)
+        answer = f'{metric}: {result}.'
+        return f'{answer} {description}' if description else answer
+    if isinstance(result, pd.Series) and result.empty:
+        return "There's no data for that in the currently loaded file."
+    return None
+
+
+def source_note(route: RouterResult, df: pd.DataFrame | None = None) -> str:
+    # Short 'where this answer came from' line shown under each answer, including
+    # which employees it covers (the advisor uses all loaded data, not the
+    # dashboard's sidebar filters).
+    note = _source_figure(route)
+    if note and df is not None and len(df) and 'Hire_Date' in df.columns:
+        start = analytics.format_date(df['Hire_Date'].min())
+        note += f' · all {len(df):,} employees in the loaded data (hired since {start})'
+    return note
+
+
+def _source_figure(route: RouterResult) -> str:
+    fn, p = route.function, route.params
+    if fn == 'overall_kpi':
+        return f"Source: {p['metric']} (dashboard KPI)"
+    if fn == 'breakdown_kpi':
+        return f"Source: {p['metric']} by {p['group_by']}"
+    if fn == 'department_comparison':
+        return f"Source: {p['metric']} for {', '.join(p['departments'])}"
+    if fn == 'time_series_trend':
+        where = '' if p.get('filter_by') in (None, 'None') else f" ({p['filter_by']}: {p.get('filter_val')})"
+        return f"Source: {p['metric']}{where}, last {p.get('months_back', 12)} months, {p.get('granularity', 'Monthly').lower()}"
+    if fn == 'forecast':
+        return f"Source: {p['metric']} forecast, {p.get('method')}, next {p.get('periods')} months"
+    if fn == 'general_summary':
+        return 'Source: dashboard headline KPIs'
+    return ''
 
 
 def explain_result(client, model: str, question: str, context: dict) -> str:

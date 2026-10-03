@@ -74,6 +74,12 @@ def test_route_query_falls_back_when_params_is_not_a_dict():
 # _validate_params
 
 
+def test_department_comparison_defaults_to_every_department():
+    df = _sample_df()
+    p = query_router._validate_params('department_comparison', {'metric': 'Employee Count'}, df)
+    assert sorted(p['departments']) == ['Engineering', 'Sales']
+
+
 def test_validate_params_rejects_departments_not_in_dataset():
     df = _sample_df()
     params = query_router._validate_params(
@@ -151,3 +157,56 @@ def test_explain_result_sends_context_as_user_message_without_json_mode():
     assert call['json_mode'] is False
     assert call['messages'][0]['role'] == 'system'
     assert json.loads(call['messages'][1]['content']) == {'question': 'x', 'result': 1}
+
+
+# Keeping answers to the data
+
+def test_route_query_accepts_unsupported_and_executes_to_nothing():
+    client = _FakeClient(json.dumps({'function': 'unsupported', 'params': {'reason': 'pay rise what-if'}}))
+    result = query_router.route_query(client, 'model', 'What if we raised pay 10%?', _sample_df())
+    assert result.function == 'unsupported'
+    assert query_router.execute(result, _sample_df()) is None
+
+
+def test_unsupported_question_gets_direct_answer_without_llm():
+    route = query_router.RouterResult('unsupported', {'reason': 'pay rise what-if'})
+    answer = query_router.direct_answer(route, None)
+    assert 'only answer from the figures' in answer
+    assert 'pay rise what-if' in answer
+
+
+def test_single_kpi_answered_exactly_from_dashboard_value():
+    df = _sample_df()
+    route = query_router.RouterResult('overall_kpi', {'metric': 'Overall Turnover Rate (%)'})
+    value = query_router.execute(route, df)
+    answer = query_router.direct_answer(route, value)
+    assert answer.startswith(f'Overall Turnover Rate (%): {analytics.kpi_value(df, "Overall Turnover Rate (%)")}.')
+
+
+def test_breakdowns_still_go_to_llm_with_precomputed_key_facts():
+    from core import context_builder
+    df = _sample_df()
+    route = query_router.RouterResult('breakdown_kpi', {'metric': 'Avg Salary ($)', 'group_by': 'Department'})
+    result = query_router.execute(route, df)
+    assert query_router.direct_answer(route, result) is None
+    facts = context_builder.build_context('q', route.function, route.params, result)['key_facts']
+    assert facts['highest']['label'] == 'Engineering'
+    assert facts['lowest']['label'] == 'Sales'
+
+
+def test_time_series_key_facts_include_change():
+    from core import context_builder
+    s = pd.Series([5, 8, 3], index=pd.to_datetime(['2026-07-31', '2026-08-31', '2026-09-30']))
+    facts = context_builder.key_facts(s)
+    assert facts['change_first_to_last'] == -2
+    assert facts['trend'] == 'down'
+    assert facts['peak_period'] == '2026-08-31'
+
+
+def test_explain_prompt_forbids_own_calculations():
+    assert 'Do NOT calculate' in query_router._EXPLAIN_SYSTEM_PROMPT
+
+
+def test_source_note_names_the_dashboard_figure():
+    route = query_router.RouterResult('breakdown_kpi', {'metric': 'Avg Salary ($)', 'group_by': 'Department'})
+    assert query_router.source_note(route) == 'Source: Avg Salary ($) by Department'
