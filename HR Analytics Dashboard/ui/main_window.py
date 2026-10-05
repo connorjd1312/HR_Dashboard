@@ -416,6 +416,10 @@ class MainWindow(QMainWindow):
     # Drag-and-drop
 
 
+    def closeEvent(self, event):
+        self.advisor_tab.shutdown()
+        super().closeEvent(event)
+
     def dragEnterEvent(self, event: QDragEnterEvent):
         # Accept drag if at least one dragged file is a supported type.
         if event.mimeData().hasUrls():

@@ -101,6 +101,18 @@ Available functions:
 
 Known job roles in the current dataset (for context only, not a function parameter): {valid['job_roles']}
 
+Rules and examples (follow these closely):
+- Questions about the future ("will", "next quarter", "next 6 months", "expected", "predict") → forecast.
+  "Will departures go up or down over the next 6 months?" → {{"function": "forecast", "params": {{"metric": "Departures per Month", "periods": 6, "method": "Linear Trend"}}}}
+- Comparing named departments → department_comparison with the metric actually asked about.
+  "Compare average tenure between Sales and Engineering" → {{"function": "department_comparison", "params": {{"departments": ["Sales", "Engineering"], "metric": "Average Tenure (yrs)"}}}}
+- "Which department/role/group is highest/lowest" → breakdown_kpi.
+  "Which department has the highest attrition?" → {{"function": "breakdown_kpi", "params": {{"metric": "Attrition (Voluntary Leavers) Rate (%)", "group_by": "Department"}}}}
+- Questions needing two headline figures (e.g. turnover AND attrition) → general_summary.
+- Questions about a named person or individual employees, causes ("why"), or what-if scenarios → unsupported.
+  "What is John Smith's salary?" → {{"function": "unsupported", "params": {{"reason": "information about an individual employee"}}}}
+- Counts by employment status (e.g. how many were terminated vs resigned) → breakdown_kpi with metric "Total Employees" and group_by "Status".
+
 Respond with ONLY a JSON object, no other text, of the exact form:
 {{"function": "<one of the seven names above>", "params": {{...}}}}"""
 
@@ -261,6 +273,8 @@ _EXPLAIN_SYSTEM_PROMPT = (
     "forecast figures provided.\n"
     "- If the JSON doesn't answer the question, say so in one sentence and suggest "
     "where on the dashboard to look.\n"
+    "- Never mention JSON, 'key_facts', parameters or how the data was given to you; "
+    "just answer as if you looked at the dashboard. Round decimals to 1 place.\n"
     "Answer in plain English in 1-4 sentences, or a short list if listing groups."
 )
 
