@@ -98,7 +98,7 @@ def forecast_summary(history: pd.Series, forecast: pd.Series) -> dict:
         'percent_change': percent_change,
         'last_historical': round(last_historical, 2),
         'forecast_points': [
-            {'date': idx.strftime('%Y-%m-%d'), 'value': round(float(val), 2)}
+            {'date': idx.strftime('%Y-%m-%d'), 'value': round(float(val), 1)}
             for idx, val in forecast.items()
         ],
     }

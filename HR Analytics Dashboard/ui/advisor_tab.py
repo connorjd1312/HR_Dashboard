@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox,
     QFrame, QScrollArea, QLineEdit, QStackedWidget, QSizePolicy, QProgressBar,
 )
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QThread
 
 from core.local_llm_client import LocalLLMClient
 from ui import theme
@@ -50,6 +50,19 @@ _SUGGESTED_QUESTIONS = [
 ]
 
 
+class _WarmUpWorker(QThread):
+    # Loads the local model in the background so the first question is quick.
+    def __init__(self, client: LocalLLMClient, parent=None):
+        super().__init__(parent)
+        self._client = client
+
+    def run(self):
+        try:
+            self._client.warm_up()
+        except Exception:
+            pass  # any real problem is reported when a question is asked
+
+
 class AdvisorTab(QWidget):
 
     def __init__(self, parent=None):
@@ -59,6 +72,7 @@ class AdvisorTab(QWidget):
         self._worker: AdvisorWorker | None = None
         self._download_worker: ModelDownloadWorker | None = None
         self._pending_label: QLabel | None = None
+        self._warm_up_worker: _WarmUpWorker | None = None
 
         self._build_ui()
         self._check_connection()
@@ -78,6 +92,12 @@ class AdvisorTab(QWidget):
 
     def update_data(self, df: pd.DataFrame):
         self._df = df
+
+    def shutdown(self):
+        # Called when the app closes: let a background model load finish rather
+        # than destroying its thread mid-run (which would crash on exit).
+        if self._warm_up_worker is not None:
+            self._warm_up_worker.wait()
 
     # Advisor page
 
@@ -269,14 +289,25 @@ class AdvisorTab(QWidget):
             self._advisor_stack.setCurrentIndex(0)
         else:
             self._status_dot.setStyleSheet(f'color: {_GREEN}; font-size: 14px; background: transparent;')
-            self._status_label.setText(f'Local model ready · {len(models)} model(s) available')
             self._model_combo.clear()
             self._model_combo.addItems(models)
             self._model_combo.setEnabled(True)
             self._advisor_stack.setCurrentIndex(1)
+            self._start_warm_up()
 
         self._recheck_btn.setEnabled(True)
 
+
+    def _start_warm_up(self):
+        if self._warm_up_worker is not None:
+            if not self._warm_up_worker.isRunning():
+                self._status_label.setText('Local model ready')
+            return
+        self._status_label.setText('Loading the local model in the background…')
+        self._warm_up_worker = _WarmUpWorker(self._client, self)
+        self._warm_up_worker.finished.connect(
+            lambda: self._status_label.setText('Local model ready'))
+        self._warm_up_worker.start()
 
     # Model download handling
 

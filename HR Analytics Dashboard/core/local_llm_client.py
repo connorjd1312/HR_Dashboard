@@ -25,6 +25,16 @@ MODEL_URL = (
 )
 DEFAULT_MODEL = 'Llama 3.2 3B (local)'  # display name shown in the UI's model list
 
+# Inference settings (tuned with tools/advisor_eval.py)
+# - all CPU cores: llama.cpp defaults to half of them
+# - temperature 0: the same question always gets the same, most likely answer,
+#   which keeps the model sticking to the figures it's given
+# - token caps: router replies are a short JSON object; answers are a few sentences
+N_THREADS = max(1, os.cpu_count() or 1)
+TEMPERATURE = 0.0
+MAX_TOKENS_JSON = 200
+MAX_TOKENS_TEXT = 350
+
 ProgressCallback = Callable[[int, int], None]  # (bytes_downloaded, total_bytes)
 
 
@@ -97,10 +107,17 @@ class LocalLLMClient:
                 self._llm = Llama(
                     model_path=str(self.model_path),
                     n_ctx=4096,
+                    n_threads=N_THREADS,
+                    n_threads_batch=N_THREADS,
                     verbose=False,
                 )
             except Exception as e:
                 raise LocalLLMError(f'Failed to load the local model: {e}') from e
+
+    def warm_up(self) -> None:
+        # Load the model ahead of the first question (it takes a while on CPU),
+        # so the user's first answer isn't slowed down by loading.
+        self._ensure_loaded()
 
     def chat(
         self,
@@ -114,7 +131,10 @@ class LocalLLMClient:
         # in-process call with no network timeout to apply.
         self._ensure_loaded()
 
-        kwargs = {}
+        kwargs = {
+            'temperature': TEMPERATURE,
+            'max_tokens': MAX_TOKENS_JSON if json_mode else MAX_TOKENS_TEXT,
+        }
         if json_mode:
             kwargs['response_format'] = {'type': 'json_object'}
 
