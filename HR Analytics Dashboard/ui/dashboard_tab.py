@@ -52,7 +52,8 @@ class DashboardTab(QWidget):
         self._chart_panels: list[ChartPanel] = []
         self._multi_mode: bool = False
         self._expanded_panel: ChartPanel | None = None
-        self._period: tuple | None = None  # (start, end) of the hire-date filter
+        self._period: tuple | None = None  # (start, end) of the sidebar date range
+        self._period_mode = analytics.PERIOD_EMPLOYED
 
         # Drill-down state
         # KPI mode:   {'mode':'kpi',   'metric':str, 'path':[(dim,val), ...], 'focused_dim':str|None, 'removed_dims':set, 'show_charts':bool, 'show_table':bool}
@@ -150,26 +151,30 @@ class DashboardTab(QWidget):
     # Public API, called by MainWindow whenever the dataset changes
 
 
-    def set_period(self, start, end):
+    def set_period(self, start, end, mode=analytics.PERIOD_EMPLOYED):
         # Hire-date range currently applied; shown in the banner and under chart titles.
         self._period = (start, end)
+        self._period_mode = mode
         for panel in self._chart_panels:
             panel.set_period_text(self._period_subtitle())
 
     def _period_subtitle(self) -> str | None:
         if not self._period:
             return None
-        return f'Hired {analytics.format_period(*self._period)}'
+        verb = 'Hired' if self._period_mode == analytics.PERIOD_HIRED else 'Employed'
+        return f'{verb} {analytics.format_period(*self._period)}'
 
     def _refresh_period_label(self):
         if not self._period or self._df is None:
             self._period_label.hide()
             return
-        today = pd.Timestamp.today()
+        as_at = min(self._period[1], pd.Timestamp.today().normalize())
+        who = ('employees hired' if self._period_mode == analytics.PERIOD_HIRED
+               else 'everyone employed at any time')
         self._period_label.setText(
-            f'<b>Time period:</b> employees hired {analytics.format_period(*self._period)}'
+            f'<b>Time period:</b> {who} {analytics.format_period(*self._period)}'
             f'&nbsp;&nbsp;·&nbsp;&nbsp;{len(self._df):,} employees'
-            f'&nbsp;&nbsp;·&nbsp;&nbsp;figures as at {analytics.format_date(today)}'
+            f'&nbsp;&nbsp;·&nbsp;&nbsp;status as at {analytics.format_date(as_at)}'
         )
         self._period_label.show()
 

@@ -164,3 +164,46 @@ def test_age_group_breakdown_in_natural_order():
                        'Status': ['Active'] * 5, 'Turnover': [False] * 5})
     result = analytics.kpi_breakdown(df, 'Total Employees', 'Age Group')
     assert list(result.index) == ['Under 30', '30–39', '40–49', '50–59']
+
+
+# ── Period filter ─────────────────────────────────────────────────────────
+
+def _period_staff() -> pd.DataFrame:
+    df = pd.DataFrame({
+        'Name':      ['Long-serving', 'Left 2019', 'Left in period', 'Left after period', 'New hire'],
+        'Status':    ['Active', 'Resigned', 'Resigned', 'Resigned', 'Active'],
+        'Hire_Date': pd.to_datetime(['2015-03-01', '2016-01-01', '2018-05-01', '2019-06-01', '2025-04-01']),
+        'End_Date':  pd.to_datetime([None, '2019-02-01', '2025-06-01', '2026-03-01', None]),
+    })
+    df['Turnover'] = df['Status'].isin(['Resigned', 'Terminated', 'Retired'])
+    df['Tenure_Years'] = 0.0
+    return df
+
+
+def test_employed_during_period_counts_everyone_working_then():
+    out = analytics.filter_period(_period_staff(), '2025-01-01', '2025-12-31', analytics.PERIOD_EMPLOYED)
+    assert sorted(out['Name']) == ['Left after period', 'Left in period', 'Long-serving', 'New hire']
+
+
+def test_employed_during_period_treats_later_leavers_as_active():
+    out = analytics.filter_period(_period_staff(), '2025-01-01', '2025-12-31').set_index('Name')
+    assert out.loc['Left after period', 'Status'] == 'Active'
+    assert not out.loc['Left after period', 'Turnover']
+    assert out.loc['Left in period', 'Turnover']
+    # Turnover for the period: 1 leaver out of 4 employed
+    assert analytics.kpi_value(out.reset_index(), 'Overall Turnover Rate (%)') == '25.0%'
+
+
+def test_hired_during_period_only_counts_new_hires():
+    out = analytics.filter_period(_period_staff(), '2025-01-01', '2025-12-31', analytics.PERIOD_HIRED)
+    assert list(out['Name']) == ['New hire']
+
+
+def test_tenure_stops_at_end_date():
+    from core import data_cleaner
+    df = pd.DataFrame({'Name': ['A'], 'Department': ['Sales'], 'Job_Role': ['Rep'], 'Status': ['Resigned'],
+                       'Hire_Date': pd.to_datetime(['2010-01-01']), 'End_Date': pd.to_datetime(['2012-01-01']),
+                       'Salary': [50000]})
+    out = data_cleaner.clean(df)
+    out = out[0] if isinstance(out, tuple) else out
+    assert out['Tenure_Years'].iloc[0] == 2.0

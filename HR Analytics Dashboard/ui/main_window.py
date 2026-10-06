@@ -23,6 +23,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QDragEnterEvent, QDropEvent
 
 from core.data_loader import load_file
+from core import analytics
 from core.data_cleaner import clean
 from ui.filter_panel import FilterPanel
 from ui.dashboard_tab import DashboardTab
@@ -493,20 +494,18 @@ class MainWindow(QMainWindow):
         if f.get('age_group') and f['age_group'] != 'All' and 'Age_Group' in df.columns:
             df = df[df['Age_Group'] == f['age_group']]
 
-        df = df[
-            (df['Hire_Date'].dt.date >= f['date_from']) &
-            (df['Hire_Date'].dt.date <= f['date_to'])
-        ]
+        mode = f.get('period_mode', analytics.PERIOD_EMPLOYED)
+        df = analytics.filter_period(df, f['date_from'], f['date_to'], mode)
 
-        self._set_period(f['date_from'], f['date_to'])
+        self._set_period(f['date_from'], f['date_to'], mode)
         self.dashboard_tab.update_data(df)
         self.statusBar().showMessage(f'Showing {len(df)} records')
 
-    def _set_period(self, date_from, date_to):
-        # Show the hire-date range on the dashboard. The start is clamped to the
+    def _set_period(self, date_from, date_to, mode):
+        # Show the date range on the dashboard. The start is clamped to the
         # earliest hire in the data so the banner never claims a range we don't have.
         start = max(pd.Timestamp(date_from), self._df_full['Hire_Date'].min())
-        self.dashboard_tab.set_period(start, pd.Timestamp(date_to))
+        self.dashboard_tab.set_period(start, pd.Timestamp(date_to), mode)
 
     def _on_tab_changed(self, index):
         # Show sidebar on Dashboard tab, hide it on Analytics/Forecasting tabs —

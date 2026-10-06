@@ -121,39 +121,6 @@ def describe_metric(metric: str) -> str:
     return METRIC_DESCRIPTIONS.get(metric, '')
 
 
-# Plain-English explanation of each metric, shown in tooltips and dialogs so
-# users know exactly what a number means and how it's worked out.
-METRIC_DESCRIPTIONS = {
-    'Total Employees':      'Number of employee records in the selected period, including people who have left.',
-    'Employee Count':       'Number of employee records in each group, including people who have left.',
-    'Active Employees':     'Employees whose status is Active (excludes people on leave and leavers).',
-    'On Leave Count':       'Employees whose status is On Leave.',
-    'Resigned Count':       'Employees whose status is Resigned.',
-    'Overall Turnover Rate (%)':
-        'Share of employees who have left for any reason (resigned, terminated or retired).',
-    'Attrition (Voluntary Leavers) Rate (%)':
-        'Share of employees who chose to leave (resigned or retired). Unlike overall turnover, '
-        'it does not count terminations.',
-    'Avg Tenure (yrs)':     'Average number of years since each employee was hired.',
-    'Average Tenure (yrs)': 'Average number of years since each employee was hired.',
-    'Avg Salary ($)':       'Average annual salary.',
-    'Average Salary ($)':   'Average annual salary.',
-    'Average Age':          'Average age in years, from date of birth.',
-    'Avg Absenteeism Days': 'Average number of days absent per employee.',
-    'Avg Leave Balance':    'Average number of leave days each employee has remaining.',
-    'Hires per Month':      'Number of people hired in each period.',
-    'Departures per Month': 'Number of people who left in each period (any reason).',
-    'Monthly Turnover Rate (%)':
-        'People who left in each period as a share of all employees.',
-    'Monthly Attrition (Voluntary Leavers) Rate (%)':
-        'People who resigned or retired in each period as a share of all employees.',
-}
-
-
-def describe_metric(metric: str) -> str:
-    return METRIC_DESCRIPTIONS.get(metric, '')
-
-
 CHART_TYPES = ['Auto', 'Vertical Bar', 'Horizontal Bar', 'Pie', 'Donut', 'Line']
 
 # Metrics whose category values sum to a meaningful whole (so a pie/donut is
@@ -181,6 +148,43 @@ _MAX_VERTICAL_BARS  = 6   # above this, switch to horizontal bars for readabilit
 
 # Order used when cascading drill-downs through dimensions
 DRILL_CASCADE = ['Department', 'Job Role', 'Status', 'Sex', 'Ethnicity', 'Age Group']
+
+
+# How the dashboard's date range selects employees
+PERIOD_EMPLOYED = 'Employed during period'
+PERIOD_HIRED = 'Hired during period'
+PERIOD_MODES = [PERIOD_EMPLOYED, PERIOD_HIRED]
+
+_LEFT_STATUSES = ['Resigned', 'Terminated', 'Retired']
+
+
+def filter_period(df: pd.DataFrame, start, end, mode: str = PERIOD_EMPLOYED) -> pd.DataFrame:
+    # Select the employees the dashboard should count for a date range.
+    #
+    # 'Employed during period' (default): everyone who worked here at any point in
+    # the range — hired on/before the end and not left before the start. Figures
+    # are 'as at' the end of the range: anyone who left AFTER it was still
+    # employed then, so they count as active, not as a leaver.
+    #
+    # 'Hired during period': only people whose hire date falls in the range.
+    start, end = pd.Timestamp(start), pd.Timestamp(end)
+    if mode == PERIOD_HIRED:
+        return df[(df['Hire_Date'] >= start) & (df['Hire_Date'] <= end)]
+
+    ended = df['End_Date'] if 'End_Date' in df.columns else pd.Series(pd.NaT, index=df.index)
+    out = df[(df['Hire_Date'] <= end) & (ended.isna() | (ended >= start))].copy()
+    if 'End_Date' not in out.columns:
+        return out
+
+    left_later = out['End_Date'] > end
+    if left_later.any():
+        out.loc[left_later, 'Status'] = 'Active'
+        out.loc[left_later, 'Turnover'] = False
+        out.loc[left_later, 'End_Date'] = pd.NaT
+    if 'Tenure_Years' in out.columns:
+        tenure_end = out['End_Date'].fillna(min(end, pd.Timestamp.today().normalize()))
+        out['Tenure_Years'] = ((tenure_end - out['Hire_Date']).dt.days / 365).round(1)
+    return out
 
 
 def format_date(d) -> str:

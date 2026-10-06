@@ -138,8 +138,9 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
         labels = ['Under 30', '30–39', '40–49', '50–59', '60+']
         df['Age_Group'] = pd.cut(df['Age'], bins=bins, labels=labels).astype(str).replace('nan', 'Unknown')
 
-    # Tenure in decimal years from Hire_Date to today
-    df['Tenure_Years'] = ((today - df['Hire_Date']).dt.days / 365).round(1)
+    # Tenure in decimal years from Hire_Date to their End_Date (or today if still employed)
+    tenure_end = df['End_Date'].fillna(today) if 'End_Date' in df.columns else today
+    df['Tenure_Years'] = ((tenure_end - df['Hire_Date']).dt.days / 365).round(1)
 
     # Turnover flag — True for any status that means the employee has left
     df['Turnover'] = df['Status'].isin(['Resigned', 'Terminated', 'Retired'])
