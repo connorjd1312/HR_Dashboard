@@ -2,7 +2,9 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QDateEdit, QPushButton, QFrame,
 )
-from PyQt6.QtCore import pyqtSignal, QDate
+from PyQt6.QtCore import pyqtSignal, QDate, Qt
+
+from core import analytics
 
 from ui import theme
 
@@ -100,13 +102,25 @@ class FilterPanel(QWidget):
         cl.addWidget(divider)
         cl.addSpacing(4)
 
-        cl.addWidget(self._field_label('Hire Date From'))
+        cl.addWidget(self._field_label('Time Period'))
+        self.period_mode_combo = QComboBox()
+        self.period_mode_combo.addItems(analytics.PERIOD_MODES)
+        self.period_mode_combo.setItemData(
+            0, 'Everyone who worked here at any time in the range (standard headcount view)',
+            Qt.ItemDataRole.ToolTipRole)
+        self.period_mode_combo.setItemData(
+            1, 'Only people whose hire date falls in the range (new-hire view)',
+            Qt.ItemDataRole.ToolTipRole)
+        self._style_combo(self.period_mode_combo)
+        cl.addWidget(self.period_mode_combo)
+
+        cl.addWidget(self._field_label('From'))
         self.date_from = QDateEdit(DEFAULT_HIRE_FROM)
         self.date_from.setCalendarPopup(True)
         self.date_from.setStyleSheet(self._date_style())
         cl.addWidget(self.date_from)
 
-        cl.addWidget(self._field_label('Hire Date To'))
+        cl.addWidget(self._field_label('To'))
         self.date_to = QDateEdit(QDate.currentDate())
         self.date_to.setCalendarPopup(True)
         self.date_to.setStyleSheet(self._date_style())
@@ -173,6 +187,7 @@ class FilterPanel(QWidget):
         self.sex_combo.setCurrentIndex(0)
         self.ethnicity_combo.setCurrentIndex(0)
         self.age_group_combo.setCurrentIndex(0)
+        self.period_mode_combo.setCurrentIndex(0)
         self.date_from.setDate(DEFAULT_HIRE_FROM)
         self.date_to.setDate(QDate.currentDate())
         self.emit_filters()
@@ -185,6 +200,7 @@ class FilterPanel(QWidget):
             'sex':        self.sex_combo.currentText(),
             'ethnicity':  self.ethnicity_combo.currentText(),
             'age_group':  self.age_group_combo.currentText(),
+            'period_mode': self.period_mode_combo.currentText(),
             'date_from':  self.date_from.date().toPyDate(),
             'date_to':    self.date_to.date().toPyDate(),
         })
