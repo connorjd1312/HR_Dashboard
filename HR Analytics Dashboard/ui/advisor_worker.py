@@ -18,12 +18,15 @@ class AdvisorWorker(QThread):
     succeeded = pyqtSignal(str, dict)   # answer text, debug info (function + params)
     failed = pyqtSignal(str)
 
-    def __init__(self, client: LocalLLMClient, model: str, question: str, df: pd.DataFrame, parent=None):
+    def __init__(self, client: LocalLLMClient, model: str, question: str, df: pd.DataFrame,
+                 history_df: pd.DataFrame | None = None, scope: str | None = None, parent=None):
         super().__init__(parent)
         self._client = client
         self._model = model
         self._question = question
-        self._df = df
+        self._df = df                    # employees to answer about (maybe dashboard-filtered)
+        self._history_df = history_df    # full data for trends / forecasts
+        self._scope = scope              # description of the dashboard filters, if used
 
     def run(self):
         try:
@@ -31,9 +34,12 @@ class AdvisorWorker(QThread):
             route = query_router.route_query(self._client, self._model, self._question, self._df)
 
             self.stage.emit('Looking up the data…')
-            result = query_router.execute(route, self._df)
+            result = query_router.execute(route, self._df, self._history_df)
+            used_df = (self._history_df if route.function in query_router.TIME_BASED_FUNCTIONS
+                       and self._history_df is not None else self._df)
             debug = {'function': route.function, 'params': route.params,
-                     'source': query_router.source_note(route, self._df)}
+                     'source': query_router.source_note(
+                         route, used_df, None if used_df is self._history_df else self._scope)}
 
             # Exact answers (single KPIs, unsupported questions) skip the LLM entirely
             answer = query_router.direct_answer(route, result)

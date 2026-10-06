@@ -499,7 +499,23 @@ class MainWindow(QMainWindow):
 
         self._set_period(f['date_from'], f['date_to'], mode)
         self.dashboard_tab.update_data(df)
+        # Advisor and Analytics can optionally use exactly what the dashboard shows
+        description = self._describe_filters(f, mode)
+        self.advisor_tab.set_dashboard_filter(df, description)
+        self.analytics_tab.set_dashboard_filter(df, description)
         self.statusBar().showMessage(f'Showing {len(df)} records')
+
+    @staticmethod
+    def _describe_filters(f: dict, mode: str) -> str:
+        # e.g. 'employed 1 Jan 2025 – 9 Oct 2026 · Department: Sales'
+        verb = 'hired' if mode == analytics.PERIOD_HIRED else 'employed'
+        parts = [f"{verb} {analytics.format_period(f['date_from'], f['date_to'])}"]
+        for key, label in [('department', 'Department'), ('job_role', 'Job Role'),
+                           ('status', 'Status'), ('sex', 'Sex'),
+                           ('ethnicity', 'Ethnicity'), ('age_group', 'Age Group')]:
+            if f.get(key) and f[key] != 'All':
+                parts.append(f'{label}: {f[key]}')
+        return ' · '.join(parts)
 
     def _set_period(self, date_from, date_to, mode):
         # Show the date range on the dashboard. The start is clamped to the

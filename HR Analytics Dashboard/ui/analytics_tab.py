@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QScrollArea, QFrame, QSizePolicy, QLineEdit, QToolButton,
     QFileDialog, QApplication, QTableWidget, QTableWidgetItem,
-    QHeaderView, QToolTip,
+    QHeaderView, QToolTip, QCheckBox,
 )
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QPixmap, QFont
@@ -173,7 +173,10 @@ class AnalyticsTab(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._df = None
+        self._df = None          # data the charts are drawn from
+        self._full_df = None     # all loaded data
+        self._dash_df = None     # the dashboard's filtered employees
+        self._dash_scope = ''
         self._charts = []          # list of {'id', 'title', 'series_list'}
         self._active_idx = -1
         self._left_visible = True
@@ -369,6 +372,13 @@ class AnalyticsTab(QWidget):
             btn.clicked.connect(slot)
             tb.addWidget(btn)
 
+        self._use_filters_box = QCheckBox('Use dashboard filters')
+        self._use_filters_box.setToolTip(
+            'Build charts from the employees the Dashboard tab is showing, '
+            'instead of all loaded data')
+        self._use_filters_box.toggled.connect(self._on_use_filters_toggled)
+        tb.addWidget(self._use_filters_box)
+
         self._focus_btn = QPushButton('⤢ Focus')
         self._focus_btn.setToolTip('Hide the side panels to make the chart bigger')
         self._focus_btn.setFixedHeight(32)
@@ -507,7 +517,26 @@ class AnalyticsTab(QWidget):
     # ── Public API ────────────────────────────────────────────────────────────
 
     def update_data(self, df):
-        self._df = df
+        self._full_df = df
+        self._apply_data_source()
+
+    def set_dashboard_filter(self, df, description: str):
+        self._dash_df = df
+        self._dash_scope = description
+        if self._use_filters_box.isChecked():
+            self._apply_data_source()
+
+    def _on_use_filters_toggled(self, _checked):
+        self._apply_data_source()
+
+    def _apply_data_source(self):
+        # Charts use either all loaded data or the dashboard's filtered employees
+        use_dash = self._using_dashboard_filters()
+        self._df = self._dash_df if use_dash else self._full_df
+        self._use_filters_box.setToolTip(
+            f'Using the dashboard filters: {self._dash_scope}' if use_dash else
+            'Build charts from the employees the Dashboard tab is showing, '
+            'instead of all loaded data')
         if self._active_idx >= 0:
             self._render_active()
             self._update_thumbnails()
@@ -758,12 +787,19 @@ class AnalyticsTab(QWidget):
         grans = {s.get('granularity', 'Monthly') for s in series_list}
         if len(grans) == 1:
             text += f'  ·  {grans.pop()}'
+        if self._using_dashboard_filters():
+            text += '  ·  dashboard filters applied'
         return text
 
     def _snapshot_period_text(self):
         if not self._show_period:
             return None
+        if self._using_dashboard_filters():
+            return f'Dashboard filters: {self._dash_scope}'
         return f'Current snapshot as at {analytics.format_date(pd.Timestamp.today())}'
+
+    def _using_dashboard_filters(self) -> bool:
+        return self._use_filters_box.isChecked() and self._dash_df is not None
 
     # ── Snapshot rendering ────────────────────────────────────────────────────
 

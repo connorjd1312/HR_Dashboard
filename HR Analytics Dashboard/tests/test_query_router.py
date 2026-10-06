@@ -210,3 +210,29 @@ def test_explain_prompt_forbids_own_calculations():
 def test_source_note_names_the_dashboard_figure():
     route = query_router.RouterResult('breakdown_kpi', {'metric': 'Avg Salary ($)', 'group_by': 'Department'})
     assert query_router.source_note(route) == 'Source: Avg Salary ($) by Department'
+
+
+# Following the dashboard filters
+
+def test_trends_use_full_history_even_when_filtered():
+    df = _sample_df()
+    filtered = df[df['Department'] == 'Sales']
+    route = query_router.RouterResult('time_series_trend', {
+        'metric': 'Hires per Month', 'filter_by': 'None', 'filter_val': 'All',
+        'granularity': 'Yearly', 'months_back': 120})
+    full = query_router.execute(route, df)
+    assert query_router.execute(route, filtered, history_df=df).equals(full)
+
+
+def test_kpis_use_the_filtered_employees():
+    df = _sample_df()
+    filtered = df[df['Department'] == 'Sales']
+    route = query_router.RouterResult('overall_kpi', {'metric': 'Total Employees'})
+    assert query_router.execute(route, filtered, history_df=df) == '2'
+
+
+def test_source_note_describes_dashboard_scope():
+    df = _sample_df()
+    route = query_router.RouterResult('overall_kpi', {'metric': 'Total Employees'})
+    note = query_router.source_note(route, df, scope='Department: Sales')
+    assert note.endswith('4 employees matching the dashboard (Department: Sales)')
