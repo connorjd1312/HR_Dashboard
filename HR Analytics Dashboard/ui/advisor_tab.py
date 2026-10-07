@@ -11,6 +11,7 @@ import pandas as pd
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox,
     QFrame, QScrollArea, QLineEdit, QStackedWidget, QSizePolicy, QProgressBar,
+    QCheckBox,
 )
 from PyQt6.QtCore import Qt, QTimer, QThread
 
@@ -67,7 +68,9 @@ class AdvisorTab(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._df: pd.DataFrame | None = None
+        self._df: pd.DataFrame | None = None          # all loaded data
+        self._dash_df: pd.DataFrame | None = None     # what the dashboard currently shows
+        self._dash_scope: str | None = None
         self._client = LocalLLMClient()
         self._worker: AdvisorWorker | None = None
         self._download_worker: ModelDownloadWorker | None = None
@@ -92,6 +95,24 @@ class AdvisorTab(QWidget):
 
     def update_data(self, df: pd.DataFrame):
         self._df = df
+        self._refresh_scope_label()
+
+    def set_dashboard_filter(self, df: pd.DataFrame, description: str):
+        # The dashboard's filtered employees, used when 'Use dashboard filters' is ticked
+        self._dash_df = df
+        self._dash_scope = description
+        self._refresh_scope_label()
+
+    def _use_dashboard(self) -> bool:
+        return self._use_filters_box.isChecked() and self._dash_df is not None
+
+    def _refresh_scope_label(self):
+        if self._use_dashboard():
+            self._scope_label.setText(
+                f'Answering about {len(self._dash_df):,} employees: {self._dash_scope}. '
+                'Trends and forecasts use the full history.')
+        elif self._df is not None:
+            self._scope_label.setText(f'Answering about all {len(self._df):,} employees in the loaded data.')
 
     def shutdown(self):
         # Called when the app closes: let a background model load finish rather
@@ -138,12 +159,23 @@ class AdvisorTab(QWidget):
         self._model_combo.setEnabled(False)
         status_row.addWidget(self._model_combo)
 
+        self._use_filters_box = QCheckBox('Use dashboard filters')
+        self._use_filters_box.setChecked(True)
+        self._use_filters_box.setToolTip('Answer about the same employees the Dashboard tab is showing')
+        self._use_filters_box.toggled.connect(lambda _: self._refresh_scope_label())
+        status_row.addWidget(self._use_filters_box)
+
         self._recheck_btn = QPushButton('Check Again')
         self._recheck_btn.setStyleSheet(_BTN_SECONDARY)
         self._recheck_btn.clicked.connect(self._check_connection)
         status_row.addWidget(self._recheck_btn)
 
         v.addLayout(status_row)
+
+        self._scope_label = QLabel()
+        self._scope_label.setWordWrap(True)
+        self._scope_label.setStyleSheet(theme.LABEL_HINT)
+        v.addWidget(self._scope_label)
 
         # Setup card (shown when the local model isn't downloaded yet) / Chat widget (shown when it is)
         self._advisor_stack = QStackedWidget()
@@ -433,7 +465,11 @@ class AdvisorTab(QWidget):
         self._send_btn.setEnabled(False)
         self._pending_label = self._add_bubble('Thinking…', is_user=False)
 
-        self._worker = AdvisorWorker(self._client, model, question, self._df)
+        if self._use_dashboard():
+            self._worker = AdvisorWorker(self._client, model, question, self._dash_df,
+                                         history_df=self._df, scope=self._dash_scope)
+        else:
+            self._worker = AdvisorWorker(self._client, model, question, self._df)
         self._worker.stage.connect(self._on_stage)
         self._worker.succeeded.connect(self._on_succeeded)
         self._worker.failed.connect(self._on_failed)

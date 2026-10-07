@@ -200,8 +200,15 @@ def _clamp_int(value, default: int, lo: int, hi: int) -> int:
 # Execution — this is the "HR Analytics Engine" step; all real math happens here.
 
 
-def execute(result: RouterResult, df: pd.DataFrame):
+# Functions that look back over time — they need the full history, not a
+# date-filtered snapshot (which would cut off earlier months).
+TIME_BASED_FUNCTIONS = ('time_series_trend', 'forecast')
+
+
+def execute(result: RouterResult, df: pd.DataFrame, history_df: pd.DataFrame | None = None):
     fn, p = result.function, result.params
+    if fn in TIME_BASED_FUNCTIONS and history_df is not None:
+        df = history_df
 
     if fn == 'overall_kpi':
         return analytics.kpi_value(df, p['metric'])
@@ -304,12 +311,17 @@ def direct_answer(route: RouterResult, result) -> str | None:
     return None
 
 
-def source_note(route: RouterResult, df: pd.DataFrame | None = None) -> str:
+def source_note(route: RouterResult, df: pd.DataFrame | None = None,
+                scope: str | None = None) -> str:
     # Short 'where this answer came from' line shown under each answer, including
-    # which employees it covers (the advisor uses all loaded data, not the
-    # dashboard's sidebar filters).
+    # which employees it covers. `scope` describes the dashboard filters when the
+    # advisor is following them; trends/forecasts always use the full history.
     note = _source_figure(route)
-    if note and df is not None and len(df) and 'Hire_Date' in df.columns:
+    if not note or df is None or not len(df):
+        return note
+    if scope and route.function not in TIME_BASED_FUNCTIONS:
+        return note + f' · {len(df):,} employees matching the dashboard ({scope})'
+    if 'Hire_Date' in df.columns:
         start = analytics.format_date(df['Hire_Date'].min())
         note += f' · all {len(df):,} employees in the loaded data (hired since {start})'
     return note
