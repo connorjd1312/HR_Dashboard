@@ -58,7 +58,7 @@ def _metric_rows() -> str:
     rows = []
     seen = set()
     for name, text in analytics.METRIC_DESCRIPTIONS.items():
-        if text in seen:   # skip duplicate wording (e.g. 'Avg Salary' vs 'Average Salary')
+        if text in seen:   # skip entries that share the same wording
             continue
         seen.add(text)
         rows.append(f'<tr><td style="border-bottom:1px solid #E0E0E0"><b>{name}</b></td>'

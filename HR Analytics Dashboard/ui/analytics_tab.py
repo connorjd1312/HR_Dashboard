@@ -1047,6 +1047,10 @@ class AnalyticsTab(QWidget):
                 with open(path, 'r', encoding='utf-8') as f:
                     loaded = json.load(f)
                 if isinstance(loaded, list) and loaded:
+                    # Setups saved by older versions may use old metric names
+                    for chart in loaded:
+                        for series in chart.get('series_list', []):
+                            series['metric'] = analytics.canonical_metric(series.get('metric', ''))
                     self._charts = loaded
                     self._active_idx = 0
                     self._title_edit.blockSignals(True)

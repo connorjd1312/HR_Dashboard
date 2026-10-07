@@ -27,7 +27,7 @@ class ChartPanel(QFrame):
         self,
         parent=None,
         allow_close: bool = False,
-        metric: str = 'Employee Count',
+        metric: str = 'Total Employees',
         dimension: str = 'Department',
         chart_type: str = 'Auto',
     ):

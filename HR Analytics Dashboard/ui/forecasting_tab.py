@@ -198,7 +198,7 @@ class ForecastingTab(QWidget):
         else:
             arrow = {'up': '▲', 'down': '▼', 'flat': '→'}.get(summary['direction'], '→')
             color = {'up': _GREEN, 'down': _RED, 'flat': '#555'}.get(summary['direction'], '#555')
-            # Plain-English summary, e.g. "▲ Hires per Month is expected to rise 12.5%
+            # Plain-English summary, e.g. "▲ Hires are expected to rise 12.5%
             # over the next 3 months (latest: 8 → forecast: 9)"
             latest = summary['last_historical']
             end_value = summary['forecast_points'][-1]['value'] if summary['forecast_points'] else latest
@@ -210,7 +210,7 @@ class ForecastingTab(QWidget):
             else:
                 trend = f'{"rise" if summary["direction"] == "up" else "fall"} {abs(summary["percent_change"]):.1f}%'
             self._stats_label.setText(
-                f'{arrow} {metric} is expected to {trend} over the next {periods} '
+                f'{arrow} {metric} {"are" if metric in ("Hires", "Departures") else "is"} expected to {trend} over the next {periods} '
                 f'{unit}{"s" if periods != 1 else ""}'
                 f'  (latest: {latest:.1f} → forecast: {end_value:.1f})'
             )
