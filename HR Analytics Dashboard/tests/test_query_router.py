@@ -76,14 +76,14 @@ def test_route_query_falls_back_when_params_is_not_a_dict():
 
 def test_department_comparison_defaults_to_every_department():
     df = _sample_df()
-    p = query_router._validate_params('department_comparison', {'metric': 'Employee Count'}, df)
+    p = query_router._validate_params('department_comparison', {'metric': 'Total Employees'}, df)
     assert sorted(p['departments']) == ['Engineering', 'Sales']
 
 
 def test_validate_params_rejects_departments_not_in_dataset():
     df = _sample_df()
     params = query_router._validate_params(
-        'department_comparison', {'departments': ['Mars Colony'], 'metric': 'Employee Count'}, df,
+        'department_comparison', {'departments': ['Mars Colony'], 'metric': 'Total Employees'}, df,
     )
     assert set(params['departments']).issubset(set(df['Department'].unique()))
     assert len(params['departments']) > 0
@@ -92,7 +92,7 @@ def test_validate_params_rejects_departments_not_in_dataset():
 def test_validate_params_clamps_out_of_range_forecast_periods():
     df = _sample_df()
     params = query_router._validate_params(
-        'forecast', {'metric': 'Hires per Month', 'periods': 999, 'method': 'Linear Trend'}, df,
+        'forecast', {'metric': 'Hires', 'periods': 999, 'method': 'Linear Trend'}, df,
     )
     assert params['periods'] == 24
 
@@ -116,7 +116,7 @@ def test_execute_department_comparison_returns_series_indexed_by_department():
     df = _sample_df()
     result = query_router.execute(
         query_router.RouterResult(
-            'department_comparison', {'departments': ['Sales', 'Engineering'], 'metric': 'Employee Count'},
+            'department_comparison', {'departments': ['Sales', 'Engineering'], 'metric': 'Total Employees'},
         ),
         df,
     )
@@ -136,7 +136,7 @@ def test_execute_general_summary_has_expected_keys():
 def test_execute_forecast_returns_summary_dict():
     df = _sample_df()
     result = query_router.execute(
-        query_router.RouterResult('forecast', {'metric': 'Hires per Month', 'periods': 2, 'method': 'Linear Trend'}),
+        query_router.RouterResult('forecast', {'metric': 'Hires', 'periods': 2, 'method': 'Linear Trend'}),
         df,
     )
     assert 'direction' in result
@@ -186,7 +186,7 @@ def test_single_kpi_answered_exactly_from_dashboard_value():
 def test_breakdowns_still_go_to_llm_with_precomputed_key_facts():
     from core import context_builder
     df = _sample_df()
-    route = query_router.RouterResult('breakdown_kpi', {'metric': 'Avg Salary ($)', 'group_by': 'Department'})
+    route = query_router.RouterResult('breakdown_kpi', {'metric': 'Average Salary ($)', 'group_by': 'Department'})
     result = query_router.execute(route, df)
     assert query_router.direct_answer(route, result) is None
     facts = context_builder.build_context('q', route.function, route.params, result)['key_facts']
@@ -208,8 +208,8 @@ def test_explain_prompt_forbids_own_calculations():
 
 
 def test_source_note_names_the_dashboard_figure():
-    route = query_router.RouterResult('breakdown_kpi', {'metric': 'Avg Salary ($)', 'group_by': 'Department'})
-    assert query_router.source_note(route) == 'Source: Avg Salary ($) by Department'
+    route = query_router.RouterResult('breakdown_kpi', {'metric': 'Average Salary ($)', 'group_by': 'Department'})
+    assert query_router.source_note(route) == 'Source: Average Salary ($) by Department'
 
 
 # Following the dashboard filters
@@ -218,7 +218,7 @@ def test_trends_use_full_history_even_when_filtered():
     df = _sample_df()
     filtered = df[df['Department'] == 'Sales']
     route = query_router.RouterResult('time_series_trend', {
-        'metric': 'Hires per Month', 'filter_by': 'None', 'filter_val': 'All',
+        'metric': 'Hires', 'filter_by': 'None', 'filter_val': 'All',
         'granularity': 'Yearly', 'months_back': 120})
     full = query_router.execute(route, df)
     assert query_router.execute(route, filtered, history_df=df).equals(full)

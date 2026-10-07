@@ -20,21 +20,21 @@ TIME_RANGES = {
 }
 
 TIME_SERIES_METRICS = [
-    'Hires per Month',
-    'Departures per Month',
-    'Monthly Turnover Rate (%)',
-    'Monthly Attrition (Voluntary Leavers) Rate (%)',
+    'Hires',
+    'Departures',
+    'Turnover Rate per Period (%)',
+    'Attrition (Voluntary Leavers) Rate per Period (%)',
 ]
 
 SNAPSHOT_METRICS = [
-    'Employee Count',
+    'Total Employees',
     'Overall Turnover Rate (%)',
     'Attrition (Voluntary Leavers) Rate (%)',
     'Average Salary ($)',
     'Average Tenure (yrs)',
     'Average Age',
-    'Avg Absenteeism Days',
-    'Avg Leave Balance',
+    'Average Absenteeism (days)',
+    'Average Leave Balance (days)',
 ]
 
 GROUP_BY_OPTIONS = ['Department', 'Job Role', 'Status', 'Sex', 'Ethnicity', 'Age Group']
@@ -69,11 +69,11 @@ KPI_OPTIONS = [
     'Active Employees',
     'Overall Turnover Rate (%)',
     'Attrition (Voluntary Leavers) Rate (%)',
-    'Avg Tenure (yrs)',
-    'Avg Salary ($)',
+    'Average Tenure (yrs)',
+    'Average Salary ($)',
     'Average Age',
-    'Avg Absenteeism Days',
-    'Avg Leave Balance',
+    'Average Absenteeism (days)',
+    'Average Leave Balance (days)',
     'On Leave Count',
     'Resigned Count',
 ]
@@ -84,37 +84,65 @@ DEFAULT_KPIS = [
     'Active Employees',
     'Overall Turnover Rate (%)',
     'Attrition (Voluntary Leavers) Rate (%)',
-    'Avg Tenure (yrs)',
-    'Avg Salary ($)',
+    'Average Tenure (yrs)',
+    'Average Salary ($)',
 ]
 
 # Plain-English explanation of each metric, shown in tooltips and dialogs so
 # users know exactly what a number means and how it's worked out.
 METRIC_DESCRIPTIONS = {
-    'Total Employees':      'Number of employee records in the selected period, including people who have left.',
-    'Employee Count':       'Number of employee records in each group, including people who have left.',
-    'Active Employees':     'Employees whose status is Active (excludes people on leave and leavers).',
-    'On Leave Count':       'Employees whose status is On Leave.',
-    'Resigned Count':       'Employees whose status is Resigned.',
+    'Total Employees':
+        'Number of employees in the selected period (or in each group), including people who have left.',
+    'Active Employees':
+        'Employees whose status is Active (excludes people on leave and leavers).',
+    'On Leave Count':
+        'Employees whose status is On Leave.',
+    'Resigned Count':
+        'Employees whose status is Resigned.',
     'Overall Turnover Rate (%)':
         'Share of employees who have left for any reason (resigned, terminated or retired).',
     'Attrition (Voluntary Leavers) Rate (%)':
         'Share of employees who chose to leave (resigned or retired). Unlike overall turnover, '
         'it does not count terminations.',
-    'Avg Tenure (yrs)':     'Average number of years since each employee was hired.',
-    'Average Tenure (yrs)': 'Average number of years since each employee was hired.',
-    'Avg Salary ($)':       'Average annual salary.',
-    'Average Salary ($)':   'Average annual salary.',
-    'Average Age':          'Average age in years, from date of birth.',
-    'Avg Absenteeism Days': 'Average number of days absent per employee.',
-    'Avg Leave Balance':    'Average number of leave days each employee has remaining.',
-    'Hires per Month':      'Number of people hired in each period.',
-    'Departures per Month': 'Number of people who left in each period (any reason).',
-    'Monthly Turnover Rate (%)':
+    'Average Tenure (yrs)':
+        'Average years of service — up to today, or up to their leaving date for people who left.',
+    'Average Salary ($)':
+        'Average annual salary.',
+    'Average Age':
+        'Average age in years, from date of birth.',
+    'Average Absenteeism (days)':
+        'Average number of days absent per employee.',
+    'Average Leave Balance (days)':
+        'Average number of leave days each employee has remaining.',
+    'Hires':
+        'Number of people hired in each period (week, month, quarter or year).',
+    'Departures':
+        'Number of people who left in each period, for any reason.',
+    'Turnover Rate per Period (%)':
         'People who left in each period as a share of all employees.',
-    'Monthly Attrition (Voluntary Leavers) Rate (%)':
+    'Attrition (Voluntary Leavers) Rate per Period (%)':
         'People who resigned or retired in each period as a share of all employees.',
 }
+
+
+# Earlier versions used different names for some metrics; saved chart setups
+# may still contain them.
+LEGACY_METRIC_NAMES = {
+    'Employee Count': 'Total Employees',
+    'Avg Tenure (yrs)': 'Average Tenure (yrs)',
+    'Avg Salary ($)': 'Average Salary ($)',
+    'Avg Absenteeism Days': 'Average Absenteeism (days)',
+    'Avg Leave Balance': 'Average Leave Balance (days)',
+    'Hires per Month': 'Hires',
+    'Departures per Month': 'Departures',
+    'Monthly Turnover Rate (%)': 'Turnover Rate per Period (%)',
+    'Monthly Attrition (Voluntary Leavers) Rate (%)': 'Attrition (Voluntary Leavers) Rate per Period (%)',
+}
+
+
+def canonical_metric(metric: str) -> str:
+    # Current name for a metric, translating any older name.
+    return LEGACY_METRIC_NAMES.get(metric, metric)
 
 
 def describe_metric(metric: str) -> str:
@@ -125,10 +153,8 @@ CHART_TYPES = ['Auto', 'Vertical Bar', 'Horizontal Bar', 'Pie', 'Donut', 'Line']
 
 # Metrics whose category values sum to a meaningful whole (so a pie/donut is
 # defensible). Average/rate metrics are NOT parts-of-a-whole and must never
-# use Pie/Donut — averaging across slices is misleading. Covers both the
-# snapshot metric ('Employee Count') and the count-type KPI/drill-down metrics.
+# use Pie/Donut — averaging across slices is misleading.
 PARTS_OF_WHOLE_METRICS = [
-    'Employee Count',
     'Total Employees',
     'Active Employees',
     'On Leave Count',
@@ -231,10 +257,10 @@ def kpi_value(df: pd.DataFrame, metric: str) -> str:
         return f'{df["Turnover"].mean() * 100:.1f}%'
     if metric == 'Attrition (Voluntary Leavers) Rate (%)':
         return f'{_attrition_flag(df).mean() * 100:.1f}%'
-    if metric == 'Avg Tenure (yrs)':
+    if metric == 'Average Tenure (yrs)':
         v = df['Tenure_Years'].mean()
         return f'{v:.1f}' if pd.notna(v) else '—'
-    if metric == 'Avg Salary ($)':
+    if metric == 'Average Salary ($)':
         v = df['Salary'].mean()
         return f'${v:,.0f}' if pd.notna(v) else '—'
     if metric == 'Average Age':
@@ -242,11 +268,11 @@ def kpi_value(df: pd.DataFrame, metric: str) -> str:
             return '—'
         v = df['Age'].dropna().mean()
         return f'{v:.1f}' if pd.notna(v) else '—'
-    if metric == 'Avg Absenteeism Days':
+    if metric == 'Average Absenteeism (days)':
         if 'Absenteeism_Days' not in df.columns:
             return '—'
         return f'{df["Absenteeism_Days"].mean():.1f}'
-    if metric == 'Avg Leave Balance':
+    if metric == 'Average Leave Balance (days)':
         if 'Leave_Balance' not in df.columns:
             return '—'
         return f'{df["Leave_Balance"].mean():.1f}'
@@ -309,19 +335,19 @@ def _kpi_breakdown(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
         return (df.groupby(col)['Turnover'].mean() * 100).round(1).rename('Value')
     if metric == 'Attrition (Voluntary Leavers) Rate (%)':
         return (_attrition_flag(df).groupby(df[col]).mean() * 100).round(1).rename('Value')
-    if metric == 'Avg Tenure (yrs)':
+    if metric == 'Average Tenure (yrs)':
         return df.groupby(col)['Tenure_Years'].mean().round(1).rename('Value')
-    if metric == 'Avg Salary ($)':
+    if metric == 'Average Salary ($)':
         return df.groupby(col)['Salary'].mean().round(0).rename('Value')
     if metric == 'Average Age':
         if 'Age' not in df.columns:
             return pd.Series(dtype=float)
         return df.groupby(col)['Age'].mean().round(1).rename('Value')
-    if metric == 'Avg Absenteeism Days':
+    if metric == 'Average Absenteeism (days)':
         if 'Absenteeism_Days' not in df.columns:
             return pd.Series(dtype=float)
         return df.groupby(col)['Absenteeism_Days'].mean().round(1).rename('Value')
-    if metric == 'Avg Leave Balance':
+    if metric == 'Average Leave Balance (days)':
         if 'Leave_Balance' not in df.columns:
             return pd.Series(dtype=float)
         return df.groupby(col)['Leave_Balance'].mean().round(1).rename('Value')
@@ -343,8 +369,8 @@ def summary_kpis(df: pd.DataFrame) -> dict:
         'Total Employees': total,
         'Active Employees': active,
         'Overall Turnover Rate (%)': turnover_rate,
-        'Avg Tenure (yrs)': avg_tenure,
-        'Avg Salary ($)': f'{avg_salary:,.0f}',  # formatted with commas, no decimals
+        'Average Tenure (yrs)': avg_tenure,
+        'Average Salary ($)': f'{avg_salary:,.0f}',  # formatted with commas, no decimals
     }
 
 
@@ -379,14 +405,14 @@ def turnover_by_dept(df: pd.DataFrame) -> pd.Series:
 
 
 COMPARISON_METRICS = [
-    'Employee Count',
+    'Total Employees',
     'Overall Turnover Rate (%)',
     'Attrition (Voluntary Leavers) Rate (%)',
     'Average Salary ($)',
     'Average Tenure (yrs)',
     'Average Age',
-    'Avg Absenteeism Days',
-    'Avg Leave Balance',
+    'Average Absenteeism (days)',
+    'Average Leave Balance (days)',
 ]
 
 
@@ -398,7 +424,7 @@ def dept_comparison(df: pd.DataFrame, departments: list, metric: str) -> pd.Seri
         if len(sub) == 0:
             result[dept] = 0.0
             continue
-        if metric == 'Employee Count':
+        if metric == 'Total Employees':
             result[dept] = float(len(sub))
         elif metric == 'Overall Turnover Rate (%)':
             result[dept] = round(float(sub['Turnover'].mean() * 100), 1)
@@ -408,10 +434,10 @@ def dept_comparison(df: pd.DataFrame, departments: list, metric: str) -> pd.Seri
             result[dept] = round(float(sub['Salary'].mean()), 0)
         elif metric == 'Average Tenure (yrs)':
             result[dept] = round(float(sub['Tenure_Years'].mean()), 1)
-        elif metric == 'Avg Absenteeism Days':
+        elif metric == 'Average Absenteeism (days)':
             col = 'Absenteeism_Days'
             result[dept] = round(float(sub[col].mean()), 1) if col in df.columns else 0.0
-        elif metric == 'Avg Leave Balance':
+        elif metric == 'Average Leave Balance (days)':
             col = 'Leave_Balance'
             result[dept] = round(float(sub[col].mean()), 1) if col in df.columns else 0.0
         elif metric == 'Average Age':
@@ -459,20 +485,20 @@ def time_series_data(
 
     freq = _FREQ_MAP.get(granularity, 'ME')
 
-    if metric == 'Hires per Month':
+    if metric == 'Hires':
         mask = df['Hire_Date'] >= start_date
         raw = df[mask].set_index('Hire_Date').resample(freq)['Name'].count()
-    elif metric == 'Departures per Month':
+    elif metric == 'Departures':
         sub = df[df['End_Date'].notna()]
         mask = sub['End_Date'] >= start_date
         raw = sub[mask].set_index('End_Date').resample(freq)['Name'].count()
-    elif metric == 'Monthly Turnover Rate (%)':
+    elif metric == 'Turnover Rate per Period (%)':
         total = max(len(df), 1)
         sub = df[df['End_Date'].notna()]
         mask = sub['End_Date'] >= start_date
         counts = sub[mask].set_index('End_Date').resample(freq)['Name'].count()
         raw = (counts / total * 100).round(2)
-    elif metric == 'Monthly Attrition (Voluntary Leavers) Rate (%)':
+    elif metric == 'Attrition (Voluntary Leavers) Rate per Period (%)':
         total = max(len(df), 1)
         sub = df[df['End_Date'].notna() & _attrition_flag(df)]
         mask = sub['End_Date'] >= start_date
@@ -493,7 +519,7 @@ def snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
 def _snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
     col = _COL_MAP.get(group_by, group_by)
 
-    if metric == 'Employee Count':
+    if metric == 'Total Employees':
         return df.groupby(col).size().rename('Value')
     elif metric == 'Overall Turnover Rate (%)':
         return (df.groupby(col)['Turnover'].mean() * 100).round(1).rename('Value')
@@ -503,11 +529,11 @@ def _snapshot_data(df: pd.DataFrame, metric: str, group_by: str) -> pd.Series:
         return df.groupby(col)['Salary'].mean().round(0).rename('Value')
     elif metric == 'Average Tenure (yrs)':
         return df.groupby(col)['Tenure_Years'].mean().round(1).rename('Value')
-    elif metric == 'Avg Absenteeism Days':
+    elif metric == 'Average Absenteeism (days)':
         if 'Absenteeism_Days' not in df.columns:
             return pd.Series(dtype=float)
         return df.groupby(col)['Absenteeism_Days'].mean().round(1).rename('Value')
-    elif metric == 'Avg Leave Balance':
+    elif metric == 'Average Leave Balance (days)':
         if 'Leave_Balance' not in df.columns:
             return pd.Series(dtype=float)
         return df.groupby(col)['Leave_Balance'].mean().round(1).rename('Value')

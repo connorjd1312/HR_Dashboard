@@ -28,7 +28,7 @@ class TestRecommendChartType:
 
     def test_employee_count_few_categories_is_pie(self):
         # Parts-of-a-whole count with a small number of categories → Pie.
-        ctype = analytics.recommend_chart_type('Employee Count', 'Status', _series(3))
+        ctype = analytics.recommend_chart_type('Total Employees', 'Status', _series(3))
         assert ctype == 'Pie'
 
     @pytest.mark.parametrize('metric', [
@@ -41,7 +41,7 @@ class TestRecommendChartType:
 
     def test_employee_count_many_categories_is_not_pie(self):
         # Too many slices to read as a pie → falls back to a bar.
-        ctype = analytics.recommend_chart_type('Employee Count', 'Job Role', _series(8))
+        ctype = analytics.recommend_chart_type('Total Employees', 'Job Role', _series(8))
         assert ctype in ('Vertical Bar', 'Horizontal Bar')
         assert ctype not in ('Pie', 'Donut')
 
@@ -51,8 +51,8 @@ class TestRecommendChartType:
         'Average Salary ($)',
         'Average Tenure (yrs)',
         'Average Age',
-        'Avg Absenteeism Days',
-        'Avg Leave Balance',
+        'Average Absenteeism (days)',
+        'Average Leave Balance (days)',
     ])
     def test_average_and_rate_metrics_never_pie(self, metric):
         # Averages/rates don't sum to a whole — Pie/Donut must never be chosen,
@@ -72,19 +72,19 @@ class TestRecommendChartType:
     def test_ordered_dimension_never_pie(self):
         # Age Group is ordered; even as a count it should stay a bar to preserve
         # the natural ordering of the buckets.
-        ctype = analytics.recommend_chart_type('Employee Count', 'Age Group', _series(4))
+        ctype = analytics.recommend_chart_type('Total Employees', 'Age Group', _series(4))
         assert ctype == 'Vertical Bar'
 
     def test_empty_series_safe_default(self):
-        ctype = analytics.recommend_chart_type('Employee Count', 'Status', _series(0))
+        ctype = analytics.recommend_chart_type('Total Employees', 'Status', _series(0))
         assert ctype == 'Vertical Bar'
 
     def test_single_category_safe_default(self):
-        ctype = analytics.recommend_chart_type('Employee Count', 'Status', _series(1))
+        ctype = analytics.recommend_chart_type('Total Employees', 'Status', _series(1))
         assert ctype == 'Vertical Bar'
 
     def test_none_data_does_not_raise(self):
-        ctype = analytics.recommend_chart_type('Employee Count', 'Status', None)
+        ctype = analytics.recommend_chart_type('Total Employees', 'Status', None)
         assert ctype == 'Vertical Bar'
 
 
@@ -135,7 +135,7 @@ class TestAttritionRate:
 
     def test_monthly_series_counts_voluntary_exits_only(self):
         series = analytics.time_series_data(
-            _staff(), 'Monthly Attrition (Voluntary Leavers) Rate (%)', 'None', 'All',
+            _staff(), 'Attrition (Voluntary Leavers) Rate per Period (%)', 'None', 'All',
             pd.Timestamp('2026-01-01'), pd.Timestamp('2026-03-31'), 'Monthly',
         )
         # Jan: 1 resigned, Feb: 1 resigned + 1 retired, Mar: termination only.
@@ -207,3 +207,18 @@ def test_tenure_stops_at_end_date():
     out = data_cleaner.clean(df)
     out = out[0] if isinstance(out, tuple) else out
     assert out['Tenure_Years'].iloc[0] == 2.0
+
+
+# ── Metric names ──────────────────────────────────────────────────────────
+
+def test_old_metric_names_map_to_current_names():
+    assert analytics.canonical_metric('Avg Salary ($)') == 'Average Salary ($)'
+    assert analytics.canonical_metric('Hires per Month') == 'Hires'
+    assert analytics.canonical_metric('Average Age') == 'Average Age'
+
+
+def test_every_metric_has_one_name_and_a_description():
+    every = set(analytics.KPI_OPTIONS + analytics.SNAPSHOT_METRICS + analytics.TIME_SERIES_METRICS
+                + analytics.COMPARISON_METRICS)
+    assert not every & set(analytics.LEGACY_METRIC_NAMES)
+    assert all(analytics.describe_metric(m) for m in every)

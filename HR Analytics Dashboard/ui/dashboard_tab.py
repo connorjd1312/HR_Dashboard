@@ -250,7 +250,7 @@ class DashboardTab(QWidget):
     def _make_chart_panel(
         self,
         allow_close: bool,
-        metric: str = 'Employee Count',
+        metric: str = 'Total Employees',
         dimension: str = 'Department',
         chart_type: str = 'Auto',
     ) -> ChartPanel:

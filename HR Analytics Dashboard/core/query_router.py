@@ -103,7 +103,7 @@ Known job roles in the current dataset (for context only, not a function paramet
 
 Rules and examples (follow these closely):
 - Questions about the future ("will", "next quarter", "next 6 months", "expected", "predict") → forecast.
-  "Will departures go up or down over the next 6 months?" → {{"function": "forecast", "params": {{"metric": "Departures per Month", "periods": 6, "method": "Linear Trend"}}}}
+  "Will departures go up or down over the next 6 months?" → {{"function": "forecast", "params": {{"metric": "Departures", "periods": 6, "method": "Linear Trend"}}}}
 - Comparing named departments → department_comparison with the metric actually asked about.
   "Compare average tenure between Sales and Engineering" → {{"function": "department_comparison", "params": {{"departments": ["Sales", "Engineering"], "metric": "Average Tenure (yrs)"}}}}
 - "Which department/role/group is highest/lowest" → breakdown_kpi.
@@ -164,7 +164,7 @@ def _validate_params(function: str, params: dict, df: pd.DataFrame | None) -> di
         # is highest' can never miss one
         p['departments'] = depts or valid['departments']
         if p.get('metric') not in analytics.COMPARISON_METRICS:
-            p['metric'] = 'Employee Count'
+            p['metric'] = 'Total Employees'
 
     elif function == 'time_series_trend':
         if p.get('metric') not in analytics.TIME_SERIES_METRICS:
@@ -256,8 +256,8 @@ def _general_summary(df: pd.DataFrame) -> dict:
         'active_employees': analytics.kpi_value(df, 'Active Employees'),
         'turnover_rate': analytics.kpi_value(df, 'Overall Turnover Rate (%)'),
         'attrition_rate': analytics.kpi_value(df, 'Attrition (Voluntary Leavers) Rate (%)'),
-        'avg_tenure_years': analytics.kpi_value(df, 'Avg Tenure (yrs)'),
-        'avg_salary': analytics.kpi_value(df, 'Avg Salary ($)'),
+        'avg_tenure_years': analytics.kpi_value(df, 'Average Tenure (yrs)'),
+        'avg_salary': analytics.kpi_value(df, 'Average Salary ($)'),
     }
 
 
