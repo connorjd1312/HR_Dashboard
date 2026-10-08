@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from PyQt6.QtWidgets import (
+    QGridLayout,
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QScrollArea, QFrame, QSizePolicy, QLineEdit, QToolButton,
     QFileDialog, QApplication, QTableWidget, QTableWidgetItem,
@@ -23,7 +24,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from core import analytics
 from ui import theme
 from ui.chart_widget import ChartWithToolbar, make_splitter, set_title_with_period
-from ui.series_dialog import SeriesDialog
+from ui.series_dialog import PALETTE, TEMPLATES, SeriesDialog, series_from_template
 
 # ── Colour / style constants ──────────────────────────────────────────────────
 
@@ -64,10 +65,11 @@ class _SeriesCard(QFrame):
                 border: 1px solid {_BORDER};
             }}
         ''')
-        self.setFixedHeight(52)
+        # Grows taller for long names (they wrap) instead of cutting them off
+        self.setMinimumHeight(52)
 
         row = QHBoxLayout(self)
-        row.setContentsMargins(10, 0, 8, 0)
+        row.setContentsMargins(10, 8, 8, 8)
         row.setSpacing(8)
 
         dot = QLabel('●')
@@ -366,6 +368,8 @@ class AnalyticsTab(QWidget):
         ''')
         self._title_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._title_edit.textChanged.connect(self._on_title_changed)
+        # Long titles: show the start (not the end) when not editing, full title on hover
+        self._title_edit.editingFinished.connect(lambda: self._title_edit.setCursorPosition(0))
         tb.addWidget(self._title_edit, stretch=1)
 
         tb.addStretch()
@@ -417,15 +421,7 @@ class AnalyticsTab(QWidget):
 
         # ── Main chart widget ─────────────────────────────────────────────
         self._main_widget = ChartWithToolbar(width=10, height=6)
-        self._placeholder = QLabel(
-            'Build your own chart in three steps:\n\n'
-            '1.  Click  "+ Add Series"  on the left\n'
-            '2.  Choose  Over Time  (a trend across dates) or  Snapshot  (compare groups today)\n'
-            '3.  Pick a metric, then click OK — add more series to compare them on one chart\n\n'
-            'Use  "+ New Chart"  on the right to keep several charts and switch between them.'
-        )
-        self._placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._placeholder.setStyleSheet('font-size: 13px; color: #888888; line-height: 1.8;')
+        self._placeholder = self._build_empty_state()
 
         chart_area = QWidget()
         ca = QVBoxLayout(chart_area)
@@ -480,6 +476,62 @@ class AnalyticsTab(QWidget):
         self._set_table_section_open(False)
 
         return panel
+
+    def _build_empty_state(self) -> QWidget:
+        # Shown when the chart has no series: quick-start templates, or build your own.
+        page = QWidget()
+        v = QVBoxLayout(page)
+        v.addStretch()
+        title = QLabel('Start a chart')
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet(f'font-size: 18px; font-weight: bold; color: {_NAVY};')
+        v.addWidget(title)
+        hint = QLabel('Pick a common chart below, or click  "+ Add Series"  on the left to build your own.\n'
+                      'You can add several series to compare them on one chart.')
+        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        hint.setStyleSheet('font-size: 12px; color: #777;')
+        v.addWidget(hint)
+        v.addSpacing(10)
+        grid = QGridLayout()
+        grid.setSpacing(8)
+        for i, name in enumerate(TEMPLATES):
+            btn = QPushButton(name)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setMinimumHeight(40)
+            btn.setStyleSheet(f'''
+                QPushButton {{
+                    background: #F0F4FF; color: {_NAVY}; border: 1px solid #C9D7F0;
+                    border-radius: 6px; padding: 6px 14px; font-size: 12px;
+                }}
+                QPushButton:hover {{ background: #E1EAFB; border-color: {_NAVY_HOVER}; }}
+            ''')
+            btn.clicked.connect(lambda _=False, n=name: self._add_template(n))
+            grid.addWidget(btn, i // 2, i % 2)
+        row = QHBoxLayout()
+        row.addStretch()
+        row.addLayout(grid)
+        row.addStretch()
+        v.addLayout(row)
+        v.addStretch()
+        return page
+
+    def _add_template(self, name: str):
+        if self._df is None:
+            return
+        if self._active_idx < 0:
+            self._add_new_chart()
+        self._add_series_dicts(series_from_template(name, self._df))
+
+    def _add_series_dicts(self, series: list):
+        self._active_series().extend(series)
+        self._rebuild_series_cards()
+        self._render_active()
+        self._update_thumbnails()
+
+    def _next_color(self) -> str:
+        # First palette colour not already used on this chart
+        used = {s.get('color') for s in self._active_series()}
+        return next((c for c in PALETTE if c not in used), PALETTE[len(used) % len(PALETTE)])
 
     # ── Right thumbnail strip ─────────────────────────────────────────────────
 
@@ -619,6 +671,9 @@ class AnalyticsTab(QWidget):
         self._update_thumbnails()
 
     def _on_title_changed(self, text):
+        self._title_edit.setToolTip(text)
+        if not self._title_edit.hasFocus():
+            self._title_edit.setCursorPosition(0)
         if self._active_idx >= 0:
             self._charts[self._active_idx]['title'] = text
             self._update_thumbnails()
@@ -633,14 +688,9 @@ class AnalyticsTab(QWidget):
     def _add_series(self):
         if self._df is None:
             return
-        dlg = SeriesDialog(self._df, parent=self)
-        if dlg.exec():
-            s = dlg.result_series()
-            if s:
-                self._active_series().append(s)
-                self._rebuild_series_cards()
-                self._render_active()
-                self._update_thumbnails()
+        dlg = SeriesDialog(self._df, parent=self, default_color=self._next_color())
+        if dlg.exec() and dlg.result_series_list():
+            self._add_series_dicts(dlg.result_series_list())
 
     def _edit_series(self, idx):
         if self._df is None:
@@ -683,6 +733,7 @@ class AnalyticsTab(QWidget):
                 on_delete=lambda _=False, i=i: self._delete_series(i),
             )
             self._series_layout.insertWidget(i, card)
+            card.show()
 
     # ── Rendering ─────────────────────────────────────────────────────────────
 
@@ -975,6 +1026,7 @@ class AnalyticsTab(QWidget):
                 on_delete=lambda _=False, idx=i: self._delete_chart(idx),
             )
             self._thumb_layout.insertWidget(i, card)
+            card.show()
 
     # ── Hover tooltips ────────────────────────────────────────────────────────
 
