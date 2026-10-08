@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QFrame, QStackedWidget, QMenu, QTableWidget, QTableWidgetItem,
     QHeaderView, QSizePolicy, QComboBox, QScrollArea,
 )
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QCursor
 
 from core import analytics
@@ -44,6 +44,8 @@ _COMBO_STYLE = theme.COMBO_STYLE
 
 # Dashboard tab: customisable KPI cards, charts, and drill-down.
 class DashboardTab(QWidget):
+
+    clear_filter_requested = pyqtSignal(str)   # filter key, or '*' for all
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -102,6 +104,14 @@ class DashboardTab(QWidget):
         )
         self._period_label.hide()
         outer.addWidget(self._period_label)
+
+        # Active filter chips (e.g. 'Department: Sales ✕') under the time period
+        self._chips_widget = QWidget()
+        self._chips_row = QHBoxLayout(self._chips_widget)
+        self._chips_row.setContentsMargins(8, 4, 8, 0)
+        self._chips_row.setSpacing(6)
+        self._chips_widget.hide()
+        outer.addWidget(self._chips_widget)
 
         self._stack = QStackedWidget()
         outer.addWidget(self._stack)
@@ -172,6 +182,39 @@ class DashboardTab(QWidget):
 
     # Public API, called by MainWindow whenever the dataset changes
 
+
+    def set_active_filters(self, filters: list):
+        # filters: [(key, 'Department: Sales'), ...] for every sidebar filter not on 'All'
+        while self._chips_row.count():
+            item = self._chips_row.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        if not filters:
+            self._chips_widget.hide()
+            return
+        self._chips_row.addWidget(QLabel('Filtered by:', styleSheet='font-size: 12px; color: #555; background: transparent;'))
+        for key, text in filters:
+            chip = QPushButton(f'{text}   ✕')
+            chip.setToolTip('Remove this filter')
+            chip.setCursor(Qt.CursorShape.PointingHandCursor)
+            chip.setStyleSheet('''
+                QPushButton {
+                    background: #EAF1FA; color: #1F3864; border: 1px solid #B9CCE8;
+                    border-radius: 12px; padding: 3px 10px; font-size: 12px;
+                }
+                QPushButton:hover { background: #FDECEA; border-color: #E6B0AA; color: #C0392B; }
+            ''')
+            chip.clicked.connect(lambda _=False, k=key: self.clear_filter_requested.emit(k))
+            self._chips_row.addWidget(chip)
+        if len(filters) > 1:
+            clear_all = QPushButton('Clear all')
+            clear_all.setCursor(Qt.CursorShape.PointingHandCursor)
+            clear_all.setStyleSheet('QPushButton { border: none; color: #2E75B6; font-size: 12px; background: transparent; }'
+                                    'QPushButton:hover { text-decoration: underline; }')
+            clear_all.clicked.connect(lambda: self.clear_filter_requested.emit('*'))
+            self._chips_row.addWidget(clear_all)
+        self._chips_row.addStretch()
+        self._chips_widget.show()
 
     def show_data_check(self, rows_read: int, rows_loaded: int, issues: list[str]):
         # Summarise what the data cleaner found when the file(s) were loaded

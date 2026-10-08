@@ -37,6 +37,12 @@ from ui.help_dialog import HelpDialog
 SUPPORTED = ('.csv', '.xlsx')
 
 # ui/ -> HR Analytics Dashboard/ -> Default documents
+# Sidebar filter keys and their display names (used for chips and descriptions)
+_FILTER_LABELS = [
+    ('department', 'Department'), ('job_role', 'Job Role'), ('status', 'Status'),
+    ('sex', 'Sex'), ('ethnicity', 'Ethnicity'), ('age_group', 'Age Group'),
+]
+
 DEFAULT_DOCS_DIR = Path(__file__).resolve().parent.parent / 'Default documents'
 
 _DROP_ZONE_NORMAL = '''
@@ -112,6 +118,7 @@ class MainWindow(QMainWindow):
         self.analytics_tab = AnalyticsTab()
         self.forecasting_tab = ForecastingTab()
         self.advisor_tab = AdvisorTab()
+        self.dashboard_tab.clear_filter_requested.connect(self._on_clear_filter)
         self.tab_widget.addTab(self.dashboard_tab, 'Dashboard')
         self.tab_widget.addTab(self.analytics_tab, 'Analytics')
         self.tab_widget.addTab(self.forecasting_tab, 'Forecasting')
@@ -502,6 +509,9 @@ class MainWindow(QMainWindow):
         self._set_period(f['date_from'], f['date_to'], mode)
         self.dashboard_tab.update_data(df)
         # Advisor and Analytics can optionally use exactly what the dashboard shows
+        self.dashboard_tab.set_active_filters([
+            (key, f'{label}: {f[key]}') for key, label in _FILTER_LABELS if f.get(key) not in (None, 'All')
+        ])
         description = self._describe_filters(f, mode)
         self.advisor_tab.set_dashboard_filter(df, description)
         self.analytics_tab.set_dashboard_filter(df, description)
@@ -512,12 +522,21 @@ class MainWindow(QMainWindow):
         # e.g. 'employed 1 Jan 2025 – 9 Oct 2026 · Department: Sales'
         verb = 'hired' if mode == analytics.PERIOD_HIRED else 'employed'
         parts = [f"{verb} {analytics.format_period(f['date_from'], f['date_to'])}"]
-        for key, label in [('department', 'Department'), ('job_role', 'Job Role'),
-                           ('status', 'Status'), ('sex', 'Sex'),
-                           ('ethnicity', 'Ethnicity'), ('age_group', 'Age Group')]:
+        for key, label in _FILTER_LABELS:
             if f.get(key) and f[key] != 'All':
                 parts.append(f'{label}: {f[key]}')
         return ' · '.join(parts)
+
+    def _on_clear_filter(self, key: str):
+        # A filter chip's ✕ (or 'Clear all') on the dashboard
+        if not isinstance(self.filter_panel, FilterPanel):
+            return
+        if key == '*':
+            for k, _label in _FILTER_LABELS:
+                self.filter_panel._combos()[k].setCurrentIndex(0)
+            self.filter_panel.emit_filters()
+        else:
+            self.filter_panel.clear_filter(key)
 
     def _set_period(self, date_from, date_to, mode):
         # Show the date range on the dashboard. The start is clamped to the
