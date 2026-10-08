@@ -65,10 +65,11 @@ class _SeriesCard(QFrame):
                 border: 1px solid {_BORDER};
             }}
         ''')
-        self.setFixedHeight(52)
+        # Grows taller for long names (they wrap) instead of cutting them off
+        self.setMinimumHeight(52)
 
         row = QHBoxLayout(self)
-        row.setContentsMargins(10, 0, 8, 0)
+        row.setContentsMargins(10, 8, 8, 8)
         row.setSpacing(8)
 
         dot = QLabel('●')
@@ -367,6 +368,8 @@ class AnalyticsTab(QWidget):
         ''')
         self._title_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._title_edit.textChanged.connect(self._on_title_changed)
+        # Long titles: show the start (not the end) when not editing, full title on hover
+        self._title_edit.editingFinished.connect(lambda: self._title_edit.setCursorPosition(0))
         tb.addWidget(self._title_edit, stretch=1)
 
         tb.addStretch()
@@ -668,6 +671,9 @@ class AnalyticsTab(QWidget):
         self._update_thumbnails()
 
     def _on_title_changed(self, text):
+        self._title_edit.setToolTip(text)
+        if not self._title_edit.hasFocus():
+            self._title_edit.setCursorPosition(0)
         if self._active_idx >= 0:
             self._charts[self._active_idx]['title'] = text
             self._update_thumbnails()
@@ -727,6 +733,7 @@ class AnalyticsTab(QWidget):
                 on_delete=lambda _=False, i=i: self._delete_series(i),
             )
             self._series_layout.insertWidget(i, card)
+            card.show()
 
     # ── Rendering ─────────────────────────────────────────────────────────────
 
@@ -1019,6 +1026,7 @@ class AnalyticsTab(QWidget):
                 on_delete=lambda _=False, idx=i: self._delete_chart(idx),
             )
             self._thumb_layout.insertWidget(i, card)
+            card.show()
 
     # ── Hover tooltips ────────────────────────────────────────────────────────
 
