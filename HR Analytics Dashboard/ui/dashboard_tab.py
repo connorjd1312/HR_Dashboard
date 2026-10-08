@@ -36,6 +36,17 @@ _BREAKDOWN_MIN_H = 300
 _BAR_ROW_PX = 24          # height per category for horizontal bar charts
 _OVERVIEW_MAX_BARS = 10   # overview grid shows the top N; the focused view shows all
 
+# Charts shown when switching to Compare mode (metric, group by)
+_COMPARE_DEFAULTS = [
+    ('Total Employees', 'Department'),
+    ('Overall Turnover Rate (%)', 'Department'),
+    ('Total Employees', 'Age Group'),
+    ('Total Employees', 'Status'),
+    ('Average Salary ($)', 'Department'),
+]
+# Dashboard width (px) needed before Compare mode opens with 4 charts instead of 2
+_WIDE_DASHBOARD_PX = 1300
+
 _BTN_PRIMARY = theme.BTN_PRIMARY
 _BTN_SECONDARY = theme.BTN_SECONDARY
 _BTN_DANGER = theme.BTN_ICON_CLOSE
@@ -419,6 +430,7 @@ class DashboardTab(QWidget):
             self._add_chart_btn.show()
             self._resize_tip.show()
             self._rebuild_charts(allow_close=True)
+            self._add_default_compare_charts()
         else:
             self._multi_toggle_btn.setText('Compare Charts')
             self._multi_toggle_btn.setToolTip('Show up to 4 charts side by side')
@@ -446,10 +458,27 @@ class DashboardTab(QWidget):
             for cfg in configs
         ]
 
+    def _add_default_compare_charts(self):
+        # Fill Compare mode with different useful views rather than copies of the
+        # same chart: 4 on wide screens, 2 on smaller ones where 4 would be too cramped.
+        target = 4 if self.width() >= _WIDE_DASHBOARD_PX else 2
+        shown = {(p.current_config()['metric'], p.current_config()['dimension']) for p in self._chart_panels}
+        for metric, dimension in _COMPARE_DEFAULTS:
+            if len(self._chart_panels) >= target:
+                break
+            if (metric, dimension) not in shown:
+                self._chart_panels.append(self._make_chart_panel(
+                    allow_close=True, metric=metric, dimension=dimension))
+                shown.add((metric, dimension))
+
     def _add_chart(self):
         if len(self._chart_panels) >= 4:
             return
-        self._chart_panels.append(self._make_chart_panel(allow_close=True))
+        # Next suggested view that isn't already on screen
+        shown = {(p.current_config()['metric'], p.current_config()['dimension']) for p in self._chart_panels}
+        metric, dimension = next(((m, d) for m, d in _COMPARE_DEFAULTS if (m, d) not in shown),
+                                 _COMPARE_DEFAULTS[0])
+        self._chart_panels.append(self._make_chart_panel(allow_close=True, metric=metric, dimension=dimension))
         self._relayout_charts()
 
     def _on_chart_closed(self, panel):
