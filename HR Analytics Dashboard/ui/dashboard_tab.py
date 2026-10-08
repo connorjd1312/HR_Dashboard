@@ -7,11 +7,11 @@ from PyQt6.QtWidgets import (
     QFrame, QStackedWidget, QMenu, QTableWidget, QTableWidgetItem,
     QHeaderView, QSizePolicy, QComboBox, QScrollArea,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QCursor
 
 from core import analytics
-from ui import theme
+from ui import message_box, theme
 from ui.chart_widget import ChartWithToolbar, draw_pie, make_splitter
 from ui.kpi_card import KPICard, AddKPIButton
 from ui.chart_panel import ChartPanel
@@ -71,6 +71,28 @@ class DashboardTab(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
+
+        # Data check notice — shown after loading a file
+        self._data_check_bar = QFrame()
+        self._data_check_bar.hide()
+        bar = QHBoxLayout(self._data_check_bar)
+        bar.setContentsMargins(10, 4, 6, 4)
+        self._data_check_label = QLabel()
+        self._data_check_label.setWordWrap(True)
+        self._data_check_label.setStyleSheet('background: transparent; font-size: 12px;')
+        bar.addWidget(self._data_check_label, stretch=1)
+        self._data_check_details = QPushButton('View details')
+        self._data_check_details.setStyleSheet(_BTN_SECONDARY)
+        self._data_check_details.clicked.connect(self._show_data_check_details)
+        bar.addWidget(self._data_check_details)
+        dismiss = QPushButton('✕')
+        dismiss.setFixedSize(22, 22)
+        dismiss.setToolTip('Hide this message')
+        dismiss.setStyleSheet(_BTN_DANGER)
+        dismiss.clicked.connect(self._data_check_bar.hide)
+        bar.addWidget(dismiss)
+        outer.addWidget(self._data_check_bar)
+        self._data_check_items: list[str] = []
 
         # Time period banner — visible on both the dashboard and drill-down pages
         self._period_label = QLabel()
@@ -150,6 +172,34 @@ class DashboardTab(QWidget):
 
     # Public API, called by MainWindow whenever the dataset changes
 
+
+    def show_data_check(self, rows_read: int, rows_loaded: int, issues: list[str]):
+        # Summarise what the data cleaner found when the file(s) were loaded
+        self._data_check_items = issues
+        if issues:
+            self._data_check_bar.setStyleSheet(
+                'QFrame { background: #FFF4E5; border: 1px solid #F5C77E; border-radius: 6px; margin: 8px 8px 0 8px; }')
+            self._data_check_label.setStyleSheet('background: transparent; border: none; font-size: 12px; color: #7A4B00;')
+            self._data_check_label.setText(
+                f'⚠  <b>Data check:</b> {rows_loaded:,} of {rows_read:,} rows loaded — '
+                f'{len(issues)} thing{"s" if len(issues) != 1 else ""} to review in the data.')
+            self._data_check_details.show()
+        else:
+            self._data_check_bar.setStyleSheet(
+                'QFrame { background: #E9F7EF; border: 1px solid #A9DFBF; border-radius: 6px; margin: 8px 8px 0 8px; }')
+            self._data_check_label.setStyleSheet('background: transparent; border: none; font-size: 12px; color: #1E6B3A;')
+            self._data_check_label.setText(
+                f'✓  <b>Data check passed:</b> all {rows_loaded:,} rows loaded with no problems found.')
+            self._data_check_details.hide()
+            QTimer.singleShot(8000, self._data_check_bar.hide)
+        self._data_check_bar.show()
+
+    def _show_data_check_details(self):
+        items = ''.join(f'<li>{issue}</li>' for issue in self._data_check_items)
+        message_box.information(
+            self, 'Data check',
+            f'<p>These were found while loading your data:</p><ul>{items}</ul>'
+            '<p>Fixing them in the source file will make the figures more accurate.</p>')
 
     def set_period(self, start, end, mode=analytics.PERIOD_EMPLOYED):
         # Hire-date range currently applied; shown in the banner and under chart titles.

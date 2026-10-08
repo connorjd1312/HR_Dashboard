@@ -117,13 +117,13 @@ class FilterPanel(QWidget):
         cl.addWidget(self._field_label('From'))
         self.date_from = QDateEdit(DEFAULT_HIRE_FROM)
         self.date_from.setCalendarPopup(True)
-        self.date_from.setStyleSheet(self._date_style())
+        theme.style_date_edit(self.date_from)
         cl.addWidget(self.date_from)
 
         cl.addWidget(self._field_label('To'))
         self.date_to = QDateEdit(QDate.currentDate())
         self.date_to.setCalendarPopup(True)
-        self.date_to.setStyleSheet(self._date_style())
+        theme.style_date_edit(self.date_to)
         cl.addWidget(self.date_to)
 
         cl.addStretch()
@@ -177,8 +177,6 @@ class FilterPanel(QWidget):
     def _style_combo(self, combo):
         combo.setStyleSheet(theme.COMBO_STYLE)
 
-    def _date_style(self):
-        return theme.COMBO_STYLE
 
     def _reset(self):
         self.dept_combo.setCurrentIndex(0)

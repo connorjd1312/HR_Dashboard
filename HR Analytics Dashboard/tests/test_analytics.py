@@ -222,3 +222,41 @@ def test_every_metric_has_one_name_and_a_description():
                 + analytics.COMPARISON_METRICS)
     assert not every & set(analytics.LEGACY_METRIC_NAMES)
     assert all(analytics.describe_metric(m) for m in every)
+
+
+# ── Data check report ─────────────────────────────────────────────────────
+
+def test_cleaner_reports_problems_in_plain_english():
+    from core import data_cleaner
+    raw = pd.DataFrame({
+        'Name':          ['A', 'A', 'B', None, 'C', 'D', 'E'],
+        'Department':    ['Sales'] * 7,
+        'Job_Role':      ['Rep'] * 7,
+        'Status':        ['Active', 'Active', 'On Sabbatical', 'Active', 'Resigned', 'Active', 'Active'],
+        'Hire_Date':     pd.to_datetime(['2020-01-01', '2020-01-01', '2021-01-01', '2021-01-01',
+                                         '2019-01-01', '2022-01-01', '2099-01-01']),
+        'End_Date':      pd.to_datetime([None, None, None, None, None, '2023-01-01', None]),
+        'Date_of_Birth': pd.to_datetime(['1990-01-01'] * 6 + [None]),
+        'Salary':        [50000, 50000, None, 60000, 55000, 52000, 58000],
+    })
+    report = []
+    data_cleaner.clean(raw, report)
+    text = ' '.join(report)
+    assert '1 duplicate row(s) were removed' in text
+    assert 'On Sabbatical' in text
+    assert '1 row(s) were skipped' in text
+    assert 'no salary' in text
+    assert 'Hire Date in the future' in text
+    assert 'leaver(s) have no End Date' in text
+    assert 'marked Active but have an End Date' in text
+    assert 'no valid date of birth' in text
+
+
+def test_clean_data_gives_empty_report():
+    from core import data_cleaner
+    raw = pd.DataFrame({'Name': ['A'], 'Department': ['Sales'], 'Job_Role': ['Rep'], 'Status': ['Active'],
+                        'Hire_Date': pd.to_datetime(['2020-01-01']), 'End_Date': pd.to_datetime([None]),
+                        'Date_of_Birth': pd.to_datetime(['1990-01-01']), 'Salary': [50000]})
+    report = []
+    data_cleaner.clean(raw, report)
+    assert report == []

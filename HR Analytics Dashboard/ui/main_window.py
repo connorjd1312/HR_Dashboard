@@ -301,7 +301,8 @@ class MainWindow(QMainWindow):
 
             # Concatenate all raw frames into one DataFrame before cleaning
             combined_raw = pd.concat(all_raw, ignore_index=True)
-            self._df_full = clean(combined_raw)
+            data_report: list[str] = []
+            self._df_full = clean(combined_raw, data_report)
 
             # Save raw frames so future appends can include them
             self._raw_frames = all_raw
@@ -326,6 +327,7 @@ class MainWindow(QMainWindow):
             self.forecasting_tab.update_data(self._df_full)
             self.advisor_tab.update_data(self._df_full)
             self.filter_panel.emit_filters()
+            self.dashboard_tab.show_data_check(len(combined_raw), len(self._df_full), data_report)
 
             action = 'Added' if (append and self._file_count > len(paths)) else 'Loaded'
             self.statusBar().showMessage(

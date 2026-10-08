@@ -19,7 +19,6 @@ PALETTE = [
 
 _SECTION_STYLE = theme.LABEL_FIELD + ' margin-top: 4px;'
 _COMBO_STYLE = theme.COMBO_STYLE
-_DATE_EDIT_STYLE = theme.COMBO_STYLE
 
 
 def _color_btn_style(color: str) -> str:
@@ -145,7 +144,7 @@ class SeriesDialog(QDialog):
         tw.addWidget(QLabel('From', styleSheet='font-size: 11px; color: #666;'))
         self.start_date_edit = QDateEdit()
         self.start_date_edit.setCalendarPopup(True)
-        self.start_date_edit.setStyleSheet(_DATE_EDIT_STYLE)
+        theme.style_date_edit(self.start_date_edit)
         default_start = QDate.currentDate().addYears(-2)
         self.start_date_edit.setDate(default_start)
         tw.addWidget(self.start_date_edit)
@@ -153,7 +152,7 @@ class SeriesDialog(QDialog):
         tw.addWidget(QLabel('To', styleSheet='font-size: 11px; color: #666;'))
         self.end_date_edit = QDateEdit()
         self.end_date_edit.setCalendarPopup(True)
-        self.end_date_edit.setStyleSheet(_DATE_EDIT_STYLE)
+        theme.style_date_edit(self.end_date_edit)
         self.end_date_edit.setDate(QDate.currentDate())
         tw.addWidget(self.end_date_edit)
 

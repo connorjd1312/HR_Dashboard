@@ -133,7 +133,37 @@ _APP_QSS = _INPUT_QSS + f'''
     QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 
     QTableWidget {{ font-size: {FONT_BODY}px; gridline-color: #E8E8E8; }}
+
 '''
+
+
+# Date picker pop-up calendar: navy header so the month and year are readable.
+# Applied to each calendar directly (see style_date_edit) because the pop-up
+# doesn't pick up the app-wide stylesheet for its navigation bar.
+CALENDAR_STYLE = f'''
+    QCalendarWidget QWidget#qt_calendar_navigationbar {{ background-color: {NAVY}; }}
+    QCalendarWidget QToolButton {{
+        color: white; background: transparent; border: none;
+        font-size: {FONT_BODY}px; font-weight: bold; padding: 4px 8px;
+    }}
+    QCalendarWidget QToolButton:hover {{ background-color: {BLUE}; border-radius: 4px; }}
+    QCalendarWidget QToolButton::menu-indicator {{ image: none; }}
+    QCalendarWidget QMenu {{ background: white; color: {TEXT}; }}
+    QCalendarWidget QSpinBox {{
+        background: white; color: {TEXT}; border: 1px solid {INPUT_BORDER};
+        selection-background-color: {BLUE}; selection-color: white;
+    }}
+    QCalendarWidget QAbstractItemView:enabled {{
+        color: {TEXT}; background: white;
+        selection-background-color: {BLUE}; selection-color: white;
+    }}
+'''
+
+
+def style_date_edit(date_edit):
+    # Shared look for a QDateEdit and its pop-up calendar.
+    date_edit.setStyleSheet(COMBO_STYLE)
+    date_edit.calendarWidget().setStyleSheet(CALENDAR_STYLE)
 
 
 def apply_chart_style():
