@@ -147,15 +147,8 @@ class FilterPanel(QWidget):
 
         apply_btn = QPushButton('Apply Filters')
         apply_btn.setFixedHeight(36)
-        apply_btn.setStyleSheet('''
-            QPushButton {
-                background-color: #1F3864; color: white;
-                border-radius: 5px; font-size: 13px; border: none;
-            }
-            QPushButton:hover   { background-color: #2E75B6; }
-            QPushButton:pressed { background-color: #163060; }
-        ''')
         apply_btn.clicked.connect(self.emit_filters)
+        self._apply_btn = apply_btn
 
         reset_btn = QPushButton('Reset Filters')
         reset_btn.setFixedHeight(34)
@@ -169,9 +162,24 @@ class FilterPanel(QWidget):
         ''')
         reset_btn.clicked.connect(self._reset)
 
+        self._pending_hint = QLabel('Changes not applied yet')
+        self._pending_hint.setStyleSheet('color: #B9770E; font-size: 11px; background: transparent; border: none;')
+        self._pending_hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._pending_hint.hide()
+
+        fl.addWidget(self._pending_hint)
         fl.addWidget(apply_btn)
         fl.addWidget(reset_btn)
         outer.addWidget(footer)
+
+        # Watch every field so the Apply button can show when changes are waiting
+        self._applied: dict | None = None
+        for combo in self._combos().values():
+            combo.currentIndexChanged.connect(self._update_pending)
+        self.period_mode_combo.currentIndexChanged.connect(self._update_pending)
+        self.date_from.dateChanged.connect(self._update_pending)
+        self.date_to.dateChanged.connect(self._update_pending)
+        self._update_pending()
 
     #  Helpers
 
@@ -183,6 +191,43 @@ class FilterPanel(QWidget):
     def _style_combo(self, combo):
         combo.setStyleSheet(theme.COMBO_STYLE)
 
+
+    def _combos(self) -> dict:
+        # Sidebar filter key -> its dropdown
+        return {
+            'department': self.dept_combo, 'job_role': self.role_combo,
+            'status': self.status_combo, 'sex': self.sex_combo,
+            'ethnicity': self.ethnicity_combo, 'age_group': self.age_group_combo,
+        }
+
+    def _current(self) -> dict:
+        f = {key: combo.currentText() for key, combo in self._combos().items()}
+        f.update({
+            'period_mode': self.period_mode_combo.currentText(),
+            'date_from':   self.date_from.date().toPyDate(),
+            'date_to':     self.date_to.date().toPyDate(),
+        })
+        return f
+
+    def _update_pending(self, *_args):
+        # Highlight Apply when the fields differ from what the dashboard is showing
+        pending = self._applied is not None and self._current() != self._applied
+        self._pending_hint.setVisible(pending)
+        self._apply_btn.setText('Apply Changes' if pending else 'Apply Filters')
+        colour, hover = ('#E67E22', '#CA6F1E') if pending else ('#1F3864', '#2E75B6')
+        self._apply_btn.setStyleSheet(f'''
+            QPushButton {{
+                background-color: {colour}; color: white;
+                border-radius: 5px; font-size: 13px; border: none;
+            }}
+            QPushButton:hover   {{ background-color: {hover}; }}
+        ''')
+
+    def clear_filter(self, key: str):
+        # Reset one filter (from a chip's ✕ on the dashboard) and re-apply
+        if key in self._combos():
+            self._combos()[key].setCurrentIndex(0)
+        self.emit_filters()
 
     def _reset(self):
         self.dept_combo.setCurrentIndex(0)
@@ -197,14 +242,6 @@ class FilterPanel(QWidget):
         self.emit_filters()
 
     def emit_filters(self):
-        self.filters_changed.emit({
-            'department': self.dept_combo.currentText(),
-            'job_role':   self.role_combo.currentText(),
-            'status':     self.status_combo.currentText(),
-            'sex':        self.sex_combo.currentText(),
-            'ethnicity':  self.ethnicity_combo.currentText(),
-            'age_group':  self.age_group_combo.currentText(),
-            'period_mode': self.period_mode_combo.currentText(),
-            'date_from':  self.date_from.date().toPyDate(),
-            'date_to':    self.date_to.date().toPyDate(),
-        })
+        self._applied = self._current()
+        self._update_pending()
+        self.filters_changed.emit(dict(self._applied))

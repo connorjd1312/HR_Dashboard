@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QFrame, QStackedWidget, QMenu, QTableWidget, QTableWidgetItem,
     QHeaderView, QSizePolicy, QComboBox, QScrollArea,
 )
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QCursor
 
 from core import analytics
@@ -36,6 +36,17 @@ _BREAKDOWN_MIN_H = 300
 _BAR_ROW_PX = 24          # height per category for horizontal bar charts
 _OVERVIEW_MAX_BARS = 10   # overview grid shows the top N; the focused view shows all
 
+# Charts shown when switching to Compare mode (metric, group by)
+_COMPARE_DEFAULTS = [
+    ('Total Employees', 'Department'),
+    ('Overall Turnover Rate (%)', 'Department'),
+    ('Total Employees', 'Age Group'),
+    ('Total Employees', 'Status'),
+    ('Average Salary ($)', 'Department'),
+]
+# Dashboard width (px) needed before Compare mode opens with 4 charts instead of 2
+_WIDE_DASHBOARD_PX = 1300
+
 _BTN_PRIMARY = theme.BTN_PRIMARY
 _BTN_SECONDARY = theme.BTN_SECONDARY
 _BTN_DANGER = theme.BTN_ICON_CLOSE
@@ -45,6 +56,8 @@ _COMBO_STYLE = theme.COMBO_STYLE
 # Dashboard tab: customisable KPI cards, charts, and drill-down.
 class DashboardTab(QWidget):
 
+    clear_filter_requested = pyqtSignal(str)   # filter key, or '*' for all
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._df = None
@@ -52,6 +65,8 @@ class DashboardTab(QWidget):
         self._chart_panels: list[ChartPanel] = []
         self._multi_mode: bool = False
         self._expanded_panel: ChartPanel | None = None
+        self._prev_df: pd.DataFrame | None = None
+        self._prev_label = ''
         self._period: tuple | None = None  # (start, end) of the sidebar date range
         self._period_mode = analytics.PERIOD_EMPLOYED
 
@@ -102,6 +117,14 @@ class DashboardTab(QWidget):
         )
         self._period_label.hide()
         outer.addWidget(self._period_label)
+
+        # Active filter chips (e.g. 'Department: Sales ✕') under the time period
+        self._chips_widget = QWidget()
+        self._chips_row = QHBoxLayout(self._chips_widget)
+        self._chips_row.setContentsMargins(8, 4, 8, 0)
+        self._chips_row.setSpacing(6)
+        self._chips_widget.hide()
+        outer.addWidget(self._chips_widget)
 
         self._stack = QStackedWidget()
         outer.addWidget(self._stack)
@@ -173,6 +196,39 @@ class DashboardTab(QWidget):
     # Public API, called by MainWindow whenever the dataset changes
 
 
+    def set_active_filters(self, filters: list):
+        # filters: [(key, 'Department: Sales'), ...] for every sidebar filter not on 'All'
+        while self._chips_row.count():
+            item = self._chips_row.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        if not filters:
+            self._chips_widget.hide()
+            return
+        self._chips_row.addWidget(QLabel('Filtered by:', styleSheet='font-size: 12px; color: #555; background: transparent;'))
+        for key, text in filters:
+            chip = QPushButton(f'{text}   ✕')
+            chip.setToolTip('Remove this filter')
+            chip.setCursor(Qt.CursorShape.PointingHandCursor)
+            chip.setStyleSheet('''
+                QPushButton {
+                    background: #EAF1FA; color: #1F3864; border: 1px solid #B9CCE8;
+                    border-radius: 12px; padding: 3px 10px; font-size: 12px;
+                }
+                QPushButton:hover { background: #FDECEA; border-color: #E6B0AA; color: #C0392B; }
+            ''')
+            chip.clicked.connect(lambda _=False, k=key: self.clear_filter_requested.emit(k))
+            self._chips_row.addWidget(chip)
+        if len(filters) > 1:
+            clear_all = QPushButton('Clear all')
+            clear_all.setCursor(Qt.CursorShape.PointingHandCursor)
+            clear_all.setStyleSheet('QPushButton { border: none; color: #2E75B6; font-size: 12px; background: transparent; }'
+                                    'QPushButton:hover { text-decoration: underline; }')
+            clear_all.clicked.connect(lambda: self.clear_filter_requested.emit('*'))
+            self._chips_row.addWidget(clear_all)
+        self._chips_row.addStretch()
+        self._chips_widget.show()
+
     def show_data_check(self, rows_read: int, rows_loaded: int, issues: list[str]):
         # Summarise what the data cleaner found when the file(s) were loaded
         self._data_check_items = issues
@@ -225,11 +281,18 @@ class DashboardTab(QWidget):
             f'<b>Time period:</b> {who} {analytics.format_period(*self._period)}'
             f'&nbsp;&nbsp;·&nbsp;&nbsp;{len(self._df):,} employees'
             f'&nbsp;&nbsp;·&nbsp;&nbsp;status as at {analytics.format_date(as_at)}'
+            + (f'<br><span style="color:#555; font-size:11px;">The ▲▼ changes on the cards compare with '
+               f'<b>{self._prev_label}</b> — the same length of time just before this period.</span>'
+               if self._prev_df is not None and self._prev_label else '')
         )
         self._period_label.show()
 
-    def update_data(self, df: pd.DataFrame):
+    def update_data(self, df: pd.DataFrame, previous_df: pd.DataFrame | None = None,
+                    previous_label: str = ''):
+        # previous_df: the same filters over the period before, for the KPI change lines
         self._df = df
+        self._prev_df = previous_df
+        self._prev_label = previous_label
         self._refresh_period_label()
         self._refresh_kpi_row()
         for panel in self._chart_panels:
@@ -251,7 +314,13 @@ class DashboardTab(QWidget):
 
         for metric in self._kpi_metrics:
             value = analytics.kpi_value(self._df, metric) if self._df is not None else '—'
-            card = KPICard(metric, value)
+            change, tip = None, ''
+            if self._prev_df is not None and self._df is not None:
+                prev_value = analytics.kpi_value(self._prev_df, metric)
+                change = analytics.kpi_change(metric, analytics.kpi_number(self._df, metric),
+                                              analytics.kpi_number(self._prev_df, metric))
+                tip = f'Previous period ({self._prev_label}): {prev_value}'
+            card = KPICard(metric, value, change=change, change_tooltip=tip)
             card.clicked.connect(self._on_kpi_clicked)
             card.remove_clicked.connect(self._on_kpi_removed)
             self._kpi_row.addWidget(card)
@@ -364,6 +433,7 @@ class DashboardTab(QWidget):
             self._add_chart_btn.show()
             self._resize_tip.show()
             self._rebuild_charts(allow_close=True)
+            self._add_default_compare_charts()
         else:
             self._multi_toggle_btn.setText('Compare Charts')
             self._multi_toggle_btn.setToolTip('Show up to 4 charts side by side')
@@ -391,10 +461,27 @@ class DashboardTab(QWidget):
             for cfg in configs
         ]
 
+    def _add_default_compare_charts(self):
+        # Fill Compare mode with different useful views rather than copies of the
+        # same chart: 4 on wide screens, 2 on smaller ones where 4 would be too cramped.
+        target = 4 if self.width() >= _WIDE_DASHBOARD_PX else 2
+        shown = {(p.current_config()['metric'], p.current_config()['dimension']) for p in self._chart_panels}
+        for metric, dimension in _COMPARE_DEFAULTS:
+            if len(self._chart_panels) >= target:
+                break
+            if (metric, dimension) not in shown:
+                self._chart_panels.append(self._make_chart_panel(
+                    allow_close=True, metric=metric, dimension=dimension))
+                shown.add((metric, dimension))
+
     def _add_chart(self):
         if len(self._chart_panels) >= 4:
             return
-        self._chart_panels.append(self._make_chart_panel(allow_close=True))
+        # Next suggested view that isn't already on screen
+        shown = {(p.current_config()['metric'], p.current_config()['dimension']) for p in self._chart_panels}
+        metric, dimension = next(((m, d) for m, d in _COMPARE_DEFAULTS if (m, d) not in shown),
+                                 _COMPARE_DEFAULTS[0])
+        self._chart_panels.append(self._make_chart_panel(allow_close=True, metric=metric, dimension=dimension))
         self._relayout_charts()
 
     def _on_chart_closed(self, panel):

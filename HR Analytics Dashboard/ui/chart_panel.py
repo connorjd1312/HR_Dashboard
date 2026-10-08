@@ -5,7 +5,6 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 from PyQt6.QtCore import Qt, pyqtSignal
-import matplotlib.pyplot as plt
 
 from core import analytics
 from ui import theme
@@ -211,7 +210,7 @@ class ChartPanel(QFrame):
             return
 
         labels = [str(x) for x in data.index]
-        values = data.values
+        values = [float(v) for v in data.values]
 
         # Resolve 'Auto' to a concrete type from the data. The dropdown stays
         # on 'Auto' so it keeps adapting when metric/dimension change, but the
@@ -229,16 +228,29 @@ class ChartPanel(QFrame):
                     self._auto_cache[key] = ctype
             auto_label = f'Auto chart: {ctype}'
 
+        # Largest first, like the drill-down charts (ordered groups such as
+        # Age Group keep their natural order)
+        if ctype in ('Vertical Bar', 'Horizontal Bar', 'Line') and dimension not in analytics.ORDERED_DIMENSIONS:
+            order = sorted(range(len(values)), key=lambda i: values[i], reverse=True)
+            labels = [labels[i] for i in order]
+            values = [values[i] for i in order]
+        value_text = [analytics.format_metric_value(metric, v) for v in values]
+
         if ctype == 'Vertical Bar':
             bars = ax.bar(labels, values, color='#2E75B6', picker=True)
             for bar, lbl in zip(bars, labels):
                 self._artist_to_label[bar] = lbl
+            ax.bar_label(bars, labels=value_text, padding=2, fontsize=8, color='#333')
+            ax.margins(y=0.12)
             ax.set_ylabel(metric)
             ax.tick_params(axis='x', rotation=20)
         elif ctype == 'Horizontal Bar':
-            bars = ax.barh(labels, values, color='#2E75B6', picker=True)
-            for bar, lbl in zip(bars, labels):
+            # barh draws bottom-up, so reverse to put the largest at the top
+            bars = ax.barh(labels[::-1], values[::-1], color='#2E75B6', picker=True)
+            for bar, lbl in zip(bars, labels[::-1]):
                 self._artist_to_label[bar] = lbl
+            ax.bar_label(bars, labels=value_text[::-1], padding=3, fontsize=8, color='#333')
+            ax.margins(x=0.12)
             ax.set_xlabel(metric)
         elif ctype in ('Pie', 'Donut'):
             colors = [_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(labels))]
