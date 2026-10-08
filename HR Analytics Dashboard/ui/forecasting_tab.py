@@ -123,6 +123,12 @@ class ForecastingTab(QWidget):
         self.periods_spin.valueChanged.connect(self._redraw_forecast)
         controls.addWidget(self.periods_spin)
 
+        # Let the dropdowns shrink on narrower windows; the lists still show full names
+        for combo in (self.metric_combo, self.dept_combo, self.method_combo, self.gran_combo):
+            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            combo.setMinimumContentsLength(9)
+            combo.view().setMinimumWidth(combo.view().sizeHintForColumn(0) + 24)
+
         controls.addStretch()
         v.addLayout(controls)
 

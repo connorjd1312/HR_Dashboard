@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QScrollArea, QFrame, QSizePolicy, QLineEdit, QToolButton,
     QFileDialog, QApplication, QTableWidget, QTableWidgetItem,
-    QHeaderView, QToolTip, QCheckBox,
+    QHeaderView, QToolTip, QCheckBox, QMenu,
 )
 from PyQt6.QtCore import Qt, QPoint
 from PyQt6.QtGui import QPixmap, QFont
@@ -34,6 +34,20 @@ _GREY_BG = theme.BG
 _BORDER = theme.BORDER
 _RED = theme.RED
 _RED_HOVER = theme.RED_BG
+
+_TOOL_BTN_STYLE = '''
+    QPushButton {
+        font-size: 12px; background: transparent;
+        border: 1px solid #DDD; border-radius: 4px;
+        padding: 0 8px; color: #444;
+    }
+    QPushButton:hover { background: #F0F4FF; border-color: #2E75B6; }
+    QPushButton::menu-indicator { image: none; }
+'''
+
+# Side panel widths — kept narrow enough for the app to fit a 1280px-wide screen
+_LEFT_PANEL_WIDTH = 230
+_RIGHT_STRIP_WIDTH = 184
 
 
 # ── _SeriesCard ───────────────────────────────────────────────────────────────
@@ -66,6 +80,11 @@ class _SeriesCard(QFrame):
         lbl = QLabel(series['label'])
         lbl.setStyleSheet('font-size: 12px; color: #333; border: none; background: transparent;')
         lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        # Long labels wrap (and show in full on hover) instead of pushing the
+        # buttons off the side of the panel
+        lbl.setWordWrap(True)
+        lbl.setMinimumWidth(1)
+        lbl.setToolTip(series['label'])
         row.addWidget(lbl, stretch=1)
 
         edit_btn = QPushButton('Edit')
@@ -108,7 +127,7 @@ class _ThumbnailCard(QFrame):
                 border-radius: 6px;
             }}
         ''')
-        self.setFixedWidth(194)
+        self.setFixedWidth(168)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         outer = QVBoxLayout(self)
@@ -117,16 +136,16 @@ class _ThumbnailCard(QFrame):
 
         # Image container with delete button overlay
         img_container = QWidget()
-        img_container.setFixedSize(186, 120)
+        img_container.setFixedSize(160, 104)
         img_container.setStyleSheet('background: transparent; border: none;')
 
         img_lbl = QLabel(img_container)
-        img_lbl.setGeometry(0, 0, 186, 120)
+        img_lbl.setGeometry(0, 0, 160, 104)
         img_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
         img_lbl.setStyleSheet('border: none; background: #F5F7FA; border-radius: 4px;')
         if pixmap and not pixmap.isNull():
             img_lbl.setPixmap(
-                pixmap.scaled(186, 120, Qt.AspectRatioMode.KeepAspectRatio,
+                pixmap.scaled(160, 104, Qt.AspectRatioMode.KeepAspectRatio,
                               Qt.TransformationMode.SmoothTransformation)
             )
         else:
@@ -205,7 +224,7 @@ class AnalyticsTab(QWidget):
 
     def _build_left_panel(self):
         panel = QWidget()
-        panel.setFixedWidth(260)
+        panel.setFixedWidth(_LEFT_PANEL_WIDTH)
         panel.setStyleSheet(f'background: {_GREY_BG}; border-right: 1px solid {_BORDER};')
         lv = QVBoxLayout(panel)
         lv.setContentsMargins(0, 0, 0, 0)
@@ -240,6 +259,7 @@ class AnalyticsTab(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setStyleSheet('background: transparent;')
 
         self._series_container = QWidget()
@@ -311,7 +331,7 @@ class AnalyticsTab(QWidget):
             self._collapse_btn.setText('▶')
             self._left_visible = False
         else:
-            self._left_panel.setFixedWidth(260)
+            self._left_panel.setFixedWidth(_LEFT_PANEL_WIDTH)
             self._collapse_btn.setText('◀')
             self._left_visible = True
 
@@ -351,28 +371,29 @@ class AnalyticsTab(QWidget):
         tb.addStretch()
 
         # Icon buttons
+        export_btn = QPushButton('⬇ Export ▾')
+        export_btn.setToolTip('Copy the chart, or save it as an image or PDF')
+        export_btn.setFixedHeight(32)
+        export_btn.setStyleSheet(_TOOL_BTN_STYLE)
+        export_menu = QMenu(export_btn)
+        export_menu.addAction('📋  Copy to clipboard', self._copy_to_clipboard)
+        export_menu.addAction('🖼  Save as PNG image…', self._export_png)
+        export_menu.addAction('📄  Save as PDF…', self._export_pdf)
+        export_btn.setMenu(export_menu)
+        tb.addWidget(export_btn)
+
         for icon, tip, slot in [
-            ('📋 Copy',  'Copy to clipboard',   self._copy_to_clipboard),
-            ('🖼 PNG',   'Export as PNG',        self._export_png),
-            ('📄 PDF',   'Export as PDF',        self._export_pdf),
-            ('💾 Save',  'Save chart config',    self._save_config),
-            ('📂 Load',  'Load chart config',    self._load_config),
+            ('💾 Save',  'Save this chart setup to a file',   self._save_config),
+            ('📂 Load',  'Load a saved chart setup',          self._load_config),
         ]:
             btn = QPushButton(icon)
             btn.setToolTip(tip)
             btn.setFixedHeight(32)
-            btn.setStyleSheet('''
-                QPushButton {
-                    font-size: 12px; background: transparent;
-                    border: 1px solid #DDD; border-radius: 4px;
-                    padding: 0 8px; color: #444;
-                }
-                QPushButton:hover { background: #F0F4FF; border-color: #2E75B6; }
-            ''')
+            btn.setStyleSheet(_TOOL_BTN_STYLE)
             btn.clicked.connect(slot)
             tb.addWidget(btn)
 
-        self._use_filters_box = QCheckBox('Use dashboard filters')
+        self._use_filters_box = QCheckBox('Dashboard filters')
         self._use_filters_box.setToolTip(
             'Build charts from the employees the Dashboard tab is showing, '
             'instead of all loaded data')
@@ -464,7 +485,7 @@ class AnalyticsTab(QWidget):
 
     def _build_right_strip(self):
         strip = QWidget()
-        strip.setFixedWidth(210)
+        strip.setFixedWidth(_RIGHT_STRIP_WIDTH)
         strip.setStyleSheet(f'background: {_GREY_BG}; border-left: 1px solid {_BORDER};')
         sv = QVBoxLayout(strip)
         sv.setContentsMargins(0, 0, 0, 0)
@@ -690,8 +711,10 @@ class AnalyticsTab(QWidget):
 
         self._draw_on_figure(fig, chart, self._df, show_period=True)
 
-        # Keep re-fitting the layout as the chart is resized (splitter / focus mode)
-        fig.set_layout_engine('tight', pad=2.0)
+        # 'constrained' keeps re-fitting titles and labels as the chart is resized
+        # (splitter / focus mode) and handles the stacked time + snapshot layout,
+        # which 'tight' layout can't.
+        fig.set_layout_engine('constrained', h_pad=0.12, w_pad=0.1)
 
         self._main_widget.redraw()
 
@@ -726,7 +749,7 @@ class AnalyticsTab(QWidget):
 
         else:
             # Mixed — time on top, snapshot below
-            gs = fig.add_gridspec(2, 1, height_ratios=[1.6, 1], hspace=0.55)
+            gs = fig.add_gridspec(2, 1, height_ratios=[1.6, 1])
             ax_t = fig.add_subplot(gs[0])
             self._draw_time_series(ax_t, time_s, df)
             ax_s = fig.add_subplot(gs[1])
@@ -907,7 +930,7 @@ class AnalyticsTab(QWidget):
 
     # ── Thumbnail management ──────────────────────────────────────────────────
 
-    def _chart_to_pixmap(self, chart_dict, w=190, h=120):
+    def _chart_to_pixmap(self, chart_dict, w=164, h=104):
         # Render a chart dict to a QPixmap for use as a thumbnail.
         series_list = chart_dict.get('series_list', [])
         if not series_list or self._df is None:
@@ -917,12 +940,8 @@ class AnalyticsTab(QWidget):
             return pix
 
         try:
-            fig = Figure(figsize=(4, 3), dpi=72)
+            fig = Figure(figsize=(4, 3), dpi=72, layout='constrained')
             self._draw_on_figure(fig, chart_dict, self._df)
-            try:
-                fig.tight_layout(pad=1.0)
-            except Exception:
-                pass
 
             buf = io.BytesIO()
             fig.savefig(buf, format='png', bbox_inches='tight')

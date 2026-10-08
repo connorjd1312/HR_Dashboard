@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QDateEdit, QPushButton, QFrame,
+    QDateEdit, QPushButton, QFrame, QScrollArea,
 )
 from PyQt6.QtCore import pyqtSignal, QDate, Qt
 
@@ -127,7 +127,13 @@ class FilterPanel(QWidget):
         cl.addWidget(self.date_to)
 
         cl.addStretch()
-        outer.addWidget(content, stretch=1)
+        # Scroll the fields on short screens so Apply / Reset stay visible
+        fields_scroll = QScrollArea()
+        fields_scroll.setWidgetResizable(True)
+        fields_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        fields_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        fields_scroll.setWidget(content)
+        outer.addWidget(fields_scroll, stretch=1)
 
         # Footer buttons 
         footer = QWidget()
