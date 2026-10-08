@@ -260,3 +260,28 @@ def test_clean_data_gives_empty_report():
     report = []
     data_cleaner.clean(raw, report)
     assert report == []
+
+
+# ── KPI change vs previous period ─────────────────────────────────────────
+
+def test_previous_period_is_same_length_just_before():
+    start, end = analytics.previous_period('2025-01-01', '2025-12-31')
+    assert end == pd.Timestamp('2024-12-31')                                # ends the day before
+    assert end - start == pd.Timestamp('2025-12-31') - pd.Timestamp('2025-01-01')   # same length
+
+
+def test_turnover_falling_is_good_news():
+    assert analytics.kpi_change('Overall Turnover Rate (%)', 20.0, 25.5) == ('▼ 5.5 pts', 'good')
+
+
+def test_tenure_falling_is_bad_news():
+    assert analytics.kpi_change('Average Tenure (yrs)', 3.0, 3.4) == ('▼ 0.4', 'bad')
+
+
+def test_headcount_change_is_neutral_and_formatted():
+    assert analytics.kpi_change('Total Employees', 1379, 1290) == ('▲ 89', 'neutral')
+    assert analytics.kpi_change('Average Salary ($)', 92546, 90000) == ('▲ $2,546', 'neutral')
+
+
+def test_no_previous_value_means_no_change_line():
+    assert analytics.kpi_change('Total Employees', 10, None) is None

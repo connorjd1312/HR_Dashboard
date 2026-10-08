@@ -483,8 +483,25 @@ class MainWindow(QMainWindow):
     def _apply_filters(self, f: dict):
         # Filter the full dataset and push the result to the dashboard. Analytics
         # and Forecasting have their own filtering, so they keep the full dataset.
-        df = self._df_full.copy()
+        base = self._apply_group_filters(self._df_full.copy(), f)
+        mode = f.get('period_mode', analytics.PERIOD_EMPLOYED)
+        df = analytics.filter_period(base, f['date_from'], f['date_to'], mode)
 
+        # Same filters over the period before, for 'vs previous period' on the KPI
+        # cards. Skipped if that period starts before the data does (incomplete).
+        prev_start, prev_end = analytics.previous_period(f['date_from'], f['date_to'])
+        previous, previous_label = None, ''
+        if prev_start >= self._df_full['Hire_Date'].min():
+            previous = analytics.filter_period(base, prev_start, prev_end, mode)
+            previous_label = analytics.format_period(prev_start, prev_end)
+
+        self._set_period(f['date_from'], f['date_to'], mode)
+        self.dashboard_tab.update_data(df, previous, previous_label)
+        self._after_filters_applied(f, df, mode)
+
+    @staticmethod
+    def _apply_group_filters(df, f: dict):
+        # Department / role / status / sex / ethnicity / age group filters
         if f['department'] != 'All':
             df = df[df['Department'] == f['department']]
 
@@ -502,12 +519,9 @@ class MainWindow(QMainWindow):
 
         if f.get('age_group') and f['age_group'] != 'All' and 'Age_Group' in df.columns:
             df = df[df['Age_Group'] == f['age_group']]
+        return df
 
-        mode = f.get('period_mode', analytics.PERIOD_EMPLOYED)
-        df = analytics.filter_period(df, f['date_from'], f['date_to'], mode)
-
-        self._set_period(f['date_from'], f['date_to'], mode)
-        self.dashboard_tab.update_data(df)
+    def _after_filters_applied(self, f: dict, df, mode: str):
         # Advisor and Analytics can optionally use exactly what the dashboard shows
         self.dashboard_tab.set_active_filters([
             (key, f'{label}: {f[key]}') for key, label in _FILTER_LABELS if f.get(key) not in (None, 'All')

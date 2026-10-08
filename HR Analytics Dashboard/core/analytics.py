@@ -213,6 +213,55 @@ def filter_period(df: pd.DataFrame, start, end, mode: str = PERIOD_EMPLOYED) -> 
     return out
 
 
+def previous_period(start, end) -> tuple[pd.Timestamp, pd.Timestamp]:
+    # The same-length period immediately before [start, end].
+    start, end = pd.Timestamp(start), pd.Timestamp(end)
+    return start - (end - start) - pd.Timedelta(days=1), start - pd.Timedelta(days=1)
+
+
+def kpi_number(df: pd.DataFrame, metric: str) -> float | None:
+    # Numeric value of a KPI card (kpi_value without the formatting).
+    text = kpi_value(df, metric)
+    if text in (None, '—'):
+        return None
+    try:
+        return float(text.replace('$', '').replace('%', '').replace(',', ''))
+    except ValueError:
+        return None
+
+
+# Which way is good news for each KPI: +1 higher is better, -1 lower is better.
+# Anything not listed (headcount, salary, age, leave) is shown in neutral grey.
+_KPI_GOOD_DIRECTION = {
+    'Overall Turnover Rate (%)': -1,
+    'Attrition (Voluntary Leavers) Rate (%)': -1,
+    'Resigned Count': -1,
+    'Average Absenteeism (days)': -1,
+    'Average Tenure (yrs)': +1,
+}
+
+
+def kpi_change(metric: str, current: float | None, previous: float | None) -> tuple[str, str] | None:
+    # ('▲ 3.2 pts', 'good' | 'bad' | 'neutral') comparing a KPI with the previous period.
+    if current is None or previous is None:
+        return None
+    diff = current - previous
+    if abs(diff) < 0.05:
+        return '→ no change', 'neutral'
+    arrow = '▲' if diff > 0 else '▼'
+    if '%' in metric:
+        amount = f'{abs(diff):.1f} pts'
+    elif '$' in metric:
+        amount = f'${abs(diff):,.0f}'
+    elif float(abs(diff)).is_integer():
+        amount = f'{abs(diff):,.0f}'
+    else:
+        amount = f'{abs(diff):.1f}'
+    good = _KPI_GOOD_DIRECTION.get(metric)
+    tone = 'neutral' if good is None else ('good' if diff * good > 0 else 'bad')
+    return f'{arrow} {amount}', tone
+
+
 def format_date(d) -> str:
     # Human-readable date, e.g. '9 Oct 2026'.
     d = pd.Timestamp(d)

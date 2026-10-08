@@ -54,6 +54,8 @@ class DashboardTab(QWidget):
         self._chart_panels: list[ChartPanel] = []
         self._multi_mode: bool = False
         self._expanded_panel: ChartPanel | None = None
+        self._prev_df: pd.DataFrame | None = None
+        self._prev_label = ''
         self._period: tuple | None = None  # (start, end) of the sidebar date range
         self._period_mode = analytics.PERIOD_EMPLOYED
 
@@ -271,8 +273,12 @@ class DashboardTab(QWidget):
         )
         self._period_label.show()
 
-    def update_data(self, df: pd.DataFrame):
+    def update_data(self, df: pd.DataFrame, previous_df: pd.DataFrame | None = None,
+                    previous_label: str = ''):
+        # previous_df: the same filters over the period before, for the KPI change lines
         self._df = df
+        self._prev_df = previous_df
+        self._prev_label = previous_label
         self._refresh_period_label()
         self._refresh_kpi_row()
         for panel in self._chart_panels:
@@ -294,7 +300,13 @@ class DashboardTab(QWidget):
 
         for metric in self._kpi_metrics:
             value = analytics.kpi_value(self._df, metric) if self._df is not None else '—'
-            card = KPICard(metric, value)
+            change, tip = None, ''
+            if self._prev_df is not None and self._df is not None:
+                prev_value = analytics.kpi_value(self._prev_df, metric)
+                change = analytics.kpi_change(metric, analytics.kpi_number(self._df, metric),
+                                              analytics.kpi_number(self._prev_df, metric))
+                tip = f'Previous period ({self._prev_label}): {prev_value}'
+            card = KPICard(metric, value, change=change, change_tooltip=tip)
             card.clicked.connect(self._on_kpi_clicked)
             card.remove_clicked.connect(self._on_kpi_removed)
             self._kpi_row.addWidget(card)

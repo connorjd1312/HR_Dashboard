@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -10,7 +12,8 @@ class KPICard(QFrame):
     clicked        = pyqtSignal(str)
     remove_clicked = pyqtSignal(str)
 
-    def __init__(self, metric: str, value: str, parent=None):
+    def __init__(self, metric: str, value: str, parent=None, change: tuple | None = None,
+                 change_tooltip: str = ''):
         super().__init__(parent)
         self._metric = metric
 
@@ -62,6 +65,16 @@ class KPICard(QFrame):
             'color: white; font-size: 22px; font-weight: bold; background: transparent;'
         )
         v.addWidget(self._value)
+
+        # Change vs the previous period, e.g. '▼ 2.1 pts vs previous period'
+        if change:
+            text, tone = change
+            colour = {'good': '#7DDC9C', 'bad': '#FF9C8F'}.get(tone, '#C9D3E3')
+            change_lbl = QLabel(f'{text} vs previous period')
+            change_lbl.setStyleSheet(f'color: {colour}; font-size: 11px; background: transparent;')
+            if change_tooltip:
+                change_lbl.setToolTip(change_tooltip)
+            v.addWidget(change_lbl)
         v.addStretch()
 
     def set_value(self, value: str):
