@@ -15,7 +15,10 @@ _GUIDE = '''
   <li><b>Filters</b> (left) — choose a department, job role, status, hire-date range and so on,
       then click <b>Apply Filters</b>. The blue bar at the top shows the time period you're looking at.</li>
   <li><b>KPI cards</b> — headline numbers. Hover a card to see what it means; click it to see a
-      breakdown by department, job role, status and more. Use <b>+ Add Card</b> to add others, ✕ to remove.</li>
+      breakdown by department, job role, status and more. The small ▲/▼ line on each card
+      compares it with the <b>previous period</b>: the same length of time just before your chosen dates
+      (e.g. 1 Jan 2025 – 9 Oct 2026 is compared with 26 Mar 2023 – 31 Dec 2024). Green is good news,
+      red is bad news, grey is neutral. Use <b>+ Add Card</b> to add others, ✕ to remove.</li>
   <li><b>Drill down</b> — click any bar or slice (it highlights when you hover) to focus on that group.
       Keep clicking to go deeper; <b>Back</b> goes up one level.</li>
   <li><b>Compare Charts</b> — show up to 4 charts side by side. Drag the grey bars between charts

@@ -281,6 +281,9 @@ class DashboardTab(QWidget):
             f'<b>Time period:</b> {who} {analytics.format_period(*self._period)}'
             f'&nbsp;&nbsp;·&nbsp;&nbsp;{len(self._df):,} employees'
             f'&nbsp;&nbsp;·&nbsp;&nbsp;status as at {analytics.format_date(as_at)}'
+            + (f'<br><span style="color:#555; font-size:11px;">The ▲▼ changes on the cards compare with '
+               f'<b>{self._prev_label}</b> — the same length of time just before this period.</span>'
+               if self._prev_df is not None and self._prev_label else '')
         )
         self._period_label.show()
 
