@@ -798,11 +798,7 @@ class DashboardTab(QWidget):
             for artist, label in self._draw_snapshot(ax, data, metric, dimension, ctype):
                 artist.set_picker(True)
                 picks[artist] = label
-            value_of = {str(k): v for k, v in data.items()}
-            chart.set_hover_items({
-                artist: f'{label}: {analytics.format_metric_value(metric, value_of[label])}\nClick to drill down'
-                for artist, label in picks.items()
-            })
+            chart.set_hover_items(picks)
 
             def on_pick(event, dim=dimension, picks=picks):
                 # One click can pick several overlapping artists — only drill once.
