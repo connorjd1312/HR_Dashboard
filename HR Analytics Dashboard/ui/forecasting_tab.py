@@ -77,7 +77,7 @@ class ForecastingTab(QWidget):
 
     def _build_forecast_page(self) -> QWidget:
         page = QWidget()
-        page.setStyleSheet(f'background-color: {_GREY_BG};')
+        page.setStyleSheet(f'QWidget {{ background-color: {_GREY_BG}; }}' + theme.TOOLTIP_QSS)
         v = QVBoxLayout(page)
         v.setContentsMargins(12, 12, 12, 12)
         v.setSpacing(10)

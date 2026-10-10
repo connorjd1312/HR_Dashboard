@@ -106,11 +106,16 @@ _INPUT_QSS = f'''
 
 COMBO_STYLE = _INPUT_QSS
 
-_APP_QSS = _INPUT_QSS + f'''
+# Navy tooltips. A container that sets its own background must append this,
+# or its children's tooltips pick up that background behind the white text.
+TOOLTIP_QSS = f'''
     QToolTip {{
         background-color: {NAVY}; color: white; border: none;
         padding: 5px 8px; font-size: {FONT_SMALL}px;
     }}
+'''
+
+_APP_QSS = _INPUT_QSS + TOOLTIP_QSS + f'''
 
     /* Main tabs (Dashboard / Analytics / Forecasting) and sub-tabs */
     QTabWidget::pane {{ border: 1px solid {BORDER}; top: -1px; background: white; }}
