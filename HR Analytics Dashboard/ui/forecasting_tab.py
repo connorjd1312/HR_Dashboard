@@ -32,6 +32,7 @@ _PERIOD_UNITS = {'Weekly': 'week', 'Monthly': 'month', 'Quarterly': 'quarter', '
 # How much past data the chart shows; None = all the data
 _HISTORY_OPTIONS = {'All Data': None, 'Last 5 Years': 60, 'Last 2 Years': 24, 'Last 1 Year': 12}
 _FIT_MONTHS = 24  # the forecast is fitted to this much recent history
+_MIN_FIT_POINTS = 4
 
 
 class ForecastingTab(QWidget):
@@ -190,10 +191,17 @@ class ForecastingTab(QWidget):
         history = analytics.time_series_data(df, metric, 'None', 'All', start, end, granularity)
         # The forecast itself is always fitted to the most recent 2 years — a trend line
         # across the whole history drifts away from where the numbers are now
-        recent = history[history.index > end - pd.DateOffset(months=_FIT_MONTHS)]
-        if len(recent) == 0:
-            recent = history
+        # (at least _MIN_FIT_POINTS, so Yearly isn't a line through just 2 points)
+        # Fitted from the full data so the History choice only changes what's shown (a
+        # short history would otherwise start with a part-period, e.g. Oct–Dec of a year)
+        full = history
+        if months_back is not None:
+            full = analytics.time_series_data(df, metric, 'None', 'All',
+                                              self._earliest_date(end), end, granularity)
+        recent = full[full.index > end - pd.DateOffset(months=_FIT_MONTHS)]
+        recent = full.tail(max(len(recent), _MIN_FIT_POINTS))
         fc = forecasting.forecast_series(recent, periods, method, freq)
+        fc_range = forecasting.forecast_range(recent, periods, method, freq)
         summary = forecasting.forecast_summary(recent, fc)
 
         self._forecast_chart.clear_axes()
@@ -209,6 +217,12 @@ class ForecastingTab(QWidget):
             if len(fc):
                 bridge_x = [history.index[-1]] + list(fc.index)
                 bridge_y = [history.values[-1]] + list(fc.values)
+                # Shaded likely range, starting from the last real value
+                ax.fill_between(bridge_x,
+                                [history.values[-1]] + list(fc_range['Lower']),
+                                [history.values[-1]] + list(fc_range['Upper']),
+                                color=_NAVY_HOVER, alpha=0.15, linewidth=0,
+                                label=forecasting.RANGE_LABEL)
                 ax.plot(bridge_x, bridge_y, color=_NAVY_HOVER, linewidth=2, linestyle='--',
                          marker='o', markersize=3, label='Forecast')
             period = f'History: {analytics.format_period(history.index[0], history.index[-1])}'
@@ -240,7 +254,8 @@ class ForecastingTab(QWidget):
             self._stats_label.setText(
                 f'{arrow} {metric} {"are" if metric in ("Hires", "Departures") else "is"} expected to {trend} over the next {periods} '
                 f'{unit}{"s" if periods != 1 else ""}'
-                f'  (latest: {latest:.1f} → forecast: {end_value:.1f})'
+                f'  (latest: {latest:.1f} → forecast: {end_value:.1f},'
+                f' likely {fc_range["Lower"].iloc[-1]:.1f}–{fc_range["Upper"].iloc[-1]:.1f})'
             )
             self._stats_label.setStyleSheet(
                 f'font-size: 13px; font-weight: bold; color: {color}; background: transparent;'
