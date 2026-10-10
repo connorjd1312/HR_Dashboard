@@ -29,6 +29,10 @@ _COMBO_STYLE = theme.COMBO_STYLE
 # Word used for one forecast step at each granularity
 _PERIOD_UNITS = {'Weekly': 'week', 'Monthly': 'month', 'Quarterly': 'quarter', 'Yearly': 'year'}
 
+# How much past data the chart shows; None = all the data
+_HISTORY_OPTIONS = {'All Data': None, 'Last 5 Years': 60, 'Last 2 Years': 24, 'Last 1 Year': 12}
+_FIT_MONTHS = 24  # the forecast is fitted to this much recent history
+
 
 class ForecastingTab(QWidget):
 
@@ -114,6 +118,14 @@ class ForecastingTab(QWidget):
         self.gran_combo.currentTextChanged.connect(self._redraw_forecast)
         controls.addWidget(self.gran_combo)
 
+        controls.addWidget(self._tag('History'))
+        self.history_combo = QComboBox()
+        self.history_combo.addItems(_HISTORY_OPTIONS.keys())
+        self.history_combo.setStyleSheet(_COMBO_STYLE)
+        self.history_combo.setToolTip('How much past data to show. The forecast is always based on the last 2 years.')
+        self.history_combo.currentTextChanged.connect(self._redraw_forecast)
+        controls.addWidget(self.history_combo)
+
         self._ahead_label = self._tag('Months Ahead')
         controls.addWidget(self._ahead_label)
         self.periods_spin = QSpinBox()
@@ -124,7 +136,8 @@ class ForecastingTab(QWidget):
         controls.addWidget(self.periods_spin)
 
         # Let the dropdowns shrink on narrower windows; the lists still show full names
-        for combo in (self.metric_combo, self.dept_combo, self.method_combo, self.gran_combo):
+        for combo in (self.metric_combo, self.dept_combo, self.method_combo, self.gran_combo,
+                      self.history_combo):
             combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             combo.setMinimumContentsLength(9)
             combo.view().setMinimumWidth(combo.view().sizeHintForColumn(0) + 24)
@@ -169,10 +182,19 @@ class ForecastingTab(QWidget):
 
         freq = analytics._FREQ_MAP.get(granularity, 'ME')
         end = pd.Timestamp(date.today())
-        start = end - pd.DateOffset(months=24)
+        months_back = _HISTORY_OPTIONS.get(self.history_combo.currentText())
+        if months_back is None:
+            start = self._earliest_date(end)
+        else:
+            start = end - pd.DateOffset(months=months_back)
         history = analytics.time_series_data(df, metric, 'None', 'All', start, end, granularity)
-        fc = forecasting.forecast_series(history, periods, method, freq)
-        summary = forecasting.forecast_summary(history, fc)
+        # The forecast itself is always fitted to the most recent 2 years — a trend line
+        # across the whole history drifts away from where the numbers are now
+        recent = history[history.index > end - pd.DateOffset(months=_FIT_MONTHS)]
+        if len(recent) == 0:
+            recent = history
+        fc = forecasting.forecast_series(recent, periods, method, freq)
+        summary = forecasting.forecast_summary(recent, fc)
 
         self._forecast_chart.clear_axes()
         ax = self._forecast_chart.axes
@@ -223,6 +245,13 @@ class ForecastingTab(QWidget):
             self._stats_label.setStyleSheet(
                 f'font-size: 13px; font-weight: bold; color: {color}; background: transparent;'
             )
+
+    def _earliest_date(self, end: pd.Timestamp) -> pd.Timestamp:
+        # First hire or leave date in the whole dataset, so every department
+        # starts its history at the same point
+        dates = [self._df[c].min() for c in ('Hire_Date', 'End_Date') if c in self._df.columns]
+        dates = [d for d in dates if pd.notna(d)]
+        return min(dates) if dates else end - pd.DateOffset(months=24)
 
     def _tag(self, text: str) -> QLabel:
         lbl = QLabel(text)

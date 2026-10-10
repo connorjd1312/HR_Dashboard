@@ -37,7 +37,7 @@ _GUIDE = '''
 <h3 style="color:{navy}">Forecasting</h3>
 <ul>
   <li>Projects a metric forward from the last 2 years of data. Pick the metric, department,
-      method and how far ahead to look.</li>
+      method, how much history to show (all of it by default) and how far ahead to look.</li>
   <li><b>Linear Trend</b> suits steadily rising or falling numbers; <b>Moving Average</b> suits
       numbers that go up and down. Forecasts are estimates, not guarantees.</li>
 </ul>
