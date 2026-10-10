@@ -60,3 +60,52 @@ def test_forecast_summary_empty_inputs_reports_flat():
     assert summary['direction'] == 'flat'
     assert summary['percent_change'] == 0.0
     assert summary['forecast_points'] == []
+
+
+def test_forecast_series_smoothed_trend_continues_upward():
+    history = _rising_series()
+    fc = forecasting.forecast_series(history, periods=3, method='Smoothed Trend', freq='ME')
+
+    assert len(fc) == 3
+    assert fc.iloc[0] > history.iloc[-1]
+    assert fc.is_monotonic_increasing
+
+
+def test_forecast_series_smoothed_trend_flat_history_stays_flat():
+    idx = pd.date_range('2024-01-31', periods=8, freq='ME')
+    flat = pd.Series([7.0] * 8, index=idx)
+    fc = forecasting.forecast_series(flat, periods=4, method='Smoothed Trend', freq='ME')
+    assert list(fc.values) == [7.0] * 4
+
+
+def test_forecast_series_smoothed_trend_with_two_points_falls_back_to_line():
+    idx = pd.date_range('2024-01-31', periods=2, freq='ME')
+    history = pd.Series([4.0, 6.0], index=idx)
+    fc = forecasting.forecast_series(history, periods=2, method='Smoothed Trend', freq='ME')
+    assert list(fc.values) == [8.0, 10.0]
+
+
+def test_forecast_range_brackets_forecast_and_widens():
+    idx = pd.date_range('2024-01-31', periods=12, freq='ME')
+    noisy = pd.Series([10, 14, 9, 15, 11, 16, 12, 17, 13, 18, 14, 19], index=idx)
+    for method in forecasting.FORECAST_METHODS:
+        fc = forecasting.forecast_series(noisy, periods=4, method=method, freq='ME')
+        rng = forecasting.forecast_range(noisy, periods=4, method=method, freq='ME')
+
+        assert list(rng.index) == list(fc.index)
+        assert (rng['Lower'] <= fc).all() and (fc <= rng['Upper']).all()
+        width = rng['Upper'] - rng['Lower']
+        assert width.iloc[-1] > width.iloc[0] > 0
+        assert (rng['Lower'] >= 0).all()
+
+
+def test_forecast_range_perfect_line_has_no_width():
+    history = _rising_series()
+    rng = forecasting.forecast_range(history, periods=3, method='Linear Trend', freq='ME')
+    fc = forecasting.forecast_series(history, periods=3, method='Linear Trend', freq='ME')
+    assert list(rng['Lower']) == list(fc.values) == list(rng['Upper'])
+
+
+def test_forecast_range_empty_history_returns_empty_frame():
+    rng = forecasting.forecast_range(pd.Series(dtype=float), periods=3, method='Smoothed Trend', freq='ME')
+    assert rng.empty

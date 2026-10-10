@@ -37,9 +37,11 @@ _GUIDE = '''
 <h3 style="color:{navy}">Forecasting</h3>
 <ul>
   <li>Projects a metric forward from the last 2 years of data. Pick the metric, department,
-      method and how far ahead to look.</li>
-  <li><b>Linear Trend</b> suits steadily rising or falling numbers; <b>Moving Average</b> suits
-      numbers that go up and down. Forecasts are estimates, not guarantees.</li>
+      method, how much history to show (all of it by default) and how far ahead to look.</li>
+  <li><b>Smoothed Trend</b> suits numbers whose direction shifts; <b>Linear Trend</b> suits steadily rising or
+      falling numbers; <b>Moving Average</b> suits numbers that go up and down.</li>
+  <li>The shaded band is the likely range: where the real number should land 8 times out of 10,
+      based on how far past forecasts were off. Forecasts are estimates, not guarantees.</li>
 </ul>
 
 <h3 style="color:{navy}">AI Advisor</h3>
