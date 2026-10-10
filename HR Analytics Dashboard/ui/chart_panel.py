@@ -272,11 +272,7 @@ class ChartPanel(QFrame):
         subtitle = '  ·  '.join(t for t in (self._period_text, auto_label) if t)
         set_title_with_period(ax, f'{metric} by {dimension}', subtitle or None)
 
-        value_of = dict(zip(labels, values))
-        self.chart.set_hover_items({
-            artist: f'{lbl}: {analytics.format_metric_value(metric, value_of[lbl])}\nClick to drill down'
-            for artist, lbl in self._artist_to_label.items()
-        })
+        self.chart.set_hover_items(self._artist_to_label)
         self.chart.refresh()
 
     # ── Click handling ────────────────────────────────────────────────────
