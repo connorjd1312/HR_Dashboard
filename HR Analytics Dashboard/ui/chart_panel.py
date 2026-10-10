@@ -132,6 +132,7 @@ class ChartPanel(QFrame):
 
         # Chart canvas
         self.chart = ChartWithToolbar(width=8, height=4)
+        self.chart.hide_coordinates()
         v.addWidget(self.chart, stretch=1)
 
         # Wire pick events for click-to-drill

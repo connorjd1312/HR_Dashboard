@@ -217,5 +217,11 @@ class ChartWithToolbar(QWidget):
         # Small charts hide the zoom/pan toolbar to give the chart more room.
         self._toolbar.setVisible(visible)
 
+    def hide_coordinates(self):
+        # The toolbar's "x=… y=…" mouse readout means nothing on bar/pie charts.
+        for action in self._toolbar.actions():
+            if self._toolbar.widgetForAction(action) is self._toolbar.locLabel:
+                action.setVisible(False)
+
     def refresh(self):
         self._chart.refresh()

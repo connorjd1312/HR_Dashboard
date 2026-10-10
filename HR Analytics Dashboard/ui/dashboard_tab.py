@@ -785,6 +785,7 @@ class DashboardTab(QWidget):
         chart = ChartWithToolbar(width=5 if not focused else 9, height=3 if not focused else 5)
         # The zoom/pan toolbar is only worth its space on the focused chart.
         chart.set_toolbar_visible(focused)
+        chart.hide_coordinates()
 
         ax = chart.axes
         chart.clear_axes()
