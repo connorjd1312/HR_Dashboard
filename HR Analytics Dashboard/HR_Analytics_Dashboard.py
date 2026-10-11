@@ -2,9 +2,14 @@
 # Run this file to launch the application: python HR_Analytics_Dashboard.py
 
 import sys
+from pathlib import Path
 
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QApplication
 from ui.main_window import MainWindow
+
+# In the packaged .exe, bundled files are unpacked to sys._MEIPASS instead
+APP_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 
 
 def main():
@@ -13,6 +18,7 @@ def main():
 
     # Fusion gives a consistent, modern look across all Windows versions
     app.setStyle('Fusion')
+    app.setWindowIcon(QIcon(str(APP_DIR / 'assets' / 'app.ico')))
 
     # Create and display the main window
     window = MainWindow()
