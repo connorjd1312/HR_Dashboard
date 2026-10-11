@@ -177,8 +177,8 @@ DRILL_CASCADE = ['Department', 'Job Role', 'Status', 'Sex', 'Ethnicity', 'Age Gr
 
 
 # How the dashboard's date range selects employees
-PERIOD_EMPLOYED = 'Employed during period'
-PERIOD_HIRED = 'Hired during period'
+PERIOD_EMPLOYED = 'All employed'
+PERIOD_HIRED = 'New hires'
 PERIOD_MODES = [PERIOD_EMPLOYED, PERIOD_HIRED]
 
 _LEFT_STATUSES = ['Resigned', 'Terminated', 'Retired']
@@ -187,12 +187,12 @@ _LEFT_STATUSES = ['Resigned', 'Terminated', 'Retired']
 def filter_period(df: pd.DataFrame, start, end, mode: str = PERIOD_EMPLOYED) -> pd.DataFrame:
     # Select the employees the dashboard should count for a date range.
     #
-    # 'Employed during period' (default): everyone who worked here at any point in
+    # 'All employed' (default): everyone who worked here at any point in
     # the range — hired on/before the end and not left before the start. Figures
     # are 'as at' the end of the range: anyone who left AFTER it was still
     # employed then, so they count as active, not as a leaver.
     #
-    # 'Hired during period': only people whose hire date falls in the range.
+    # 'New hires': only people whose hire date falls in the range.
     start, end = pd.Timestamp(start), pd.Timestamp(end)
     if mode == PERIOD_HIRED:
         return df[(df['Hire_Date'] >= start) & (df['Hire_Date'] <= end)]

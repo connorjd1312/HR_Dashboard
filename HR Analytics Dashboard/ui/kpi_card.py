@@ -71,6 +71,9 @@ class KPICard(QFrame):
             text, tone = change
             colour = {'good': '#7DDC9C', 'bad': '#FF9C8F'}.get(tone, '#C9D3E3')
             change_lbl = QLabel(f'{text} vs previous period')
+            # Wrap on narrow windows rather than forcing the whole card row (and so
+            # the dashboard) wider, which squeezed the filter sidebar
+            change_lbl.setWordWrap(True)
             change_lbl.setStyleSheet(f'color: {colour}; font-size: 11px; background: transparent;')
             if change_tooltip:
                 change_lbl.setToolTip(change_tooltip)
