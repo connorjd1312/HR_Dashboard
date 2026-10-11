@@ -109,14 +109,27 @@ class DashboardTab(QWidget):
         outer.addWidget(self._data_check_bar)
         self._data_check_items: list[str] = []
 
-        # Time period banner — visible on both the dashboard and drill-down pages
+        # Time period banner — visible on both the dashboard and drill-down pages.
+        # Once closed it stays closed; chart subtitles still show the period.
+        self._period_bar = QFrame()
+        self._period_bar.setObjectName('periodBar')
+        self._period_bar.setStyleSheet(
+            'QFrame#periodBar { background: #E8EEF7; border-radius: 6px; margin: 8px 8px 0 8px; }')
+        self._period_bar.hide()
+        self._period_dismissed = False
+        bar = QHBoxLayout(self._period_bar)
+        bar.setContentsMargins(10, 6, 6, 6)
         self._period_label = QLabel()
-        self._period_label.setStyleSheet(
-            'background: #E8EEF7; color: #1F3864; font-size: 12px;'
-            'border-radius: 6px; padding: 6px 10px; margin: 8px 8px 0 8px;'
-        )
-        self._period_label.hide()
-        outer.addWidget(self._period_label)
+        self._period_label.setWordWrap(True)
+        self._period_label.setStyleSheet('background: transparent; color: #1F3864; font-size: 12px;')
+        bar.addWidget(self._period_label, stretch=1)
+        close_period = QPushButton('✕')
+        close_period.setFixedSize(22, 22)
+        close_period.setToolTip('Hide this message')
+        close_period.setStyleSheet(_BTN_DANGER)
+        close_period.clicked.connect(self._dismiss_period_bar)
+        bar.addWidget(close_period, alignment=Qt.AlignmentFlag.AlignTop)
+        outer.addWidget(self._period_bar)
 
         # Active filter chips (e.g. 'Department: Sales ✕') under the time period
         self._chips_widget = QWidget()
@@ -271,8 +284,8 @@ class DashboardTab(QWidget):
         return f'{verb} {analytics.format_period(*self._period)}'
 
     def _refresh_period_label(self):
-        if not self._period or self._df is None:
-            self._period_label.hide()
+        if not self._period or self._df is None or self._period_dismissed:
+            self._period_bar.hide()
             return
         as_at = min(self._period[1], pd.Timestamp.today().normalize())
         who = ('employees hired' if self._period_mode == analytics.PERIOD_HIRED
@@ -285,7 +298,11 @@ class DashboardTab(QWidget):
                f'<b>{self._prev_label}</b> — the same length of time just before this period.</span>'
                if self._prev_df is not None and self._prev_label else '')
         )
-        self._period_label.show()
+        self._period_bar.show()
+
+    def _dismiss_period_bar(self):
+        self._period_dismissed = True
+        self._period_bar.hide()
 
     def update_data(self, df: pd.DataFrame, previous_df: pd.DataFrame | None = None,
                     previous_label: str = ''):
