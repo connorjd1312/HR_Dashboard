@@ -102,7 +102,6 @@ class MainWindow(QMainWindow):
 
         # Left side placeholder until a file is loaded; hidden on welcome screen
         self.filter_panel = QWidget()
-        self.filter_panel.setFixedWidth(220)
         self.splitter.addWidget(self.filter_panel)
         self.filter_panel.hide()
 
@@ -317,7 +316,6 @@ class MainWindow(QMainWindow):
 
             # Rebuild the filter panel with values from the new combined dataset
             new_fp = FilterPanel(self._df_full)
-            new_fp.setFixedWidth(220)
             new_fp.filters_changed.connect(self._apply_filters)
             self.splitter.replaceWidget(0, new_fp)
             self.filter_panel = new_fp
