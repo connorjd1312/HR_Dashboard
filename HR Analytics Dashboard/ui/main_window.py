@@ -10,6 +10,7 @@
 #   - Layout: filter panel on the left, tabbed dashboard/charts on the right
 #   - Re-filtering and refreshing all tabs when the user applies filters
 
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -48,7 +49,9 @@ _FILTER_LABELS = [
 _SIDEBAR_WIDTH = 220
 _SIDEBAR_MAX_WIDTH = 400
 
-DEFAULT_DOCS_DIR =Path(__file__).resolve().parent.parent / 'Default documents'
+# In the packaged .exe, bundled files are unpacked to sys._MEIPASS instead
+_APP_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent.parent))
+DEFAULT_DOCS_DIR = _APP_DIR / 'Default documents'
 
 _DROP_ZONE_NORMAL = '''
     QFrame {

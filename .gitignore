@@ -14,6 +14,7 @@ __pycache__/
 dist/
 build/
 *.spec
+!HR_Analytics_Dashboard.spec
 
 # Claude Code
 .claude/

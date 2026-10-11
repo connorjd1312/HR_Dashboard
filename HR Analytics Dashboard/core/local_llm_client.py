@@ -11,13 +11,19 @@
 from __future__ import annotations
 
 import os
+import sys
 import threading
 from pathlib import Path
 from typing import Callable
 
 import requests
 
-MODEL_DIR = Path(__file__).resolve().parent.parent / 'models'
+# In the packaged .exe, keep models/ next to the .exe — the bundle's own folder is
+# temporary and deleted on exit, so a downloaded model would be lost every time
+if getattr(sys, 'frozen', False):
+    MODEL_DIR = Path(sys.executable).resolve().parent / 'models'
+else:
+    MODEL_DIR = Path(__file__).resolve().parent.parent / 'models'
 MODEL_FILENAME = 'Llama-3.2-3B-Instruct-Q4_K_M.gguf'
 MODEL_URL = (
     'https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/'
