@@ -140,7 +140,7 @@ class ForecastingTab(QWidget):
         for combo in (self.metric_combo, self.dept_combo, self.method_combo, self.gran_combo,
                       self.history_combo):
             combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-            combo.setMinimumContentsLength(9)
+            combo.setMinimumContentsLength(6)
             combo.view().setMinimumWidth(combo.view().sizeHintForColumn(0) + 24)
 
         controls.addStretch()

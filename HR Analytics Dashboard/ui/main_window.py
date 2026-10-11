@@ -43,7 +43,12 @@ _FILTER_LABELS = [
     ('sex', 'Sex'), ('ethnicity', 'Ethnicity'), ('age_group', 'Age Group'),
 ]
 
-DEFAULT_DOCS_DIR = Path(__file__).resolve().parent.parent / 'Default documents'
+# Filter sidebar: starting width and how wide it can be dragged (its own
+# minimum comes from the fields inside it)
+_SIDEBAR_WIDTH = 220
+_SIDEBAR_MAX_WIDTH = 400
+
+DEFAULT_DOCS_DIR =Path(__file__).resolve().parent.parent / 'Default documents'
 
 _DROP_ZONE_NORMAL = '''
     QFrame {
@@ -108,7 +113,11 @@ class MainWindow(QMainWindow):
         # Right side stacked: page 0 = welcome, page 1 = dashboard tabs
         self.stack = QStackedWidget()
         self.splitter.addWidget(self.stack)
-        self.splitter.setSizes([220, 1060])
+        # Extra window width goes to the charts, not the sidebar
+        self.splitter.setStretchFactor(0, 0)
+        self.splitter.setStretchFactor(1, 1)
+        self.splitter.splitterMoved.connect(self._remember_sidebar_width)
+        self._sidebar_width = _SIDEBAR_WIDTH
 
         self.stack.addWidget(self._build_welcome_page())  # index 0
 
@@ -317,10 +326,10 @@ class MainWindow(QMainWindow):
             # Rebuild the filter panel with values from the new combined dataset
             new_fp = FilterPanel(self._df_full)
             new_fp.filters_changed.connect(self._apply_filters)
+            new_fp.setMaximumWidth(_SIDEBAR_MAX_WIDTH)
             self.splitter.replaceWidget(0, new_fp)
             self.filter_panel = new_fp
-            self.filter_panel.show()
-            self.splitter.setSizes([220, 1060])
+            self._show_sidebar()
 
             # Switch from welcome page to dashboard if this is the first load
             if self.stack.currentIndex() == 0:
@@ -563,8 +572,17 @@ class MainWindow(QMainWindow):
         if self._df_full is None:
             return
         if index == 0:  # Dashboard
-            self.filter_panel.show()
-            self.splitter.setSizes([220, 1060])
+            self._show_sidebar()
         else:
             self.filter_panel.hide()
-            self.splitter.setSizes([0, 1280])
+
+    def _show_sidebar(self):
+        # Show the filter sidebar at the width the user last dragged it to
+        self.filter_panel.show()
+        total = max(self.splitter.width(), self._sidebar_width + 1)
+        self.splitter.setSizes([self._sidebar_width, total - self._sidebar_width])
+
+    def _remember_sidebar_width(self, *_args):
+        width = self.splitter.sizes()[0]
+        if width > 0:  # 0 = dragged closed; reopen at the last real width
+            self._sidebar_width = width

@@ -133,6 +133,9 @@ class FilterPanel(QWidget):
         fields_scroll.setFrameShape(QFrame.Shape.NoFrame)
         fields_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         fields_scroll.setWidget(content)
+        # Never let the sidebar be dragged narrower than the fields plus scrollbar
+        fields_scroll.setMinimumWidth(content.minimumSizeHint().width()
+                                      + fields_scroll.verticalScrollBar().sizeHint().width())
         outer.addWidget(fields_scroll, stretch=1)
 
         # Footer buttons 
@@ -190,6 +193,11 @@ class FilterPanel(QWidget):
 
     def _style_combo(self, combo):
         combo.setStyleSheet(theme.COMBO_STYLE)
+        # Fit the narrow sidebar instead of growing to the longest option (which
+        # pushed every field past the right edge); the open list still shows full names
+        combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        combo.setMinimumContentsLength(8)
+        combo.view().setMinimumWidth(combo.view().sizeHintForColumn(0) + 24)
 
 
     def _combos(self) -> dict:
