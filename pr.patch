@@ -5904,5 +5904,3 @@ index c90cc73..846deed 100644
  
 @@ -100,3 +129,28 @@ pytest tests/ -v                     
  ```
-+- The window is sized to fit a 1280px-wide screen. Adding buttons to a tab's top row can quietly push
-+  its minimum width past that, so tests in `tests/test_ui_features.py` guard it.
