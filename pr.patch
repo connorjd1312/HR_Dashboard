@@ -3087,7 +3087,7 @@ index e7e40be..8f6d536 100644
 +                    fig, chart, df, show_period=True)))
 +                for c in self._charts if c['series_list']]
 +
-     # ── Series management ─────────────────────────────────────────────────────
+     # Series management
  
      def _active_series(self):
 @@ -704,6 +858,7 @@ class AnalyticsTab(QWidget):
@@ -3143,7 +3143,6 @@ index e7e40be..8f6d536 100644
          ax.set_xticklabels(categories, rotation=20, ha='right', fontsize=9)
 @@ -981,7 +1138,7 @@ class AnalyticsTab(QWidget):
  
-     # ── Thumbnail management ──────────────────────────────────────────────────
  
 -    def _chart_to_pixmap(self, chart_dict, w=164, h=104):
 +    def _chart_to_pixmap(self, chart_dict, w=164, h=104, figsize=(4, 3)):
@@ -4823,7 +4822,6 @@ index 8877dd9..71d4aba 100644
      def set_value(self, value: str):
          self._value.setText(value)
  
-+    # A press that stays put is a click; one that moves is a drag. Decided on release.
 +
      def mousePressEvent(self, event):
          if event.button() == Qt.MouseButton.LeftButton:
@@ -4915,7 +4913,6 @@ index 8877dd9..71d4aba 100644
 +            p.end()
 +
  
- # Tile that opens a menu of available metrics when clicked.
  class AddKPIButton(QFrame):
 diff --git a/HR Analytics Dashboard/ui/main_window.py b/HR Analytics Dashboard/ui/main_window.py
 index 08a2ea5..c1d8996 100644
@@ -5614,7 +5611,6 @@ index bc9b8fc..2b39781 100644
  import matplotlib as mpl
 +import matplotlib.colors
  
- # ── Palette ──────────────────────────────────────────────────────────────────
  NAVY        = '#1F3864'   # headers, primary buttons, KPI cards
 @@ -171,34 +176,270 @@ def style_date_edit(date_edit):
      date_edit.calendarWidget().setStyleSheet(CALENDAR_STYLE)
@@ -5903,68 +5899,10 @@ diff --git a/README.md b/README.md
 index c90cc73..846deed 100644
 --- a/README.md
 +++ b/README.md
-@@ -6,6 +6,35 @@ Everything runs on your own computer; no employee data is sent anywhere.
- 
+@@ -6,6 +6,35 @@ 
  ---
  
-+## What you can do
-+
-+- Dashboard: key numbers (KPI cards) and charts that follow the filters on the left.
-+  - Drag a card left or right to put your cards in the order you like.
-+  - Click Compare Charts to show several charts at once, then drag a chart's handle (the dots at its
-+    top left) onto another chart to swap them. Reset puts everything back.
-+  - Double-click a person in any list of employees to open their profile.
-+- Employees: search by name, department, job role or status (Ctrl+F), and open a profile showing the
-+  person's details and how their pay, tenure and absence compare with their department.
-+- Analytics: build your own charts.
-+  - Describe a chart lets you type what you want in plain words, such as "hires vs departures over the
-+    last 2 years". You see a preview before anything is added. It uses the local AI model if you have
-+    downloaded it (see The AI Advisor below) and simple keyword matching if you have not.
-+  - Undo and Redo (or Ctrl+Z and Ctrl+Y) reverse and repeat your changes.
-+- Export PDF Summary Report (File menu, Ctrl+P): a printable summary with key figures, plain-English
-+  highlights and charts. You choose what goes in. Reports are always light-coloured so they print well,
-+  even if you use dark mode.
-+- Light and dark mode: Theme in the View menu, or the Dark / Light button at the top right
-+  (Ctrl+Shift+D). Follow system matches your computer's setting.
-+- The app remembers the window size and position, the theme, your dashboard layout and the files you
-+  last opened, and starts with the same files next time. To always start with the Default documents
-+  folder instead, untick Reopen last files on startup in the File menu. Open Recent lists earlier files.
-+
-+Settings are kept in the Windows registry under
-+`HKEY_CURRENT_USER\Software\HRAnalytics\HRAnalyticsDashboard`. Forget Saved Settings in the View menu
-+clears them.
-+
-+---
-+
- ## Put the app on your desktop
- 
- There are two ways, depending on what you have.
-@@ -100,3 +129,28 @@ pytest tests/ -v                      # run the tests
+@@ -100,3 +129,28 @@ pytest tests/ -v                     
  ```
- 
- The build settings are in `HR_Analytics_Dashboard.spec`.
-+
-+The tests need no screen: they set `QT_QPA_PLATFORM=offscreen` themselves, so they also run on a
-+build server. Nothing was added to `requirements.txt`; the PDF report uses Matplotlib.
-+
-+Where the newer features live (logic in `core/` has no Qt code and is covered by plain unit tests;
-+`ui/` is the screens):
-+
-+| Feature | Logic | Screen |
-+|---|---|---|
-+| Undo / redo | `core/history.py` | `ui/analytics_tab.py` |
-+| Dark mode | | `ui/theme.py` (translates each stylesheet's colours as it is set) |
-+| Employee search / profile | `core/employee_search.py` | `ui/employees_tab.py` |
-+| PDF report | `core/report_generator.py` | `ui/report_dialog.py`, `ui/main_window.py` |
-+| Drag-and-drop layout | `core/dashboard_layout.py` | `ui/drag_drop.py`, `ui/kpi_card.py`, `ui/chart_panel.py`, `ui/dashboard_tab.py` |
-+| Describe a chart | `core/chart_generator.py` | `ui/chart_prompt_dialog.py` |
-+| Remembering settings | | `ui/app_settings.py`, `ui/main_window.py` |
-+
-+Things to know when changing the UI:
-+
-+- Colours written into stylesheets in the usual light palette are translated for dark mode
-+  automatically, so new widgets don't need special handling. Colours passed to Matplotlib should come
-+  from `theme.chart_text()`, `theme.chart_color()` and friends so charts follow the theme (and the
-+  PDF report, which always draws light, stays light).
 +- The window is sized to fit a 1280px-wide screen. Adding buttons to a tab's top row can quietly push
 +  its minimum width past that, so tests in `tests/test_ui_features.py` guard it.
