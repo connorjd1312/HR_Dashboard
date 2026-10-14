@@ -1,8 +1,4 @@
-# chart_widget.py
-# A reusable PyQt6 widget that embeds a Matplotlib figure inside the application window.
-# PyQt6 and Matplotlib are separate libraries — this class bridges them using
-# FigureCanvasQTAgg, which is Matplotlib's official Qt rendering backend.
-# Every chart in the application (bar, pie, line) is drawn using an instance of this class.
+# Embeds a Matplotlib figure in a Qt widget
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.colors import to_rgba
@@ -11,8 +7,10 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Circle
 from PyQt6.QtWidgets import QSizePolicy, QWidget, QVBoxLayout, QSplitter
 
+from ui import theme
 
-# Drag handle between resizable charts — turns blue on hover so it's discoverable.
+
+# Drag handle between resizable charts
 SPLITTER_STYLE = '''
     QSplitter::handle { background: #E5E7EB; border-radius: 2px; }
     QSplitter::handle:hover { background: #2E75B6; }
@@ -20,7 +18,7 @@ SPLITTER_STYLE = '''
 
 
 def make_splitter(orientation) -> QSplitter:
-    # QSplitter the user can drag to resize charts; panes can't collapse to nothing.
+    # QSplitter the user can drag to resize charts
     splitter = QSplitter(orientation)
     splitter.setHandleWidth(6)
     splitter.setChildrenCollapsible(False)
@@ -29,29 +27,27 @@ def make_splitter(orientation) -> QSplitter:
 
 
 def set_title_with_period(ax, title, period=None, **title_kwargs):
-    # Chart title with an optional smaller grey line underneath showing the
-    # time period the chart covers.
+    # Chart title with an optional period line
     title_kwargs.setdefault('fontsize', 11)
     title_kwargs.setdefault('fontweight', 'bold')
     ax.set_title(title, pad=20 if period else 6, **title_kwargs)
     if period:
         ax.text(0.5, 1.012, period, transform=ax.transAxes, ha='center',
-                va='bottom', fontsize=9, color='#555555')
+                va='bottom', fontsize=9, color=theme.chart_muted())
 
 
 def draw_pie(ax, labels, values, colors, donut=False, value_fmt=None):
-    # Pie/donut with percentages inside the larger slices and a legend beside
-    # it, so labels on small neighbouring slices can't overlap each other.
+    # Pie with a legend so small slices do not overlap
     total = float(sum(values)) or 1.0
     wedges, _texts, _pcts = ax.pie(
         values, colors=colors, startangle=90, counterclock=False,
         autopct=lambda p: f'{p:.0f}%' if p >= 6 else '',
         pctdistance=0.78 if donut else 0.65,
         textprops={'fontsize': 8, 'color': 'white', 'fontweight': 'bold'},
-        wedgeprops={'linewidth': 1, 'edgecolor': 'white'},
+        wedgeprops={'linewidth': 1, 'edgecolor': theme.chart_surface()},
     )
     if donut:
-        ax.add_artist(Circle((0, 0), 0.55, fc='white'))
+        ax.add_artist(Circle((0, 0), 0.55, fc=theme.chart_surface()))
     fmt = value_fmt or (lambda v: f'{v:,.0f}')
     legend_labels = [f'{lbl}  {fmt(v)} ({v / total:.0%})' for lbl, v in zip(labels, values)]
     ax.legend(wedges, legend_labels, loc='center left', bbox_to_anchor=(1.0, 0.5),
@@ -61,25 +57,23 @@ def draw_pie(ax, labels, values, colors, donut=False, value_fmt=None):
 
 
 # Hover highlight for clickable bars / slices / points
-_HOVER_EDGE = '#F5A623'   # amber outline — stands out against the blues and navy
-_HOVER_DARKEN = 0.75      # hovered fill is darkened to this fraction
+_HOVER_EDGE = '#F5A623'  # amber outline, stands out against the blues and navy
+_HOVER_DARKEN = 0.75  # hovered fill is darkened to this fraction
 
 
 class HoverHighlighter:
-    # Highlights the clickable chart element under the mouse (darker fill,
-    # amber outline, hand cursor) so users can tell which parts of a chart
-    # they can click to drill down.
+    # Highlight the clickable item under the mouse
 
     def __init__(self, canvas):
         self._canvas = canvas
-        self._items: list = []        # clickable artists
+        self._items: list = []  # clickable artists
         self._hovered = None
         self._saved_style = None
         canvas.mpl_connect('motion_notify_event', self._on_move)
         canvas.mpl_connect('figure_leave_event', lambda _e: self._set_hovered(None))
 
     def set_items(self, items):
-        # Called after every redraw with the new clickable artists.
+        # Called after every redraw with the new clickable artists
         self._items = list(items)
         self._hovered = None
         self._saved_style = None
@@ -140,9 +134,7 @@ class HoverHighlighter:
 
 class ChartWidget(FigureCanvasQTAgg):
     def __init__(self, width=6, height=4, dpi=100, parent=None):
-        # Create a Matplotlib figure at the given size and resolution
-        # 'tight' layout re-fits titles and labels every time the chart is
-        # resized, so nothing gets clipped when the user drags a divider.
+        # Create the figure with a tight layout
         fig = Figure(figsize=(width, height), dpi=dpi, layout='tight')
 
         # axes is the area where the chart is actually drawn
@@ -159,23 +151,26 @@ class ChartWidget(FigureCanvasQTAgg):
         )
 
     def clear_axes(self):
-        # Remove all content from the chart area so it can be redrawn.
+        # Remove all content from the chart area so it can be redrawn
         self.axes.cla()
 
     def reset_axes(self, polar=False):
-        # Replace axes — needed when switching between standard and polar (radar) types.
+        # Replace axes when switching between standard and polar
         self.figure.clear()
         self.axes = self.figure.add_subplot(111, polar=polar)
 
+    def apply_theme(self):
+        # Axes colours are fixed when an axes is created
+        self.figure.set_facecolor(theme.chart_surface())
+        self.reset_axes()
+
     def refresh(self):
-        # Repaint the canvas. The 'tight' layout engine prevents label clipping;
-        # it's re-set here because a one-off fig.tight_layout() call elsewhere
-        # would otherwise switch automatic re-fitting off.
+        # Repaint the canvas and keep the tight layout on
         self.figure.set_layout_engine('tight')
         self.draw()
 
 
-# ChartWidget paired with a Matplotlib navigation toolbar (zoom, pan, save).
+# ChartWidget with a navigation toolbar
 class ChartWithToolbar(QWidget):
 
     def __init__(self, width=6, height=4, dpi=100, parent=None):
@@ -208,20 +203,32 @@ class ChartWithToolbar(QWidget):
         self._chart.draw()
 
     def set_hover_items(self, items):
-        # items: the clickable parts of the chart (bars, slices, points).
+        # items: the clickable parts of the chart (bars, slices, points)
         if not hasattr(self, '_hover'):
             self._hover = HoverHighlighter(self._chart)
         self._hover.set_items(items)
 
     def set_toolbar_visible(self, visible: bool):
-        # Small charts hide the zoom/pan toolbar to give the chart more room.
+        # Small charts hide the zoom/pan toolbar to give the chart more room
         self._toolbar.setVisible(visible)
 
     def hide_coordinates(self):
-        # The toolbar's "x=… y=…" mouse readout means nothing on bar/pie charts.
+        # The toolbar's "x=… y=…" mouse readout means nothing on bar/pie charts
         for action in self._toolbar.actions():
             if self._toolbar.widgetForAction(action) is self._toolbar.locLabel:
                 action.setVisible(False)
 
     def refresh(self):
         self._chart.refresh()
+
+    def refresh_theme(self):
+        # Matplotlib fixes toolbar icon colours at creation
+        self._chart.apply_theme()
+        tb = self._toolbar
+        try:
+            for _text, _tip, image_file, callback in tb.toolitems:
+                action = tb._actions.get(callback)
+                if action is not None:
+                    action.setIcon(tb._icon(image_file + '.png'))
+        except (AttributeError, TypeError):
+            pass  # private matplotlib attributes; keep the old icons if missing

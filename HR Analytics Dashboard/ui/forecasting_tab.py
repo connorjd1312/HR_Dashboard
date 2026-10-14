@@ -1,6 +1,4 @@
-# forecasting_tab.py
-# Forecasting tab: statistical forecast charts (plain linear-trend / moving-average
-# extrapolation). The AI Workforce Advisor chat lives in its own tab (advisor_tab.py).
+# Forecasting tab with statistical forecast charts
 
 from __future__ import annotations
 
@@ -15,7 +13,7 @@ from core import analytics, forecasting
 from ui import theme
 from ui.chart_widget import ChartWithToolbar, set_title_with_period
 
-# Colour / style constants — matches dashboard_tab.py / series_dialog.py
+# Colour / style constants, matches dashboard_tab.py / series_dialog.py
 
 _NAVY = theme.NAVY
 _NAVY_HOVER = theme.BLUE
@@ -136,7 +134,7 @@ class ForecastingTab(QWidget):
         self.periods_spin.valueChanged.connect(self._redraw_forecast)
         controls.addWidget(self.periods_spin)
 
-        # Let the dropdowns shrink on narrower windows; the lists still show full names
+        # Let the dropdowns shrink on narrower windows
         for combo in (self.metric_combo, self.dept_combo, self.method_combo, self.gran_combo,
                       self.history_combo):
             combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
@@ -189,11 +187,7 @@ class ForecastingTab(QWidget):
         else:
             start = end - pd.DateOffset(months=months_back)
         history = analytics.time_series_data(df, metric, 'None', 'All', start, end, granularity)
-        # The forecast itself is always fitted to the most recent 2 years — a trend line
-        # across the whole history drifts away from where the numbers are now
-        # (at least _MIN_FIT_POINTS, so Yearly isn't a line through just 2 points)
-        # Fitted from the full data so the History choice only changes what's shown (a
-        # short history would otherwise start with a part-period, e.g. Oct–Dec of a year)
+        # Fit the forecast to the most recent 2 years
         full = history
         if months_back is not None:
             full = analytics.time_series_data(df, metric, 'None', 'All',
@@ -209,10 +203,10 @@ class ForecastingTab(QWidget):
 
         if len(history) == 0:
             ax.text(0.5, 0.5, 'Not enough data to forecast', ha='center', va='center',
-                     transform=ax.transAxes, color='#888')
+                     transform=ax.transAxes, color=theme.chart_muted())
             ax.axis('off')
         else:
-            ax.plot(history.index, history.values, color=_NAVY, linewidth=2,
+            ax.plot(history.index, history.values, color=theme.chart_color(_NAVY), linewidth=2,
                      marker='o', markersize=3, label='Historical')
             if len(fc):
                 bridge_x = [history.index[-1]] + list(fc.index)
@@ -228,7 +222,7 @@ class ForecastingTab(QWidget):
             period = f'History: {analytics.format_period(history.index[0], history.index[-1])}'
             if len(fc):
                 period += f'   ·   Forecast to {analytics.format_date(fc.index[-1])}'
-            set_title_with_period(ax, f'{metric} — {method} Forecast', period, color=_NAVY)
+            set_title_with_period(ax, f'{metric} - {method} Forecast', period, color=theme.heading_colour())
             ax.tick_params(axis='x', rotation=30, labelsize=8)
             ax.legend(fontsize=9)
 
@@ -240,14 +234,13 @@ class ForecastingTab(QWidget):
         else:
             arrow = {'up': '▲', 'down': '▼', 'flat': '→'}.get(summary['direction'], '→')
             color = {'up': _GREEN, 'down': _RED, 'flat': '#555'}.get(summary['direction'], '#555')
-            # Plain-English summary, e.g. "▲ Hires are expected to rise 12.5%
-            # over the next 3 months (latest: 8 → forecast: 9)"
+            # Plain-English summary
             latest = summary['last_historical']
             end_value = summary['forecast_points'][-1]['value'] if summary['forecast_points'] else latest
             if summary['direction'] == 'flat':
                 trend = 'stay about the same'
             elif latest == 0:
-                # A % change from zero is meaningless — describe the actual change instead
+                # A % change from zero is meaningless, describe the actual change instead
                 trend = f'{"rise" if end_value > latest else "fall"} from 0 to {end_value:.1f}'
             else:
                 trend = f'{"rise" if summary["direction"] == "up" else "fall"} {abs(summary["percent_change"]):.1f}%'
@@ -262,11 +255,14 @@ class ForecastingTab(QWidget):
             )
 
     def _earliest_date(self, end: pd.Timestamp) -> pd.Timestamp:
-        # First hire or leave date in the whole dataset, so every department
-        # starts its history at the same point
+        # Earliest hire or leave date in the data
         dates = [self._df[c].min() for c in ('Hire_Date', 'End_Date') if c in self._df.columns]
         dates = [d for d in dates if pd.notna(d)]
         return min(dates) if dates else end - pd.DateOffset(months=24)
+
+    def refresh_theme(self):
+        self._forecast_chart.refresh_theme()
+        self._redraw_forecast()
 
     def _tag(self, text: str) -> QLabel:
         lbl = QLabel(text)

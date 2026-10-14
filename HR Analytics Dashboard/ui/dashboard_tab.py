@@ -10,10 +10,10 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QCursor
 
-from core import analytics
+from core import analytics, dashboard_layout
 from ui import message_box, theme
 from ui.chart_widget import ChartWithToolbar, draw_pie, make_splitter
-from ui.kpi_card import KPICard, AddKPIButton
+from ui.kpi_card import KPICard, KPIRow, AddKPIButton
 from ui.chart_panel import ChartPanel
 
 EMPLOYEE_TABLE_COLS = [
@@ -28,13 +28,11 @@ EMPLOYEE_TABLE_COLS = [
     ('Tenure_Years',  'Tenure (yrs)'),
 ]
 
-_PIE_COLORS = theme.CHART_COLORS
 
-# Breakdown chart sizing in the KPI drill-down grid. Charts keep a readable
-# height and the grid scrolls, instead of squashing every chart onto one screen.
+# Chart sizes in the KPI drill-down grid
 _BREAKDOWN_MIN_H = 300
-_BAR_ROW_PX = 24          # height per category for horizontal bar charts
-_OVERVIEW_MAX_BARS = 10   # overview grid shows the top N; the focused view shows all
+_BAR_ROW_PX = 24  # height per category for horizontal bar charts
+_OVERVIEW_MAX_BARS = 10  # overview grid shows the top N; the focused view shows all
 
 # Charts shown when switching to Compare mode (metric, group by)
 _COMPARE_DEFAULTS = [
@@ -44,7 +42,7 @@ _COMPARE_DEFAULTS = [
     ('Total Employees', 'Status'),
     ('Average Salary ($)', 'Department'),
 ]
-# Dashboard width (px) needed before Compare mode opens with 4 charts instead of 2
+# Width needed for 4 charts in Compare mode
 _WIDE_DASHBOARD_PX = 1300
 
 _BTN_PRIMARY = theme.BTN_PRIMARY
@@ -53,10 +51,12 @@ _BTN_DANGER = theme.BTN_ICON_CLOSE
 _COMBO_STYLE = theme.COMBO_STYLE
 
 
-# Dashboard tab: customisable KPI cards, charts, and drill-down.
+# Dashboard tab: customisable KPI cards, charts, and drill-down
 class DashboardTab(QWidget):
 
-    clear_filter_requested = pyqtSignal(str)   # filter key, or '*' for all
+    clear_filter_requested = pyqtSignal(str)  # filter key, or '*' for all
+    employee_requested = pyqtSignal(object)
+    layout_changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -70,15 +70,14 @@ class DashboardTab(QWidget):
         self._period: tuple | None = None  # (start, end) of the sidebar date range
         self._period_mode = analytics.PERIOD_EMPLOYED
 
-        # Drill-down state
-        # KPI mode:   {'mode':'kpi',   'metric':str, 'path':[(dim,val), ...], 'focused_dim':str|None, 'removed_dims':set, 'show_charts':bool, 'show_table':bool}
-        # Chart mode: {'mode':'chart', 'metric':str, 'path':[(dim,val), ...], 'override_dim':str|None, 'show_table':bool}
+        # Drill-down state for KPI mode and chart mode
         self._drill_state: dict | None = None
         self._last_pick_click = None  # guards against one click drilling twice
+        self._restoring_layout = False
 
         self._build_ui()
 
-  
+
     # Build top level layout
 
 
@@ -87,7 +86,7 @@ class DashboardTab(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # Data check notice — shown after loading a file
+        # Data check notice, shown after loading a file
         self._data_check_bar = QFrame()
         self._data_check_bar.hide()
         bar = QHBoxLayout(self._data_check_bar)
@@ -109,8 +108,7 @@ class DashboardTab(QWidget):
         outer.addWidget(self._data_check_bar)
         self._data_check_items: list[str] = []
 
-        # Time period banner — visible on both the dashboard and drill-down pages.
-        # Once closed it stays closed; chart subtitles still show the period.
+        # Time period banner, stays closed once closed
         self._period_bar = QFrame()
         self._period_bar.setObjectName('periodBar')
         self._period_bar.setStyleSheet(
@@ -159,21 +157,26 @@ class DashboardTab(QWidget):
         v.setContentsMargins(8, 8, 8, 8)
         v.setSpacing(8)
 
-        #KPI cards row
-        self._kpi_widget = QWidget()
-        self._kpi_row = QHBoxLayout(self._kpi_widget)
-        self._kpi_row.setContentsMargins(0, 0, 0, 0)
-        self._kpi_row.setSpacing(8)
+        # KPI cards row
+        self._kpi_widget = KPIRow()
+        self._kpi_row = self._kpi_widget.layout()
+        self._kpi_widget.reordered.connect(self._on_kpi_reordered)
         v.addWidget(self._kpi_widget)
 
         # Toggle row above charts
         self._toggle_widget = QWidget()
         toggle_row = QHBoxLayout(self._toggle_widget)
         toggle_row.setContentsMargins(0, 0, 0, 0)
-        self._resize_tip = QLabel('Tip: drag the grey bars between charts to resize them')
+        self._resize_tip = QLabel('Tip: drag the grey bars between charts to resize them, or '
+                                  'drag a chart\'s handle onto another chart to swap them')
+        # The hint clips instead of widening the window
+        self._resize_tip.setMinimumWidth(0)
+        self._resize_tip.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self._resize_tip.setToolTip('Drag the grey bars between charts to resize them.\n'
+                                    'Drag the handle (the dots at the top left of a chart) onto another chart to swap their places.')
         self._resize_tip.setStyleSheet('color: #777; font-size: 11px; background: transparent;')
         self._resize_tip.hide()
-        toggle_row.addWidget(self._resize_tip)
+        toggle_row.addWidget(self._resize_tip, stretch=1)
         toggle_row.addStretch()
 
         self._add_chart_btn = QPushButton('+ Add Chart')
@@ -183,6 +186,13 @@ class DashboardTab(QWidget):
         self._add_chart_btn.hide()
         toggle_row.addWidget(self._add_chart_btn)
 
+        self._reset_layout_btn = QPushButton('Reset')
+        self._reset_layout_btn.setToolTip('Put the cards and charts back to how they were at the start.\n'
+                                          'You can rearrange cards by dragging them.')
+        self._reset_layout_btn.setStyleSheet(_BTN_SECONDARY)
+        self._reset_layout_btn.clicked.connect(self.reset_layout)
+        toggle_row.addWidget(self._reset_layout_btn)
+
         self._multi_toggle_btn = QPushButton('Compare Charts')
         self._multi_toggle_btn.setToolTip('Show up to 4 charts side by side')
         self._multi_toggle_btn.setStyleSheet(_BTN_SECONDARY)
@@ -191,7 +201,7 @@ class DashboardTab(QWidget):
 
         v.addWidget(self._toggle_widget)
 
-        # Chart area — rebuilt as resizable splitters by _relayout_charts
+        # Chart area, rebuilt as resizable splitters by _relayout_charts
         self._chart_area = QWidget()
         self._chart_layout = QVBoxLayout(self._chart_area)
         self._chart_layout.setContentsMargins(0, 0, 0, 0)
@@ -210,7 +220,7 @@ class DashboardTab(QWidget):
 
 
     def set_active_filters(self, filters: list):
-        # filters: [(key, 'Department: Sales'), ...] for every sidebar filter not on 'All'
+        # filters: list of (key, label) for active sidebar filters
         while self._chips_row.count():
             item = self._chips_row.takeAt(0)
             if item.widget():
@@ -250,7 +260,7 @@ class DashboardTab(QWidget):
                 'QFrame { background: #FFF4E5; border: 1px solid #F5C77E; border-radius: 6px; margin: 8px 8px 0 8px; }')
             self._data_check_label.setStyleSheet('background: transparent; border: none; font-size: 12px; color: #7A4B00;')
             self._data_check_label.setText(
-                f'⚠  <b>Data check:</b> {rows_loaded:,} of {rows_read:,} rows loaded — '
+                f'⚠  <b>Data check:</b> {rows_loaded:,} of {rows_read:,} rows loaded, '
                 f'{len(issues)} thing{"s" if len(issues) != 1 else ""} to review in the data.')
             self._data_check_details.show()
         else:
@@ -271,7 +281,7 @@ class DashboardTab(QWidget):
             '<p>Fixing them in the source file will make the figures more accurate.</p>')
 
     def set_period(self, start, end, mode=analytics.PERIOD_EMPLOYED):
-        # Hire-date range currently applied; shown in the banner and under chart titles.
+        # Hire-date range currently applied
         self._period = (start, end)
         self._period_mode = mode
         for panel in self._chart_panels:
@@ -294,8 +304,8 @@ class DashboardTab(QWidget):
             f'<b>Time period:</b> {who} {analytics.format_period(*self._period)}'
             f'&nbsp;&nbsp;·&nbsp;&nbsp;{len(self._df):,} employees'
             f'&nbsp;&nbsp;·&nbsp;&nbsp;status as at {analytics.format_date(as_at)}'
-            + (f'<br><span style="color:#555; font-size:11px;">The ▲▼ changes on the cards compare with '
-               f'<b>{self._prev_label}</b> — the same length of time just before this period.</span>'
+            + (f'<br><span style="color:{theme.text_muted()}; font-size:11px;">The ▲▼ changes on the cards compare with '
+               f'<b>{self._prev_label}</b>: the same length of time just before this period.</span>'
                if self._prev_df is not None and self._prev_label else '')
         )
         self._period_bar.show()
@@ -306,7 +316,7 @@ class DashboardTab(QWidget):
 
     def update_data(self, df: pd.DataFrame, previous_df: pd.DataFrame | None = None,
                     previous_label: str = ''):
-        # previous_df: the same filters over the period before, for the KPI change lines
+        # previous_df: the same filters over the period before
         self._df = df
         self._prev_df = previous_df
         self._prev_label = previous_label
@@ -314,7 +324,7 @@ class DashboardTab(QWidget):
         self._refresh_kpi_row()
         for panel in self._chart_panels:
             panel.update_data(df)
-        # If drill-down view is active, re-render so sidebar filter changes flow through
+        # If drill-down view is active
         if self._stack.currentIndex() == 1 and self._drill_state:
             self._render_drill()
 
@@ -330,7 +340,7 @@ class DashboardTab(QWidget):
                 w.deleteLater()
 
         for metric in self._kpi_metrics:
-            value = analytics.kpi_value(self._df, metric) if self._df is not None else '—'
+            value = analytics.kpi_value(self._df, metric) if self._df is not None else '-'
             change, tip = None, ''
             if self._prev_df is not None and self._df is not None:
                 prev_value = analytics.kpi_value(self._prev_df, metric)
@@ -348,14 +358,14 @@ class DashboardTab(QWidget):
 
     def _on_kpi_clicked(self, metric: str):
         self._drill_state = {
-            'mode':         'kpi',
-            'metric':       metric,
-            'path':         [],      # [(dimension, value), ...] — bars/slices clicked so far
-            'focused_dim':  None,
+            'mode': 'kpi',
+            'metric': metric,
+            'path': [],  # [(dimension, value), ...], bars/slices clicked so far
+            'focused_dim': None,
             'removed_dims': set(),
-            'show_charts':  True,
-            'show_table':   False,   # employee table starts hidden so the charts get the room
-            'chart_types':  {},   # {dimension: chart_type}; missing = 'Auto'
+            'show_charts': True,
+            'show_table': False,  # employee table starts hidden so the charts get the room
+            'chart_types': {},  # {dimension: chart_type}; missing = 'Auto'
         }
         self._render_drill()
         self._stack.setCurrentIndex(1)
@@ -363,6 +373,19 @@ class DashboardTab(QWidget):
     def _on_kpi_removed(self, metric: str):
         self._kpi_metrics = [m for m in self._kpi_metrics if m != metric]
         self._refresh_kpi_row()
+        self._emit_layout_changed()
+
+    def _on_kpi_reordered(self, metric: str, index: int):
+        # Rebuild after Qt finishes the drop
+        new_order = dashboard_layout.reorder(self._kpi_metrics, metric, index)
+        if new_order == self._kpi_metrics:
+            return
+
+        def apply():
+            self._kpi_metrics = new_order
+            self._refresh_kpi_row()
+            self._emit_layout_changed()
+        QTimer.singleShot(0, apply)
 
     def _on_add_kpi_clicked(self):
         menu = QMenu(self)
@@ -378,9 +401,10 @@ class DashboardTab(QWidget):
         if metric not in self._kpi_metrics:
             self._kpi_metrics.append(metric)
             self._refresh_kpi_row()
+            self._emit_layout_changed()
 
-  
-    # Chart area management 
+
+    # Chart area management
 
 
     def _make_chart_panel(
@@ -398,6 +422,8 @@ class DashboardTab(QWidget):
         )
         panel.bar_clicked.connect(self._on_chart_bar_clicked)
         panel.expand_requested.connect(self._on_chart_expand)
+        panel.swap_requested.connect(self._on_panel_swap)
+        panel.config_changed.connect(self._emit_layout_changed)
         panel.set_period_text(self._period_subtitle())
         if allow_close:
             panel.close_requested.connect(self._on_chart_closed)
@@ -406,9 +432,7 @@ class DashboardTab(QWidget):
         return panel
 
     def _relayout_charts(self):
-        # Lay charts out two per row inside splitters so the user can drag the
-        # dividers to resize them. Panels are detached first so deleting the old
-        # splitters doesn't delete them.
+        # Lay out charts two per row in splitters
         self._set_expanded(None)
         for panel in self._chart_panels:
             panel.setParent(None)
@@ -424,13 +448,27 @@ class DashboardTab(QWidget):
             self._chart_splitter.addWidget(row)
         self._chart_splitter.setSizes([1000] * self._chart_splitter.count())
         self._chart_layout.addWidget(self._chart_splitter)
+        for panel in self._chart_panels:
+            panel.set_draggable(len(self._chart_panels) > 1)
+
+    def _on_panel_swap(self, source_id: str, target):
+        source = next((p for p in self._chart_panels if str(id(p)) == source_id), None)
+        if source is None or source is target or target not in self._chart_panels:
+            return
+        swapped = dashboard_layout.swap(self._chart_panels, self._chart_panels.index(source),
+                                        self._chart_panels.index(target))
+
+        def apply():
+            self._chart_panels = swapped
+            self._relayout_charts()
+            self._emit_layout_changed()
+        QTimer.singleShot(0, apply)
 
     def _on_chart_expand(self, panel):
         self._set_expanded(None if self._expanded_panel is panel else panel)
 
     def _set_expanded(self, panel):
-        # Enlarge one chart to fill the dashboard (hides KPI cards and the other
-        # charts), or restore the normal layout when panel is None.
+        # Enlarge one chart, or restore the layout when panel is None
         self._expanded_panel = panel
         self._kpi_widget.setVisible(panel is None)
         self._toggle_widget.setVisible(panel is None)
@@ -442,29 +480,77 @@ class DashboardTab(QWidget):
                 row = self._chart_splitter.widget(i)
                 row.setVisible(panel is None or panel.parent() is row)
 
-    def _toggle_multi_mode(self):
-        self._multi_mode = not self._multi_mode
+    def _apply_multi_buttons(self):
         if self._multi_mode:
             self._multi_toggle_btn.setText('Single Chart')
             self._multi_toggle_btn.setToolTip('Go back to one large chart')
-            self._add_chart_btn.show()
-            self._resize_tip.show()
-            self._rebuild_charts(allow_close=True)
-            self._add_default_compare_charts()
         else:
             self._multi_toggle_btn.setText('Compare Charts')
             self._multi_toggle_btn.setToolTip('Show up to 4 charts side by side')
-            self._add_chart_btn.hide()
-            self._resize_tip.hide()
+        self._add_chart_btn.setVisible(self._multi_mode)
+        self._resize_tip.setVisible(self._multi_mode)
+
+    def _toggle_multi_mode(self):
+        self._multi_mode = not self._multi_mode
+        self._apply_multi_buttons()
+        if self._multi_mode:
+            self._rebuild_charts(allow_close=True)
+            self._add_default_compare_charts()
+        else:
             # Drop everything except the first chart
             for extra in self._chart_panels[1:]:
                 extra.deleteLater()
             self._chart_panels = self._chart_panels[:1]
             self._rebuild_charts(allow_close=False)
         self._relayout_charts()
+        self._emit_layout_changed()
+
+    def _emit_layout_changed(self):
+        if not self._restoring_layout:
+            self.layout_changed.emit()
+
+    def layout_state(self) -> dict:
+        return {
+            'kpis': list(self._kpi_metrics),
+            'multi_mode': self._multi_mode,
+            'charts': [p.current_config() for p in self._chart_panels],
+        }
+
+    def restore_layout(self, state):
+        layout = dashboard_layout.sanitize_layout(state)
+        self._restoring_layout = True
+        try:
+            self._kpi_metrics = layout['kpis']
+            self._multi_mode = layout['multi_mode']
+            configs = layout['charts'] if self._multi_mode else layout['charts'][:1]
+            self._set_expanded(None)
+            for p in self._chart_panels:
+                p.setParent(None)
+                p.deleteLater()
+            self._chart_panels = [self._make_chart_panel(allow_close=self._multi_mode, **cfg) for cfg in configs]
+            self._apply_multi_buttons()
+            self._relayout_charts()
+            self._refresh_kpi_row()
+        finally:
+            self._restoring_layout = False
+
+    def report_inputs(self):
+        return (self._df, self._prev_df, self._prev_label, list(self._kpi_metrics),
+                [p.current_config() for p in self._chart_panels])
+
+    def reset_layout(self):
+        self.restore_layout(dashboard_layout.default_layout())
+        self.layout_changed.emit()
+
+    def refresh_theme(self):
+        self._refresh_period_label()
+        for panel in self._chart_panels:
+            panel.refresh_theme()
+        if self._stack.currentIndex() == 1 and self._drill_state:
+            self._render_drill()
 
     def _rebuild_charts(self, allow_close: bool):
-        # Rebuild panels with a different allow_close flag, preserving configs.
+        # Rebuild panels with a different allow_close flag, preserving configs
         configs = [p.current_config() for p in self._chart_panels]
         for p in self._chart_panels:
             p.deleteLater()
@@ -479,8 +565,7 @@ class DashboardTab(QWidget):
         ]
 
     def _add_default_compare_charts(self):
-        # Fill Compare mode with different useful views rather than copies of the
-        # same chart: 4 on wide screens, 2 on smaller ones where 4 would be too cramped.
+        # Fill Compare mode with different charts
         target = 4 if self.width() >= _WIDE_DASHBOARD_PX else 2
         shown = {(p.current_config()['metric'], p.current_config()['dimension']) for p in self._chart_panels}
         for metric, dimension in _COMPARE_DEFAULTS:
@@ -500,6 +585,7 @@ class DashboardTab(QWidget):
                                  _COMPARE_DEFAULTS[0])
         self._chart_panels.append(self._make_chart_panel(allow_close=True, metric=metric, dimension=dimension))
         self._relayout_charts()
+        self._emit_layout_changed()
 
     def _on_chart_closed(self, panel):
         if panel not in self._chart_panels:
@@ -510,8 +596,9 @@ class DashboardTab(QWidget):
         panel.setParent(None)
         panel.deleteLater()
         self._relayout_charts()
+        self._emit_layout_changed()
 
- 
+
     # Chart bar click to drill down entry
 
 
@@ -521,19 +608,17 @@ class DashboardTab(QWidget):
             return
         cfg = sender.current_config()
         self._drill_state = {
-            'mode':          'chart',
-            'metric':        cfg['metric'],
-            'path':          [(cfg['dimension'], label)],
-            'override_dim':  None,
-            'show_table':    False,
+            'mode': 'chart',
+            'metric': cfg['metric'],
+            'path': [(cfg['dimension'], label)],
+            'override_dim': None,
+            'show_table': False,
         }
         self._render_drill()
         self._stack.setCurrentIndex(1)
 
 
-
-#/////////////////////////////////////////////////////////////////////////////////////////////////
-# drill down feature will be change in future
+# Drill down will change later
 
 
     # Drill-down rendering
@@ -612,7 +697,7 @@ class DashboardTab(QWidget):
 
 
     # KPI drill-down view
-  
+
 
     def _build_kpi_drill_view(self) -> QWidget:
         s = self._drill_state
@@ -640,8 +725,7 @@ class DashboardTab(QWidget):
             if col in df.columns:
                 df = df[df[col].astype(str) == str(val)]
 
-        # Dimensions still available to break down by. Once they're all used
-        # (or nothing matches), the employee list is the end of the drill-down.
+        # Dimensions still available to break down by
         used = {dim for dim, _ in path}
         remaining = [d for d in analytics.DRILL_CASCADE if d not in used]
         at_bottom = not remaining or len(df) == 0
@@ -660,7 +744,7 @@ class DashboardTab(QWidget):
             toggle_row.addWidget(show_all_btn)
 
         hint = QLabel('Click a bar or slice to drill into that group'
-                      if not at_bottom else 'No more breakdowns — showing the matching employees')
+                      if not at_bottom else 'No more breakdowns, showing the matching employees')
         hint.setStyleSheet('color: #777; font-size: 11px; background: transparent;')
         toggle_row.insertWidget(0, hint)
 
@@ -711,15 +795,15 @@ class DashboardTab(QWidget):
                 grid_scroll.setWidget(grid_widget)
                 v.addWidget(grid_scroll, stretch=2)
 
-        # Table — show only employees relevant to this KPI
+        # Table, show only employees relevant to this KPI
         if show_table:
             table_df = analytics.kpi_relevant_employees(df, metric)
 
             count_metrics = {
-                'Active Employees':                       'active employees',
-                'On Leave Count':                         'employees on leave',
-                'Resigned Count':                         'resigned employees',
-                'Overall Turnover Rate (%)':              'employees who have left',
+                'Active Employees': 'active employees',
+                'On Leave Count': 'employees on leave',
+                'Resigned Count': 'resigned employees',
+                'Overall Turnover Rate (%)': 'employees who have left',
                 'Attrition (Voluntary Leavers) Rate (%)': 'employees who left voluntarily',
             }
             descriptor = count_metrics.get(metric, 'employees')
@@ -750,8 +834,7 @@ class DashboardTab(QWidget):
         head.addWidget(title)
         head.addStretch()
 
-        # Per-chart type selector (defaults to 'Auto'). Lets the user override
-        # the automatically chosen chart type for this breakdown.
+        # Chart type selector, defaults to Auto
         current_type = self._drill_state.get('chart_types', {}).get(dimension, 'Auto')
         type_combo = QComboBox()
         type_combo.addItems(analytics.CHART_TYPES)
@@ -783,14 +866,13 @@ class DashboardTab(QWidget):
 
         data = analytics.kpi_breakdown(df, metric, dimension)
 
-        # Resolve the selected type ('Auto' → recommended).
+        # Resolve the selected type ('Auto' → recommended)
         ctype = current_type
         if ctype == 'Auto':
             ctype = (analytics.recommend_chart_type(metric, dimension, data)
                      if not data.empty else 'Vertical Bar')
 
-        # In the overview grid, long breakdowns (e.g. Job Role) show only the
-        # top categories so the chart stays readable; 🔍 focus shows them all.
+        # Show only the top categories in the overview
         hidden = 0
         if (not focused and ctype in ('Horizontal Bar', 'Vertical Bar')
                 and dimension not in analytics.ORDERED_DIMENSIONS
@@ -800,7 +882,7 @@ class DashboardTab(QWidget):
             ctype = 'Horizontal Bar'
 
         chart = ChartWithToolbar(width=5 if not focused else 9, height=3 if not focused else 5)
-        # The zoom/pan toolbar is only worth its space on the focused chart.
+        # The zoom/pan toolbar is only worth its space on the focused chart
         chart.set_toolbar_visible(focused)
         chart.hide_coordinates()
 
@@ -808,7 +890,7 @@ class DashboardTab(QWidget):
         chart.clear_axes()
         if data.empty:
             ax.text(0.5, 0.5, 'No data', ha='center', va='center',
-                    transform=ax.transAxes, color='#888')
+                    transform=ax.transAxes, color=theme.chart_muted())
             ax.axis('off')
         else:
             # Every bar/slice is clickable to drill one level deeper
@@ -819,7 +901,7 @@ class DashboardTab(QWidget):
             chart.set_hover_items(picks)
 
             def on_pick(event, dim=dimension, picks=picks):
-                # One click can pick several overlapping artists — only drill once.
+                # One click can pick several overlapping artists, only drill once
                 if event.artist in picks and event.mouseevent is not self._last_pick_click:
                     self._last_pick_click = event.mouseevent
                     self._kpi_drill_into(dim, picks[event.artist])
@@ -830,7 +912,7 @@ class DashboardTab(QWidget):
         layout.addWidget(chart, stretch=1)
 
         if hidden:
-            more = QPushButton(f'Showing top {_OVERVIEW_MAX_BARS} of {len(data) + hidden}  —  🔍 see all {dimension.lower()}s')
+            more = QPushButton(f'Showing top {_OVERVIEW_MAX_BARS} of {len(data) + hidden}, 🔍 see all {dimension.lower()}s')
             more.setCursor(Qt.CursorShape.PointingHandCursor)
             more.setStyleSheet(
                 'QPushButton { color: #2E75B6; background: transparent; border: none;'
@@ -840,9 +922,7 @@ class DashboardTab(QWidget):
             more.clicked.connect(lambda _, d=dimension: self._kpi_focus(d))
             layout.addWidget(more)
 
-        # Horizontal bars grow taller with more categories (e.g. Job Role) so
-        # every label stays readable — nothing is hidden or bucketed. The
-        # drill-down page scrolls rather than squashing the chart.
+        # Horizontal bars grow taller with more categories
         min_h = 420 if focused else _BREAKDOWN_MIN_H
         if ctype == 'Horizontal Bar':
             min_h = max(min_h, len(data) * _BAR_ROW_PX + 110)
@@ -851,10 +931,7 @@ class DashboardTab(QWidget):
         return frame
 
     def _draw_snapshot(self, ax, data: pd.Series, metric: str, dimension: str, ctype: str) -> list:
-        # Render a snapshot Series onto an axes as the given concrete chart type.
-        # Returns (artist, category label) pairs so callers can make them clickable.
-        # Bars are sorted largest-first for readability (except ordered
-        # dimensions like Age Group, where the natural order is preserved).
+        # Draw a snapshot chart and return the clickable items
         labels = [str(x) for x in data.index]
         values = [float(v) for v in data.values]
 
@@ -865,31 +942,31 @@ class DashboardTab(QWidget):
             values = [values[i] for i in order]
 
         if ctype == 'Horizontal Bar':
-            # Show every category (no 'Other' bucket); barh stacks bottom-to-top,
-            # so reverse to put the largest on top.
+            # Show every category, reversed so the largest is on top
             labels, values = labels[::-1], values[::-1]
             artists = ax.barh(labels, values, color='#2E75B6', height=0.7)
             for i, val in enumerate(values):
                 ax.text(val, i, f' {self._fmt_val(metric, val)}',
-                        va='center', fontsize=8, color='#333')
+                        va='center', fontsize=8, color=theme.chart_text())
             ax.set_xlabel(metric, fontsize=9)
             ax.tick_params(axis='y', labelsize=9)
             ax.margins(x=0.15, y=0.02)
             ax.spines[['top', 'right']].set_visible(False)
         elif ctype in ('Pie', 'Donut'):
-            colors = [_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(labels))]
+            palette = theme.chart_palette()
+            colors = [palette[i % len(palette)] for i in range(len(labels))]
             artists = draw_pie(ax, labels, values, colors, donut=(ctype == 'Donut'),
                                value_fmt=lambda v: self._fmt_val(metric, v))
         elif ctype == 'Line':
             ax.plot(labels, values, color='#2E75B6', linewidth=2)
-            artists = [ax.plot([lbl], [val], 'o', color='#1F3864', markersize=7)[0]
+            artists = [ax.plot([lbl], [val], 'o', color=theme.chart_color(theme.NAVY), markersize=7)[0]
                        for lbl, val in zip(labels, values)]
             ax.set_ylabel(metric, fontsize=9)
             ax.tick_params(axis='x', rotation=20, labelsize=8)
         else:  # Vertical Bar (safe default)
             artists = bars = ax.bar(labels, values, color='#2E75B6', width=0.65)
             ax.bar_label(bars, labels=[self._fmt_val(metric, v) for v in values],
-                         padding=2, fontsize=8, color='#333')
+                         padding=2, fontsize=8, color=theme.chart_text())
             ax.tick_params(axis='x', rotation=20, labelsize=9)
             ax.set_ylabel(metric, fontsize=9)
             ax.margins(y=0.15)
@@ -898,7 +975,7 @@ class DashboardTab(QWidget):
         return list(zip(artists, labels))
 
     def _fmt_val(self, metric: str, val: float) -> str:
-        # Compact value label for bar ends.
+        # Compact value label for bar ends
         if '%' in metric:
             return f'{val:.1f}'
         if '$' in metric or 'Salary' in metric:
@@ -914,7 +991,7 @@ class DashboardTab(QWidget):
         self._render_drill()
 
     def _kpi_drill_into(self, dimension: str, value: str):
-        # Narrow the KPI drill-down to one group and show the remaining breakdowns.
+        # Narrow the KPI drill-down to one group and show the remaining breakdowns
         if not self._drill_state:
             return
         self._drill_state['path'].append((dimension, value))
@@ -1053,10 +1130,9 @@ class DashboardTab(QWidget):
         return lbl
 
 
-#///////////////////////////////////////////////////////////////////////////////////////////
-        #drill down feature will be change in future 
+        # Drill down will change later
 
-    # Employee table builder 
+    # Employee table builder
 
 
     def _build_employee_table(self, df: pd.DataFrame) -> QTableWidget:
@@ -1075,15 +1151,14 @@ class DashboardTab(QWidget):
             }
         ''')
 
-        # Sorting must be off during insert — otherwise the table re-sorts after every
-        # setItem() call and rows get scrambled (cells end up in unrelated rows).
+        # Turn sorting off while inserting rows
         table.setSortingEnabled(False)
 
-        for r, (_, row) in enumerate(df.iterrows()):
+        for r, (key, row) in enumerate(df.iterrows()):
             for c, (col, _) in enumerate(cols):
                 val = row[col]
                 if pd.isna(val):
-                    text = '—'
+                    text = '-'
                     sort_val = None
                 elif col == 'Salary':
                     text = f'${val:,.0f}'
@@ -1099,7 +1174,8 @@ class DashboardTab(QWidget):
                     sort_val = None
 
                 item = QTableWidgetItem(text)
-                # Use Qt.ItemDataRole.UserRole+1 = EditRole so numeric columns sort numerically
+                item.setData(Qt.ItemDataRole.UserRole, key)
+                # Use EditRole so numbers sort numerically
                 if sort_val is not None:
                     item.setData(Qt.ItemDataRole.EditRole, sort_val)
                 # Right-align numeric columns
@@ -1108,8 +1184,10 @@ class DashboardTab(QWidget):
                 table.setItem(r, c, item)
 
         table.setSortingEnabled(True)
+        table.setToolTip('Double-click a row to open that employee\'s profile')
+        table.cellDoubleClicked.connect(
+            lambda row, _col, t=table: self.employee_requested.emit(t.item(row, 0).data(Qt.ItemDataRole.UserRole)))
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         table.horizontalHeader().setStretchLastSection(True)
         table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         return table
-    

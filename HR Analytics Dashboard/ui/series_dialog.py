@@ -1,11 +1,4 @@
-# series_dialog.py
-# Dialog for adding or editing one chart series in the Analytics tab.
-#
-# Designed to be quick for non-technical users: pick what kind of chart you want
-# in plain language, answer two or three questions (what / who / when), and
-# everything else (label, chart style, trend line, granularity, colour) is
-# filled in sensibly and tucked away under "More options". Quick-start
-# templates add common charts in one click.
+# Dialog to add or edit one chart series
 
 from __future__ import annotations
 
@@ -20,12 +13,12 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QDate
 
 from core import analytics
+# Re-exported so existing imports keep working
+from core.series_utils import (
+    PALETTE, auto_granularity, auto_label, make_series,
+    date_range as _date_range,
+)
 from ui import theme
-
-PALETTE = [
-    '#1F3864', '#2E75B6', '#1E8449', '#C0392B',
-    '#D4AC0D', '#5B2C6F', '#117A65', '#E67E22',
-]
 
 _SECTION_STYLE = theme.LABEL_FIELD + ' margin-top: 6px;'
 _COMBO_STYLE = theme.COMBO_STYLE
@@ -45,7 +38,7 @@ _DATE_PRESETS = [
 _TIME_STYLES = ['Line', 'Bar', 'Area', 'Scatter']
 _SNAP_STYLES = ['Vertical Bar', 'Horizontal Bar', 'Scatter', 'Pie']
 
-# Quick-start templates: name → list of series settings (dates filled in on use)
+# Quick-start templates
 TEMPLATES = {
     'Hires vs departures (last 12 months)': [
         dict(view_type='time', metric='Hires', months=12, style='Line', color='#1F3864'),
@@ -70,56 +63,18 @@ TEMPLATES = {
 }
 
 
-def _iso(d) -> str:
-    return pd.Timestamp(d).strftime('%Y-%m-%d')
-
-
-def _date_range(months, df) -> tuple[str, str]:
-    # Start/end ISO dates for a preset: N months back from today, or all time.
-    end = pd.Timestamp.today().normalize()
-    if months is None:
-        start = df['Hire_Date'].min() if df is not None and len(df) else end - pd.DateOffset(years=5)
-    else:
-        start = end - pd.DateOffset(months=months)
-    return _iso(start), _iso(end)
-
-
-def auto_granularity(start_iso: str, end_iso: str) -> str:
-    # Pick a sensible time step for the range so charts aren't too spiky or too flat.
-    days = (pd.Timestamp(end_iso) - pd.Timestamp(start_iso)).days
-    if days <= 100:
-        return 'Weekly'
-    if days <= 760:
-        return 'Monthly'
-    return 'Quarterly'
-
-
-def auto_label(s: dict) -> str:
-    # Readable default name, e.g. 'Hires · Sales' or 'Total Employees by Department'.
-    # (The time step and dates are already shown under the chart title.)
-    if s['view_type'] == 'snapshot':
-        return f"{s['metric']} by {s['group_by']}"
-    parts = [s['metric']]
-    if s.get('filter_val') not in (None, 'All'):
-        parts.append(s['filter_val'])
-    return ' · '.join(parts)
-
-
 def series_from_template(name: str, df) -> list[dict]:
-    # Build ready-to-draw series dicts for a quick-start template.
+    # Build ready-to-draw series dicts for a quick-start template
     out = []
     for t in TEMPLATES[name]:
-        s = {
-            'id': str(uuid.uuid4())[:8], 'view_type': t['view_type'], 'metric': t['metric'],
-            'filter_by': 'None', 'filter_val': 'All', 'start_date': None, 'end_date': None,
-            'granularity': None, 'style': t['style'], 'show_trend': t.get('show_trend', False),
-            'color': t['color'], 'group_by': t.get('group_by'),
-        }
+        start = end = gran = None
         if t['view_type'] == 'time':
-            s['start_date'], s['end_date'] = _date_range(t['months'], df)
-            s['granularity'] = auto_granularity(s['start_date'], s['end_date'])
-        s['label'] = auto_label(s)
-        out.append(s)
+            start, end = _date_range(t['months'], df)
+            gran = auto_granularity(start, end)
+        out.append(make_series(
+            t['view_type'], t['metric'], style=t['style'], color=t['color'],
+            group_by=t.get('group_by'), start_date=start, end_date=end,
+            granularity=gran, show_trend=t.get('show_trend', False)))
     return out
 
 
@@ -167,7 +122,7 @@ def _swatch_style(color: str) -> str:
     '''
 
 
-# Modal dialog for configuring one chart series.
+# Modal dialog for configuring one chart series
 class SeriesDialog(QDialog):
 
     def __init__(self, df, existing=None, parent=None, default_color=None):
@@ -188,7 +143,7 @@ class SeriesDialog(QDialog):
             self._populate(existing)
         self._refresh()
 
-    # ── UI construction ───────────────────────────────────────────────────
+    # UI construction
 
     def _build_ui(self):
         outer = QVBoxLayout(self)
@@ -206,9 +161,9 @@ class SeriesDialog(QDialog):
         layout.setSpacing(8)
         layout.setContentsMargins(20, 16, 20, 16)
 
-        # ── Quick start (new series only) ─────────────────────────────────
+        # Quick start (new series only)
         if not self._existing:
-            layout.addWidget(QLabel('Quick start — add a common chart in one click', styleSheet=_SECTION_STYLE))
+            layout.addWidget(QLabel('Quick start, add a common chart in one click', styleSheet=_SECTION_STYLE))
             grid = QGridLayout()
             grid.setSpacing(6)
             for i, name in enumerate(TEMPLATES):
@@ -221,7 +176,7 @@ class SeriesDialog(QDialog):
             layout.addWidget(self._divider())
             layout.addWidget(QLabel('Or build your own', styleSheet=_SECTION_STYLE))
 
-        # ── 1. What kind of chart? ────────────────────────────────────────
+        # What kind of chart?
         cards = QHBoxLayout()
         cards.setSpacing(8)
         self._kind_group = QButtonGroup(self)
@@ -238,7 +193,7 @@ class SeriesDialog(QDialog):
         self._kind_group.idToggled.connect(lambda *_: self._on_kind_changed())
         layout.addLayout(cards)
 
-        # ── 2a. Over time: What / Who / When ──────────────────────────────
+        # Over time: What / Who / When
         self._time_widget = QWidget()
         tw = QVBoxLayout(self._time_widget)
         tw.setContentsMargins(0, 0, 0, 0)
@@ -269,7 +224,7 @@ class SeriesDialog(QDialog):
             self._preset_group.addButton(chip, i)
             chips.addWidget(chip)
         chips.addStretch()
-        self._preset_group.button(1).setChecked(True)   # Last 12 months
+        self._preset_group.button(1).setChecked(True)  # Last 12 months
         self._preset_group.idToggled.connect(lambda *_: self._on_preset_changed())
         tw.addLayout(chips)
 
@@ -289,7 +244,7 @@ class SeriesDialog(QDialog):
         tw.addWidget(self._custom_row)
         layout.addWidget(self._time_widget)
 
-        # ── 2b. Compare groups: What / Grouped by ─────────────────────────
+        # Compare groups: What / Grouped by
         self._snap_widget = QWidget()
         sw = QVBoxLayout(self._snap_widget)
         sw.setContentsMargins(0, 0, 0, 0)
@@ -308,7 +263,7 @@ class SeriesDialog(QDialog):
         self._snap_widget.hide()
         layout.addWidget(self._snap_widget)
 
-        # ── More options (collapsed) ──────────────────────────────────────
+        # More options (collapsed)
         self._more_btn = QPushButton('More options ▸')
         self._more_btn.setCheckable(True)
         self._more_btn.setStyleSheet(
@@ -376,7 +331,7 @@ class SeriesDialog(QDialog):
         scroll.setWidget(content)
         outer.addWidget(scroll, stretch=1)
 
-        # ── Footer: always visible ────────────────────────────────────────
+        # Footer: always visible
         footer = QFrame()
         footer.setStyleSheet(f'QFrame {{ background: {theme.BG}; border-top: 1px solid {theme.BORDER}; }}')
         fl = QHBoxLayout(footer)
@@ -399,7 +354,7 @@ class SeriesDialog(QDialog):
         self._select_swatch(self._color)
         self._fill_style_combo()
 
-    # ── Helpers ───────────────────────────────────────────────────────────
+    # Helpers
 
     def _metric_combo(self, metrics) -> QComboBox:
         combo = QComboBox()
@@ -411,7 +366,7 @@ class SeriesDialog(QDialog):
         return combo
 
     def _description_label(self) -> QLabel:
-        # Grey text under a metric dropdown explaining what the metric means.
+        # Grey text under a metric dropdown explaining what the metric means
         lbl = QLabel()
         lbl.setWordWrap(True)
         lbl.setStyleSheet(theme.LABEL_HINT)
@@ -424,8 +379,7 @@ class SeriesDialog(QDialog):
         return line
 
     def _fill_who_combo(self):
-        # One list: 'All employees', then every group grouped by dimension
-        # (e.g. 'Department: Sales'). Item data holds (filter_by, filter_val).
+        # List of groups to filter by
         self.who_combo.addItem(_ALL_EMPLOYEES, ('None', 'All'))
         if self._df is None:
             return
@@ -457,7 +411,7 @@ class SeriesDialog(QDialog):
     def _is_time(self) -> bool:
         return self.time_card.isChecked()
 
-    # ── Reacting to choices ───────────────────────────────────────────────
+    # Reacting to choices
 
     def _on_kind_changed(self):
         is_time = self._is_time()
@@ -485,7 +439,7 @@ class SeriesDialog(QDialog):
         return _date_range(preset, self._df)
 
     def _current_series(self) -> dict:
-        # The series as currently configured (without label/id).
+        # The series as currently configured (without label/id)
         if self._is_time():
             filter_by, filter_val = self.who_combo.currentData() or ('None', 'All')
             start, end = self._dates()
@@ -512,7 +466,7 @@ class SeriesDialog(QDialog):
         return ''
 
     def _refresh(self):
-        # Keep descriptions, the suggested name and the error message up to date.
+        # Keep descriptions, the suggested name and the error message up to date
         self.time_metric_desc.setText(analytics.describe_metric(self.time_metric_combo.currentText()))
         self.snap_metric_desc.setText(analytics.describe_metric(self.snap_metric_combo.currentText()))
         s = self._current_series()
@@ -521,7 +475,7 @@ class SeriesDialog(QDialog):
         self._error_label.setText(error)
         self._confirm_btn.setEnabled(not error)
 
-    # ── Results ───────────────────────────────────────────────────────────
+    # Results
 
     def _use_template(self, name: str):
         self._results = series_from_template(name, self._df)
@@ -538,15 +492,15 @@ class SeriesDialog(QDialog):
         self.accept()
 
     def result_series(self):
-        # The configured series (or the first series of a template).
+        # The configured series (or the first series of a template)
         return self._results[0] if self._results else None
 
     def result_series_list(self) -> list[dict]:
-        # Every series to add — templates can add more than one.
+        # Every series to add, templates can add more than one
         return list(self._results)
 
     def _populate(self, s):
-        # Fill the dialog from an existing series so it can be edited.
+        # Fill the dialog from an existing series so it can be edited
         self._color = s.get('color', PALETTE[0])
         self._select_swatch(self._color)
         if s.get('view_type') == 'snapshot':
@@ -561,7 +515,7 @@ class SeriesDialog(QDialog):
                 if self.who_combo.itemData(i) == key:
                     self.who_combo.setCurrentIndex(i)
                     break
-            # Select the matching preset (e.g. 'Last 12 months'), otherwise show the custom dates
+            # Select the matching preset (e.g. 'Last 12 months')
             saved = (s.get('start_date'), s.get('end_date'))
             preset_idx = next((i for i, (_n, months) in enumerate(_DATE_PRESETS)
                                if months != 'custom' and _date_range(months, self._df) == saved),

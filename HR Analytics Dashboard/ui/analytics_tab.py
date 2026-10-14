@@ -1,3 +1,4 @@
+import copy
 import io
 import json
 import uuid
@@ -13,7 +14,7 @@ from PyQt6.QtWidgets import (
     QHeaderView, QToolTip, QCheckBox, QMenu,
 )
 from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QPixmap, QFont
+from PyQt6.QtGui import QPixmap, QFont, QKeySequence, QShortcut
 
 import matplotlib
 matplotlib.use('QtAgg')
@@ -22,11 +23,13 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 
 from core import analytics
+from core.history import History
 from ui import theme
+from ui.chart_prompt_dialog import ADD_AS_NEW, ChartPromptDialog
 from ui.chart_widget import ChartWithToolbar, make_splitter, set_title_with_period
 from ui.series_dialog import PALETTE, TEMPLATES, SeriesDialog, series_from_template
 
-# ── Colour / style constants ──────────────────────────────────────────────────
+# Colour / style constants
 
 _NAVY = theme.NAVY
 _NAVY_HOVER = theme.BLUE
@@ -43,17 +46,18 @@ _TOOL_BTN_STYLE = '''
         padding: 0 8px; color: #444;
     }
     QPushButton:hover { background: #F0F4FF; border-color: #2E75B6; }
+    QPushButton:disabled { color: #BBB; border-color: #EEE; }
     QPushButton::menu-indicator { image: none; }
 '''
 
-# Side panel widths — kept narrow enough for the app to fit a 1280px-wide screen
+# Side panel widths
 _LEFT_PANEL_WIDTH = 230
 _RIGHT_STRIP_WIDTH = 184
 
 
-# ── _SeriesCard ───────────────────────────────────────────────────────────────
+# SeriesCard
 
-# One row in the series list — coloured dot, label, edit and delete buttons.
+# One row in the series list, coloured dot, label, edit and delete buttons
 class _SeriesCard(QFrame):
 
     def __init__(self, series, on_edit, on_delete, parent=None):
@@ -82,8 +86,7 @@ class _SeriesCard(QFrame):
         lbl = QLabel(series['label'])
         lbl.setStyleSheet('font-size: 12px; color: #333; border: none; background: transparent;')
         lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        # Long labels wrap (and show in full on hover) instead of pushing the
-        # buttons off the side of the panel
+        # Wrap long labels instead of pushing buttons away
         lbl.setWordWrap(True)
         lbl.setMinimumWidth(1)
         lbl.setToolTip(series['label'])
@@ -114,9 +117,9 @@ class _SeriesCard(QFrame):
         row.addWidget(del_btn)
 
 
-# ── _ThumbnailCard ────────────────────────────────────────────────────────────
+# ThumbnailCard
 
-# Clickable chart thumbnail in the right sidebar.
+# Clickable chart thumbnail in the right sidebar
 class _ThumbnailCard(QFrame):
 
     def __init__(self, chart_dict, pixmap, is_active, on_click, on_delete, parent=None):
@@ -187,28 +190,39 @@ class _ThumbnailCard(QFrame):
         super().mousePressEvent(event)
 
 
-# ── AnalyticsTab ──────────────────────────────────────────────────────────────
+# AnalyticsTab
 
-# Multi-chart analytics builder with series management and thumbnail navigation.
+# Multi-chart analytics builder
 class AnalyticsTab(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._df = None          # data the charts are drawn from
-        self._full_df = None     # all loaded data
-        self._dash_df = None     # the dashboard's filtered employees
+        self._df = None  # data the charts are drawn from
+        self._full_df = None  # all loaded data
+        self._dash_df = None  # the dashboard's filtered employees
         self._dash_scope = ''
-        self._charts = []          # list of {'id', 'title', 'series_list'}
+        self._charts = []  # list of {'id', 'title', 'series_list'}
         self._active_idx = -1
         self._left_visible = True
         self._focus_mode = False
         self._hover_cid = None
         self._show_period = False
+        self._llm_client = None
+        self._history = History()
 
         self._build_ui()
-        self._add_new_chart()
+        self._add_new_chart(record=False)
+        self._history.reset(self._snapshot())
+        self._update_history_buttons()
 
-    # ── UI construction ───────────────────────────────────────────────────────
+        # A focused text box keeps its own Ctrl+Z for the text being typed
+        scope = Qt.ShortcutContext.WidgetWithChildrenShortcut
+        for keys, slot in (('Ctrl+Z', self._undo), ('Ctrl+Y', self._redo), ('Ctrl+Shift+Z', self._redo)):
+            sc = QShortcut(QKeySequence(keys), self)
+            sc.setContext(scope)
+            sc.activated.connect(slot)
+
+    # UI construction
 
     def _build_ui(self):
         root = QHBoxLayout(self)
@@ -222,7 +236,7 @@ class AnalyticsTab(QWidget):
         self._right_strip = self._build_right_strip()
         root.addWidget(self._right_strip)
 
-    # ── Left panel (collapsible) ──────────────────────────────────────────────
+    # Left panel (collapsible)
 
     def _build_left_panel(self):
         panel = QWidget()
@@ -276,7 +290,7 @@ class AnalyticsTab(QWidget):
 
         # Footer buttons
         footer = QWidget()
-        footer.setFixedHeight(96)
+        footer.setFixedHeight(168)
         footer.setStyleSheet(f'background: {_GREY_BG}; border-top: 1px solid {_BORDER};')
         fv = QVBoxLayout(footer)
         fv.setContentsMargins(10, 10, 10, 12)
@@ -305,6 +319,24 @@ class AnalyticsTab(QWidget):
         ''')
         clear_btn.clicked.connect(self._clear_series)
 
+        # Fixed-width panel
+        history_row = QHBoxLayout()
+        history_row.setSpacing(6)
+        self._undo_btn = QPushButton('Undo')
+        self._redo_btn = QPushButton('Redo')
+        for btn, slot in ((self._undo_btn, self._undo), (self._redo_btn, self._redo)):
+            btn.setFixedHeight(30)
+            btn.setStyleSheet(_TOOL_BTN_STYLE)
+            btn.clicked.connect(slot)
+            history_row.addWidget(btn, stretch=1)
+        self._ai_btn = QPushButton('Describe a chart')
+        self._ai_btn.setToolTip('Describe a chart in your own words and let the app build it')
+        self._ai_btn.setFixedHeight(30)
+        self._ai_btn.setStyleSheet(_TOOL_BTN_STYLE)
+        self._ai_btn.clicked.connect(self._open_chart_prompt)
+
+        fv.addLayout(history_row)
+        fv.addWidget(self._ai_btn)
         fv.addWidget(add_btn)
         fv.addWidget(clear_btn)
         lv.addWidget(footer)
@@ -312,14 +344,14 @@ class AnalyticsTab(QWidget):
         return panel
 
     def _toggle_focus_mode(self):
-        # Focus mode hides the builder and My Charts panels so the chart fills the tab.
+        # Focus mode hides the side panels
         self._focus_mode = not self._focus_mode
         self._left_panel.setVisible(not self._focus_mode)
         self._right_strip.setVisible(not self._focus_mode)
         self._focus_btn.setText('⤡ Exit Focus' if self._focus_mode else '⤢ Focus')
 
     def _set_table_section_open(self, is_open: bool):
-        # Collapsed: only the toggle button shows. Open: table gets ~a third of the height.
+        # Collapsed: only the toggle button shows
         if is_open:
             self._table_section.setMaximumHeight(16777215)
             total = sum(self._chart_table_split.sizes()) or 600
@@ -337,7 +369,7 @@ class AnalyticsTab(QWidget):
             self._collapse_btn.setText('◀')
             self._left_visible = True
 
-    # ── Center panel ──────────────────────────────────────────────────────────
+    # Center panel
 
     def _build_center_panel(self):
         panel = QWidget()
@@ -346,7 +378,7 @@ class AnalyticsTab(QWidget):
         cv.setContentsMargins(0, 0, 0, 0)
         cv.setSpacing(0)
 
-        # ── Top bar ───────────────────────────────────────────────────────
+        # Top bar
         top_bar = QWidget()
         top_bar.setFixedHeight(52)
         top_bar.setStyleSheet(f'background: white; border-bottom: 1px solid {_BORDER};')
@@ -368,8 +400,10 @@ class AnalyticsTab(QWidget):
         ''')
         self._title_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._title_edit.textChanged.connect(self._on_title_changed)
-        # Long titles: show the start (not the end) when not editing, full title on hover
+        # Long titles: show the start (not the end) when not editing
         self._title_edit.editingFinished.connect(lambda: self._title_edit.setCursorPosition(0))
+        # One undo step per finished rename, not per keystroke
+        self._title_edit.editingFinished.connect(lambda: self._commit('Rename chart'))
         tb.addWidget(self._title_edit, stretch=1)
 
         tb.addStretch()
@@ -419,7 +453,7 @@ class AnalyticsTab(QWidget):
 
         cv.addWidget(top_bar)
 
-        # ── Main chart widget ─────────────────────────────────────────────
+        # Main chart widget
         self._main_widget = ChartWithToolbar(width=10, height=6)
         self._placeholder = self._build_empty_state()
 
@@ -430,8 +464,7 @@ class AnalyticsTab(QWidget):
         ca.addWidget(self._placeholder, stretch=1)
         self._main_widget.hide()
 
-        # Chart and data table share a splitter so the user can drag the
-        # divider to give either one more room.
+        # Splitter lets the user resize the chart and table
         self._chart_table_split = make_splitter(Qt.Orientation.Vertical)
         self._chart_table_split.addWidget(chart_area)
         cv.addWidget(self._chart_table_split, stretch=1)
@@ -441,7 +474,7 @@ class AnalyticsTab(QWidget):
         ts.setContentsMargins(0, 0, 0, 0)
         ts.setSpacing(0)
 
-        # ── Data table (collapsible) ──────────────────────────────────────
+        # Data table (collapsible)
         self._table_visible = False
         self._table_toggle_btn = QPushButton('▼ Data Table')
         self._table_toggle_btn.setFixedHeight(28)
@@ -478,7 +511,7 @@ class AnalyticsTab(QWidget):
         return panel
 
     def _build_empty_state(self) -> QWidget:
-        # Shown when the chart has no series: quick-start templates, or build your own.
+        # Shown when the chart has no series: quick-start templates
         page = QWidget()
         v = QVBoxLayout(page)
         v.addStretch()
@@ -491,7 +524,24 @@ class AnalyticsTab(QWidget):
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         hint.setStyleSheet('font-size: 12px; color: #777;')
         v.addWidget(hint)
-        v.addSpacing(10)
+        v.addSpacing(6)
+        ai_row = QHBoxLayout()
+        ai_row.addStretch()
+        ai_btn = QPushButton('Describe a chart in your own words...')
+        ai_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        ai_btn.setMinimumHeight(40)
+        ai_btn.setStyleSheet(f'''
+            QPushButton {{
+                background: {_NAVY}; color: white; border: none;
+                border-radius: 6px; padding: 6px 18px; font-size: 13px; font-weight: bold;
+            }}
+            QPushButton:hover {{ background: {_NAVY_HOVER}; }}
+        ''')
+        ai_btn.clicked.connect(self._open_chart_prompt)
+        ai_row.addWidget(ai_btn)
+        ai_row.addStretch()
+        v.addLayout(ai_row)
+        v.addSpacing(6)
         grid = QGridLayout()
         grid.setSpacing(8)
         for i, name in enumerate(TEMPLATES):
@@ -520,20 +570,21 @@ class AnalyticsTab(QWidget):
             return
         if self._active_idx < 0:
             self._add_new_chart()
-        self._add_series_dicts(series_from_template(name, self._df))
+        self._add_series_dicts(series_from_template(name, self._df), 'Add chart template')
 
-    def _add_series_dicts(self, series: list):
+    def _add_series_dicts(self, series: list, label: str = 'Add series'):
         self._active_series().extend(series)
         self._rebuild_series_cards()
         self._render_active()
         self._update_thumbnails()
+        self._commit(label)
 
     def _next_color(self) -> str:
         # First palette colour not already used on this chart
         used = {s.get('color') for s in self._active_series()}
         return next((c for c in PALETTE if c not in used), PALETTE[len(used) % len(PALETTE)])
 
-    # ── Right thumbnail strip ─────────────────────────────────────────────────
+    # Right thumbnail strip
 
     def _build_right_strip(self):
         strip = QWidget()
@@ -587,7 +638,7 @@ class AnalyticsTab(QWidget):
 
         return strip
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def update_data(self, df):
         self._full_df = df
@@ -614,13 +665,13 @@ class AnalyticsTab(QWidget):
             self._render_active()
             self._update_thumbnails()
 
-    # ── Multi-chart management ────────────────────────────────────────────────
+    # Multi-chart management
 
-    def _add_new_chart(self):
+    def _add_new_chart(self, record: bool = True):
         chart_num = len(self._charts) + 1
         chart = {
-            'id':          str(uuid.uuid4())[:8],
-            'title':       f'Chart {chart_num}',
+            'id': str(uuid.uuid4())[:8],
+            'title': f'Chart {chart_num}',
             'series_list': [],
         }
         self._charts.append(chart)
@@ -631,6 +682,8 @@ class AnalyticsTab(QWidget):
         self._rebuild_series_cards()
         self._update_thumbnails()
         self._render_active()
+        if record:
+            self._commit('New chart')
 
     def _delete_chart(self, idx):
         if len(self._charts) <= 1:
@@ -644,6 +697,7 @@ class AnalyticsTab(QWidget):
             self._rebuild_series_cards()
             self._update_thumbnails()
             self._render_active()
+            self._commit('Clear chart')
             return
 
         self._charts.pop(idx)
@@ -658,6 +712,7 @@ class AnalyticsTab(QWidget):
         self._rebuild_series_cards()
         self._update_thumbnails()
         self._render_active()
+        self._commit('Delete chart')
 
     def _set_active_chart(self, idx):
         if idx < 0 or idx >= len(self._charts):
@@ -678,7 +733,104 @@ class AnalyticsTab(QWidget):
             self._charts[self._active_idx]['title'] = text
             self._update_thumbnails()
 
-    # ── Series management ─────────────────────────────────────────────────────
+    def _snapshot(self) -> list:
+        return copy.deepcopy(self._charts)
+
+    def _commit(self, label: str):
+        if self._history.push(self._snapshot(), label):
+            self._update_history_buttons()
+
+    def _undo(self):
+        state = self._history.undo()
+        if state is not None:
+            self._restore(state)
+
+    def _redo(self):
+        state = self._history.redo()
+        if state is not None:
+            self._restore(state)
+
+    def _restore(self, charts: list):
+        self._active_idx = self._chart_to_show(self._charts, charts)
+        self._charts = charts
+        self._title_edit.blockSignals(True)
+        self._title_edit.setText(self._charts[self._active_idx]['title'])
+        self._title_edit.blockSignals(False)
+        self._rebuild_series_cards()
+        self._render_active()
+        self._update_thumbnails()
+        self._update_history_buttons()
+
+    def _chart_to_show(self, old: list, new: list) -> int:
+        # Jump to the first changed chart
+        before = {c['id']: c for c in old}
+        for i, c in enumerate(new):
+            if before.get(c['id']) != c:
+                return i
+        current = old[self._active_idx]['id'] if 0 <= self._active_idx < len(old) else None
+        for i, c in enumerate(new):
+            if c['id'] == current:
+                return i
+        return min(max(self._active_idx, 0), len(new) - 1)
+
+    def _update_history_buttons(self):
+        h = self._history
+        self._undo_btn.setEnabled(h.can_undo())
+        self._redo_btn.setEnabled(h.can_redo())
+        self._undo_btn.setToolTip(f'Undo: {h.undo_label()}  (Ctrl+Z)' if h.can_undo() else 'Nothing to undo')
+        self._redo_btn.setToolTip(f'Redo: {h.redo_label()}  (Ctrl+Y)' if h.can_redo() else 'Nothing to redo')
+
+    def set_llm_client(self, client):
+        self._llm_client = client
+
+    def _open_chart_prompt(self):
+        if self._df is None or len(self._df) == 0:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(self, 'No data', 'Load some employee data first, then describe a chart.')
+            return
+        dlg = ChartPromptDialog(self._df, self._llm_client, preview_fn=self._suggestion_pixmap, parent=self)
+        if dlg.exec() and dlg.suggestion() is not None:
+            self._apply_suggestion(dlg.suggestion(), dlg.mode())
+
+    def _suggestion_pixmap(self, suggestion):
+        return self._chart_to_pixmap({'series_list': suggestion.series}, 540, 270, figsize=(7.4, 3.8))
+
+    def _apply_suggestion(self, suggestion, mode: str):
+        series = suggestion.series
+        starts_empty = self._active_idx >= 0 and not self._active_series()
+        if mode == ADD_AS_NEW or self._active_idx < 0:
+            self._add_new_chart(record=False)
+            self._set_active_title(suggestion.title)
+        else:
+            used = {s.get('color') for s in self._active_series()}
+            for s in series:
+                s['color'] = next((c for c in PALETTE if c not in used), PALETTE[len(used) % len(PALETTE)])
+                used.add(s['color'])
+            if starts_empty and self._charts[self._active_idx]['title'].startswith('Chart '):
+                self._set_active_title(suggestion.title)
+        self._add_series_dicts(series, 'Generate chart')
+
+    def _set_active_title(self, title: str):
+        self._charts[self._active_idx]['title'] = title
+        self._title_edit.blockSignals(True)
+        self._title_edit.setText(title)
+        self._title_edit.blockSignals(False)
+
+    def refresh_theme(self):
+        self._main_widget.refresh_theme()
+        if self._active_idx >= 0:
+            self._render_active()
+            self._update_thumbnails()
+
+    def report_charts(self) -> list:
+        # Each draw function copies its chart
+        if self._df is None:
+            return []
+        return [(c['title'], (lambda fig, chart=copy.deepcopy(c), df=self._df: self._draw_on_figure(
+                    fig, chart, df, show_period=True)))
+                for c in self._charts if c['series_list']]
+
+    # Series management
 
     def _active_series(self):
         if self._active_idx < 0:
@@ -704,6 +856,7 @@ class AnalyticsTab(QWidget):
                 self._rebuild_series_cards()
                 self._render_active()
                 self._update_thumbnails()
+                self._commit('Edit series')
 
     def _delete_series(self, idx):
         series_list = self._active_series()
@@ -711,6 +864,7 @@ class AnalyticsTab(QWidget):
         self._rebuild_series_cards()
         self._render_active()
         self._update_thumbnails()
+        self._commit('Delete series')
 
     def _clear_series(self):
         if self._active_idx >= 0:
@@ -718,6 +872,7 @@ class AnalyticsTab(QWidget):
         self._rebuild_series_cards()
         self._render_active()
         self._update_thumbnails()
+        self._commit('Clear series')
 
     def _rebuild_series_cards(self):
         # Remove all cards (leave the trailing stretch)
@@ -735,7 +890,7 @@ class AnalyticsTab(QWidget):
             self._series_layout.insertWidget(i, card)
             card.show()
 
-    # ── Rendering ─────────────────────────────────────────────────────────────
+    # Rendering
 
     def _render_active(self):
         if self._active_idx < 0:
@@ -762,9 +917,7 @@ class AnalyticsTab(QWidget):
 
         self._draw_on_figure(fig, chart, self._df, show_period=True)
 
-        # 'constrained' keeps re-fitting titles and labels as the chart is resized
-        # (splitter / focus mode) and handles the stacked time + snapshot layout,
-        # which 'tight' layout can't.
+        # Constrained layout re-fits labels when resized
         fig.set_layout_engine('constrained', h_pad=0.12, w_pad=0.1)
 
         self._main_widget.redraw()
@@ -781,8 +934,7 @@ class AnalyticsTab(QWidget):
         self._update_data_table()
 
     def _draw_on_figure(self, fig, chart_dict, df, show_period=False):
-        # Draw all series in chart_dict onto fig. show_period adds the time
-        # period under each chart title (skipped on small thumbnails).
+        # Draw all series onto the figure
         self._show_period = show_period
         series_list = chart_dict.get('series_list', [])
         if not series_list:
@@ -799,7 +951,7 @@ class AnalyticsTab(QWidget):
             self._draw_snapshots(fig, snap_s, df)
 
         else:
-            # Mixed — time on top, snapshot below
+            # Mixed, time on top, snapshot below
             gs = fig.add_gridspec(2, 1, height_ratios=[1.6, 1])
             ax_t = fig.add_subplot(gs[0])
             self._draw_time_series(ax_t, time_s, df)
@@ -807,7 +959,7 @@ class AnalyticsTab(QWidget):
             if snap_s:
                 self._draw_snapshot_single(ax_s, snap_s[0], df)
 
-    # ── Time series rendering ─────────────────────────────────────────────────
+    # Time series rendering
 
     def _draw_time_series(self, ax, series_list, df):
         for s in series_list:
@@ -815,7 +967,7 @@ class AnalyticsTab(QWidget):
             if data is None or data.empty:
                 continue
 
-            color = s['color']
+            color = theme.chart_color(s['color'])
             label = s['label']
             style = s.get('style', 'Line')
 
@@ -852,7 +1004,7 @@ class AnalyticsTab(QWidget):
             ax.legend(fontsize=9, loc='best')
 
     def _time_period_text(self, series_list):
-        # e.g. '1 Jan 2025 – 30 Jun 2026 · Monthly' across all time series on the chart.
+        # Period text under the chart title
         if not self._show_period:
             return None
         start = min(pd.Timestamp(s['start_date']) for s in series_list)
@@ -875,7 +1027,7 @@ class AnalyticsTab(QWidget):
     def _using_dashboard_filters(self) -> bool:
         return self._use_filters_box.isChecked() and self._dash_df is not None
 
-    # ── Snapshot rendering ────────────────────────────────────────────────────
+    # Snapshot rendering
 
     def _draw_snapshots(self, fig, series_list, df):
         groups: dict[str, list] = {}
@@ -898,7 +1050,7 @@ class AnalyticsTab(QWidget):
             return
 
         style = s.get('style', 'Vertical Bar')
-        color = s['color']
+        color = theme.chart_color(s['color'])
 
         if style == 'Horizontal Bar':
             bars = ax.barh(data.index, data.values, color=color, alpha=0.85)
@@ -942,7 +1094,7 @@ class AnalyticsTab(QWidget):
                 continue
             offset = (i - n / 2 + 0.5) * width
             vals = [float(data.get(cat, 0)) for cat in categories]
-            ax.bar(x + offset, vals, width, color=s['color'], label=label, alpha=0.85)
+            ax.bar(x + offset, vals, width, color=theme.chart_color(s['color']), label=label, alpha=0.85)
 
         ax.set_xticks(x)
         ax.set_xticklabels(categories, rotation=20, ha='right', fontsize=9)
@@ -950,10 +1102,10 @@ class AnalyticsTab(QWidget):
         set_title_with_period(ax, f'Comparison by {group_by}', self._snapshot_period_text())
         ax.grid(axis='y', linestyle='--', alpha=0.35)
 
-    # ── Series data helper ────────────────────────────────────────────────────
+    # Series data helper
 
     def _series_data(self, s, df):
-        # Return a pd.Series of data for a series config dict.
+        # Return a pd.Series of data for a series config dict
         if df is None:
             return None
         try:
@@ -979,10 +1131,10 @@ class AnalyticsTab(QWidget):
         except Exception:
             return None
 
-    # ── Thumbnail management ──────────────────────────────────────────────────
+    # Thumbnail management
 
-    def _chart_to_pixmap(self, chart_dict, w=164, h=104):
-        # Render a chart dict to a QPixmap for use as a thumbnail.
+    def _chart_to_pixmap(self, chart_dict, w=164, h=104, figsize=(4, 3)):
+        # Render a chart dict to a QPixmap for use as a thumbnail
         series_list = chart_dict.get('series_list', [])
         if not series_list or self._df is None:
             # Grey placeholder
@@ -991,7 +1143,7 @@ class AnalyticsTab(QWidget):
             return pix
 
         try:
-            fig = Figure(figsize=(4, 3), dpi=72, layout='constrained')
+            fig = Figure(figsize=figsize, dpi=72, layout='constrained')
             self._draw_on_figure(fig, chart_dict, self._df)
 
             buf = io.BytesIO()
@@ -1028,7 +1180,7 @@ class AnalyticsTab(QWidget):
             self._thumb_layout.insertWidget(i, card)
             card.show()
 
-    # ── Hover tooltips ────────────────────────────────────────────────────────
+    # Hover tooltips
 
     def _on_hover(self, event):
         if not event.inaxes:
@@ -1059,7 +1211,7 @@ class AnalyticsTab(QWidget):
                     pass
         QToolTip.hideText()
 
-    # ── Export / Clipboard ────────────────────────────────────────────────────
+    # Export / Clipboard
 
     def _export_png(self):
         path, _ = QFileDialog.getSaveFileName(
@@ -1095,7 +1247,7 @@ class AnalyticsTab(QWidget):
             from PyQt6.QtWidgets import QMessageBox
             QMessageBox.warning(self, 'Copy Failed', str(e))
 
-    # ── Save / Load config ────────────────────────────────────────────────────
+    # Save / Load config
 
     def _save_config(self):
         path, _ = QFileDialog.getSaveFileName(
@@ -1130,11 +1282,12 @@ class AnalyticsTab(QWidget):
                     self._rebuild_series_cards()
                     self._update_thumbnails()
                     self._render_active()
+                    self._commit('Load chart setup')
             except Exception as e:
                 from PyQt6.QtWidgets import QMessageBox
                 QMessageBox.warning(self, 'Load Failed', str(e))
 
-    # ── Data table ────────────────────────────────────────────────────────────
+    # Data table
 
     def _toggle_table(self):
         self._table_visible = not self._table_visible
@@ -1209,7 +1362,7 @@ class AnalyticsTab(QWidget):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 self._table.setItem(row_i, col_i, item)
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
+    # Helpers
 
     @staticmethod
     def _fmt(metric):
