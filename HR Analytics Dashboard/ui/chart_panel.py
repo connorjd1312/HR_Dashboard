@@ -9,18 +9,24 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from core import analytics
 from ui import theme
 from ui.chart_widget import ChartWithToolbar, draw_pie, set_title_with_period
+from ui.drag_drop import DragHandle, PANEL_MIME, mime_payload, start_drag
 
 _LABEL_STYLE = theme.LABEL_TAG
 _COMBO_STYLE = theme.COMBO_STYLE
-_PIE_COLORS = theme.CHART_COLORS
 
 
-# Chart with metric/dimension/type dropdowns; emits bar_clicked and close_requested.
+_PANEL_STYLE = 'QFrame#ChartPanel { background: white; border: 1px solid #E5E7EB; border-radius: 8px; }'
+_PANEL_DROP_STYLE = 'QFrame#ChartPanel { background: white; border: 2px dashed #F5A623; border-radius: 8px; }'
+
+
+# Chart with metric/dimension/type dropdowns
 class ChartPanel(QFrame):
 
-    bar_clicked      = pyqtSignal(str)
-    close_requested  = pyqtSignal(object)
+    bar_clicked = pyqtSignal(str)
+    close_requested = pyqtSignal(object)
     expand_requested = pyqtSignal(object)
+    config_changed = pyqtSignal()
+    swap_requested = pyqtSignal(str, object)
 
     def __init__(
         self,
@@ -35,20 +41,17 @@ class ChartPanel(QFrame):
         self._period_text: str | None = None
         self._allow_close = allow_close
         self._artist_to_label: dict = {}
-        # Cache of Auto-resolved chart types keyed by (metric, dimension) so the
-        # chart type stays stable when sidebar filters narrow the data — it only
-        # re-resolves when the user changes the metric or dimension.
+        # Remembers the Auto chart type for each metric and dimension
         self._auto_cache: dict[tuple[str, str], str] = {}
 
         self.setObjectName('ChartPanel')
-        self.setStyleSheet(
-            'QFrame#ChartPanel { background: white; border: 1px solid #E5E7EB; border-radius: 8px; }'
-        )
+        self.setStyleSheet(_PANEL_STYLE)
+        self.setAcceptDrops(True)
 
         self._build_ui()
         self.set_config(metric=metric, dimension=dimension, chart_type=chart_type)
 
-    # ── UI construction ───────────────────────────────────────────────────
+    # UI construction
 
     def _build_ui(self):
         v = QVBoxLayout(self)
@@ -59,11 +62,17 @@ class ChartPanel(QFrame):
         bar = QHBoxLayout()
         bar.setSpacing(6)
 
+        self._drag_handle = DragHandle(tooltip='Drag onto another chart to swap their positions')
+        self._drag_handle.drag_requested.connect(self._begin_drag)
+        self._drag_handle.hide()
+        bar.addWidget(self._drag_handle)
+
         bar.addWidget(self._tag('Show'))
         self.metric_combo = QComboBox()
         self.metric_combo.addItems(analytics.SNAPSHOT_METRICS)
         self.metric_combo.setStyleSheet(_COMBO_STYLE)
         self.metric_combo.currentIndexChanged.connect(self._refresh)
+        self.metric_combo.currentIndexChanged.connect(lambda _i: self.config_changed.emit())
         self.metric_combo.currentTextChanged.connect(
             lambda m: self.metric_combo.setToolTip(analytics.describe_metric(m)))
         for i, m in enumerate(analytics.SNAPSHOT_METRICS):
@@ -75,6 +84,7 @@ class ChartPanel(QFrame):
         self.dim_combo.addItems(analytics.GROUP_BY_OPTIONS)
         self.dim_combo.setStyleSheet(_COMBO_STYLE)
         self.dim_combo.currentIndexChanged.connect(self._refresh)
+        self.dim_combo.currentIndexChanged.connect(lambda _i: self.config_changed.emit())
         self.dim_combo.setToolTip('How to split the employees into groups')
         bar.addWidget(self.dim_combo)
 
@@ -83,16 +93,16 @@ class ChartPanel(QFrame):
         self.type_combo.addItems(analytics.CHART_TYPES)
         self.type_combo.setStyleSheet(_COMBO_STYLE)
         self.type_combo.currentIndexChanged.connect(self._refresh)
+        self.type_combo.currentIndexChanged.connect(lambda _i: self.config_changed.emit())
         self.type_combo.setToolTip('Chart type. "Auto" picks the clearest type for the data.')
         bar.addWidget(self.type_combo)
 
-        # Let the dropdowns shrink when charts sit side by side; the popup
-        # list still shows the full names.
+        # Let dropdowns shrink when charts sit side by side
         for combo, max_w, stretch in ((self.metric_combo, 280, 3),
                                       (self.dim_combo, 160, 2),
                                       (self.type_combo, 150, 2)):
             combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-            combo.setMinimumContentsLength(8)
+            combo.setMinimumContentsLength(7)  # keeps compare mode no wider with the drag handle
             combo.setMaximumWidth(max_w)
             combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             combo.view().setMinimumWidth(combo.view().sizeHintForColumn(0) + 24)
@@ -143,14 +153,49 @@ class ChartPanel(QFrame):
         lbl.setStyleSheet(_LABEL_STYLE)
         return lbl
 
-    # ── Public API ────────────────────────────────────────────────────────
+    # Public API
 
     def update_data(self, df):
         self._df = df
         self._refresh()
 
+    def set_draggable(self, draggable: bool):
+        self._drag_handle.setVisible(draggable)
+
+    def refresh_theme(self):
+        self.chart.refresh_theme()
+        self._refresh()
+
+    def _begin_drag(self):
+        start_drag(self, PANEL_MIME, str(id(self)))
+
+    def _set_drop_highlight(self, on: bool):
+        self.setStyleSheet(_PANEL_DROP_STYLE if on else _PANEL_STYLE)
+
+    def _is_foreign_panel(self, mime) -> bool:
+        source = mime_payload(mime, PANEL_MIME)
+        return source is not None and source != str(id(self))
+
+    def dragEnterEvent(self, event):
+        if self._is_foreign_panel(event.mimeData()):
+            self._set_drop_highlight(True)
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        if self._is_foreign_panel(event.mimeData()):
+            event.acceptProposedAction()
+
+    def dragLeaveEvent(self, event):
+        self._set_drop_highlight(False)
+
+    def dropEvent(self, event):
+        self._set_drop_highlight(False)
+        if self._is_foreign_panel(event.mimeData()):
+            event.acceptProposedAction()
+            self.swap_requested.emit(mime_payload(event.mimeData(), PANEL_MIME), self)
+
     def set_expanded(self, expanded: bool):
-        # Update the enlarge button to match the dashboard's current state.
+        # Update the enlarge button to match the dashboard's current state
         if expanded:
             self._expand_btn.setText('⤡ Restore')
             self._expand_btn.setToolTip('Return the chart to its normal size')
@@ -159,7 +204,7 @@ class ChartPanel(QFrame):
             self._expand_btn.setToolTip('Enlarge this chart to fill the dashboard')
 
     def set_period_text(self, text: str | None):
-        # Shown under the chart title; applied on the next redraw.
+        # Shown under the chart title; applied on the next redraw
         self._period_text = text
 
     def set_config(self, metric: str | None = None, dimension: str | None = None, chart_type: str | None = None):
@@ -178,26 +223,24 @@ class ChartPanel(QFrame):
 
     def current_config(self) -> dict:
         return {
-            'metric':     self.metric_combo.currentText(),
-            'dimension':  self.dim_combo.currentText(),
+            'metric': self.metric_combo.currentText(),
+            'dimension': self.dim_combo.currentText(),
             'chart_type': self.type_combo.currentText(),
         }
 
-    # ── Drawing ───────────────────────────────────────────────────────────
+    # Drawing
 
     def _refresh(self):
         if self._df is None:
             return
 
-        metric    = self.metric_combo.currentText()
+        metric = self.metric_combo.currentText()
         dimension = self.dim_combo.currentText()
-        ctype     = self.type_combo.currentText()
+        ctype = self.type_combo.currentText()
 
         ax = self.chart.axes
         self.chart.clear_axes()
-        # cla() does not reset the aspect ratio, so a previous Pie's
-        # set_aspect('equal') would squash the next bar/line chart. Force 'auto'
-        # back on every redraw; the Pie branch re-sets 'equal' when needed.
+        # Reset the aspect ratio so a pie does not squash other charts
         ax.set_aspect('auto')
         self._artist_to_label = {}
 
@@ -205,7 +248,7 @@ class ChartPanel(QFrame):
         if data.empty:
             ax.text(0.5, 0.5, 'No data for current filters',
                     ha='center', va='center', transform=ax.transAxes,
-                    color='#888', fontsize=11)
+                    color=theme.chart_muted(), fontsize=11)
             ax.axis('off')
             self.chart.refresh()
             return
@@ -213,24 +256,19 @@ class ChartPanel(QFrame):
         labels = [str(x) for x in data.index]
         values = [float(v) for v in data.values]
 
-        # Resolve 'Auto' to a concrete type from the data. The dropdown stays
-        # on 'Auto' so it keeps adapting when metric/dimension change, but the
-        # resolved type is cached per (metric, dimension) so it doesn't flicker
-        # as sidebar filters narrow the data.
+        # Pick a concrete chart type for Auto and remember it
         auto_label = ''
         if ctype == 'Auto':
             key = (metric, dimension)
             ctype = self._auto_cache.get(key)
             if ctype is None:
                 ctype = analytics.recommend_chart_type(metric, dimension, data)
-                # Don't cache a default picked from empty/single-row data —
-                # let it re-resolve once real data arrives.
+                # Do not remember a default chosen from empty data
                 if len(data) > 1:
                     self._auto_cache[key] = ctype
             auto_label = f'Auto chart: {ctype}'
 
-        # Largest first, like the drill-down charts (ordered groups such as
-        # Age Group keep their natural order)
+        # Largest first, except ordered groups like Age Group
         if ctype in ('Vertical Bar', 'Horizontal Bar', 'Line') and dimension not in analytics.ORDERED_DIMENSIONS:
             order = sorted(range(len(values)), key=lambda i: values[i], reverse=True)
             labels = [labels[i] for i in order]
@@ -241,7 +279,7 @@ class ChartPanel(QFrame):
             bars = ax.bar(labels, values, color='#2E75B6', picker=True)
             for bar, lbl in zip(bars, labels):
                 self._artist_to_label[bar] = lbl
-            ax.bar_label(bars, labels=value_text, padding=2, fontsize=8, color='#333')
+            ax.bar_label(bars, labels=value_text, padding=2, fontsize=8, color=theme.chart_text())
             ax.margins(y=0.12)
             ax.set_ylabel(metric)
             ax.tick_params(axis='x', rotation=20)
@@ -250,33 +288,33 @@ class ChartPanel(QFrame):
             bars = ax.barh(labels[::-1], values[::-1], color='#2E75B6', picker=True)
             for bar, lbl in zip(bars, labels[::-1]):
                 self._artist_to_label[bar] = lbl
-            ax.bar_label(bars, labels=value_text[::-1], padding=3, fontsize=8, color='#333')
+            ax.bar_label(bars, labels=value_text[::-1], padding=3, fontsize=8, color=theme.chart_text())
             ax.margins(x=0.12)
             ax.set_xlabel(metric)
         elif ctype in ('Pie', 'Donut'):
-            colors = [_PIE_COLORS[i % len(_PIE_COLORS)] for i in range(len(labels))]
+            palette = theme.chart_palette()
+            colors = [palette[i % len(palette)] for i in range(len(labels))]
             wedges = draw_pie(ax, labels, values, colors, donut=(ctype == 'Donut'))
             for w, lbl in zip(wedges, labels):
                 w.set_picker(True)
                 self._artist_to_label[w] = lbl
         elif ctype == 'Line':
-            ax.plot(labels, values, color='#2E75B6', linewidth=2)
+            ax.plot(labels, values, color=theme.chart_color(theme.BLUE), linewidth=2)
             for lbl, val in zip(labels, values):
-                point, = ax.plot([lbl], [val], 'o', color='#1F3864', markersize=8,
+                point, = ax.plot([lbl], [val], 'o', color=theme.chart_color(theme.NAVY), markersize=8,
                                  picker=True, pickradius=6, zorder=3)
                 self._artist_to_label[point] = lbl
             ax.set_ylabel(metric)
             ax.tick_params(axis='x', rotation=20)
 
-        # Auto-picked chart type goes in the subtitle to keep the title short
-        # enough for side-by-side charts.
+        # Put the Auto chart type in the subtitle
         subtitle = '  ·  '.join(t for t in (self._period_text, auto_label) if t)
         set_title_with_period(ax, f'{metric} by {dimension}', subtitle or None)
 
         self.chart.set_hover_items(self._artist_to_label)
         self.chart.refresh()
 
-    # ── Click handling ────────────────────────────────────────────────────
+    # Click handling
 
     def _on_pick(self, event):
         artist = event.artist

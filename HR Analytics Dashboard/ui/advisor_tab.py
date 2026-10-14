@@ -1,8 +1,4 @@
-# advisor_tab.py
-# AI Advisor tab: the AI Workforce Advisor chat (an embedded local LLM — no
-# external server or process to install/run). Its own top-level tab next to
-# Forecasting, with the conversation in a centred column so it sits where the
-# user is looking.
+# AI Advisor tab with the chat
 
 from __future__ import annotations
 
@@ -52,7 +48,7 @@ _SUGGESTED_QUESTIONS = [
 
 
 class _WarmUpWorker(QThread):
-    # Loads the local model in the background so the first question is quick.
+    # Loads the local model in the background so the first question is quick
     def __init__(self, client: LocalLLMClient, parent=None):
         super().__init__(parent)
         self._client = client
@@ -66,12 +62,12 @@ class _WarmUpWorker(QThread):
 
 class AdvisorTab(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, client: LocalLLMClient | None = None):
         super().__init__(parent)
-        self._df: pd.DataFrame | None = None          # all loaded data
-        self._dash_df: pd.DataFrame | None = None     # what the dashboard currently shows
+        self._df: pd.DataFrame | None = None  # all loaded data
+        self._dash_df: pd.DataFrame | None = None  # what the dashboard currently shows
         self._dash_scope: str | None = None
-        self._client = LocalLLMClient()
+        self._client = client or LocalLLMClient()
         self._worker: AdvisorWorker | None = None
         self._download_worker: ModelDownloadWorker | None = None
         self._pending_label: QLabel | None = None
@@ -81,7 +77,7 @@ class AdvisorTab(QWidget):
         self._check_connection()
 
     def _build_ui(self):
-        # Centre a fixed-max-width column in the tab, like a chat app.
+        # Centre a fixed-max-width column in the tab, like a chat app
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet(f'AdvisorTab {{ background-color: {_GREY_BG}; }}')
         outer = QHBoxLayout(self)
@@ -98,7 +94,7 @@ class AdvisorTab(QWidget):
         self._refresh_scope_label()
 
     def set_dashboard_filter(self, df: pd.DataFrame, description: str):
-        # The dashboard's filtered employees, used when 'Use dashboard filters' is ticked
+        # The dashboard's filtered employees
         self._dash_df = df
         self._dash_scope = description
         self._refresh_scope_label()
@@ -115,8 +111,7 @@ class AdvisorTab(QWidget):
             self._scope_label.setText(f'Answering about all {len(self._df):,} employees in the loaded data.')
 
     def shutdown(self):
-        # Called when the app closes: let a background model load finish rather
-        # than destroying its thread mid-run (which would crash on exit).
+        # Let a background model load finish before closing
         if self._warm_up_worker is not None:
             self._warm_up_worker.wait()
 
@@ -177,7 +172,7 @@ class AdvisorTab(QWidget):
         self._scope_label.setStyleSheet(theme.LABEL_HINT)
         v.addWidget(self._scope_label)
 
-        # Setup card (shown when the local model isn't downloaded yet) / Chat widget (shown when it is)
+        # Setup card or chat widget
         self._advisor_stack = QStackedWidget()
         v.addWidget(self._advisor_stack, stretch=1)
 
@@ -232,7 +227,7 @@ class AdvisorTab(QWidget):
     def _default_setup_text(self) -> str:
         return (
             'This feature answers HR questions using a locally hosted AI model that runs '
-            'inside this application — no external program to install, no server to start, '
+            'inside this application, no external program to install, no server to start, '
             'and once the one-time download below finishes, no internet connection is needed '
             'to use it.\n\n'
             'Click "Download Model" to fetch it now (a one-time download of a few GB).'
@@ -253,7 +248,7 @@ class AdvisorTab(QWidget):
         self._messages_layout.addStretch()
 
         self._welcome = QLabel('👋  Hi! Ask me about headcount, turnover, attrition, tenure, salaries '
-                               'or forecasts — or try one of the suggestions below.')
+                               'or forecasts, or try one of the suggestions below.')
         self._welcome.setWordWrap(True)
         self._welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._welcome.setStyleSheet('font-size: 13px; color: #777; background: transparent; padding: 20px;')
@@ -352,7 +347,7 @@ class AdvisorTab(QWidget):
         self._recheck_btn.setEnabled(False)
         self._download_progress.setVisible(True)
         self._download_progress.setValue(0)
-        self._setup_message_label.setText('Downloading the local model — this can take a while on first run…')
+        self._setup_message_label.setText('Downloading the local model, this can take a while on first run…')
 
         self._download_worker = ModelDownloadWorker(self._client)
         self._download_worker.progress.connect(self._on_download_progress)
@@ -412,8 +407,7 @@ class AdvisorTab(QWidget):
         return label
 
     def _fit_bubble(self, label: QLabel):
-        # Word-wrapped labels default to a narrow width; size the bubble to its
-        # text so short messages stay on one line and long ones use the column.
+        # Size the bubble to its text
         lines = label.text().splitlines() or ['']
         text_w = max(label.fontMetrics().horizontalAdvance(line) for line in lines)
         label.setMinimumWidth(min(text_w + 40, _BUBBLE_MAX_WIDTH))
@@ -456,7 +450,7 @@ class AdvisorTab(QWidget):
 
         model = self._model_combo.currentText()
         if not model:
-            self._add_bubble('No AI model is available — check the connection above.', is_user=False, is_error=True)
+            self._add_bubble('No AI model is available, check the connection above.', is_user=False, is_error=True)
             return
 
         self._add_bubble(question, is_user=True)
