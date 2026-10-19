@@ -1,5 +1,7 @@
 # Colours, fonts and shared styles
 
+from __future__ import annotations
+
 import re
 
 from PyQt6.QtCore import QEvent, QObject, Qt
